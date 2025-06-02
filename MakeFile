@@ -1,0 +1,12 @@
+.PHONY: sim build shell
+
+sim:
+	docker compose -f infra/docker-compose.yml run --rm dev \
+	  bash -c "cd firmware/hello_world && idf.py qemu -nographic"
+
+build:
+	docker compose -f infra/docker-compose.yml run --rm dev \
+	  bash -c 'cd firmware/hello_world && idf.py build'
+
+shell:
+	docker compose -f infra/docker-compose.yml run --rm dev bash
