@@ -1,10 +1,11 @@
-version: '3'
 services:
   dev:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      - IDF_PATH=/opt/esp/idf
     volumes:
-      - ../:/workspace          # mount project into container
-    working_dir: /workspace
+      - ../:/workspace:rw
     tty: true
+    stdin_open: true

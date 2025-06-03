@@ -1,12 +1,19 @@
-.PHONY: sim build shell
+.PHONY: sim build shell clean
 
 sim:
-	docker compose -f infra/docker-compose.yml run --rm dev \
-	  bash -c "cd firmware/hello_world && idf.py qemu -nographic"
+	docker compose -f infra/docker-compose.yml run --rm \
+	  dev \
+	  bash -lc 'cd /workspace/firmware/hello_world && . $$IDF_PATH/export.sh && idf.py qemu'
 
 build:
-	docker compose -f infra/docker-compose.yml run --rm dev \
-	  bash -c 'cd firmware/hello_world && idf.py build'
+	docker compose -f infra/docker-compose.yml run --rm \
+	  dev \
+	  bash -lc 'cd /workspace/firmware/hello_world && . $$IDF_PATH/export.sh && idf.py build'
 
 shell:
 	docker compose -f infra/docker-compose.yml run --rm dev bash
+
+clean:
+	docker compose -f infra/docker-compose.yml run --rm \
+	  dev \
+	  bash -lc 'cd /workspace/firmware/hello_world && . $$IDF_PATH/export.sh && idf.py clean'
