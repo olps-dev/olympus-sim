@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRIS - Olympus Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTQiIGZpbGw9IiMzNzNmZmYiLz4KPHN2ZyB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHZpZXdCb3g9IjAgMCAxNCAxNCIgeD0iOSIgeT0iOSIgZmlsbD0iI2ZmZiI+CjxwYXRoIGQ9Im03IDEgYy0zIDAtNS41IDEuNS03IDQgMS41LTIuNSA0LTQgNy00IDMgMCA1LjUgMS41IDcgNC0xLjUgMi41LTQgNC03IDR6Ii8+Cjwvc3ZnPgo8L3N2Zz4=">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>🏠 IRIS - Olympus Dashboard</h1>
+                <div class="connection-status" id="connectionStatus">
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <span id="statusText">Connecting...</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="system-time" id="systemTime"></div>
+                <div class="simulation-time" id="simulationTime">Sim: 0s</div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- KPI Overview -->
+            <section class="kpi-section">
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon">⚡</div>
+                        <div class="kpi-content">
+                            <div class="kpi-label">Pipeline Latency</div>
+                            <div class="kpi-value" id="pipelineLatency">--ms</div>
+                            <div class="kpi-threshold">Target: <300ms</div>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-icon">🔋</div>
+                        <div class="kpi-content">
+                            <div class="kpi-label">Battery Life</div>
+                            <div class="kpi-value" id="batteryLife">--days</div>
+                            <div class="kpi-threshold">Target: ≥9 days</div>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-icon">📶</div>
+                        <div class="kpi-content">
+                            <div class="kpi-label">Mesh PDR</div>
+                            <div class="kpi-value" id="meshPDR">--%</div>
+                            <div class="kpi-threshold">Target: >95%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-icon">🎯</div>
+                        <div class="kpi-content">
+                            <div class="kpi-label">Detection Rate</div>
+                            <div class="kpi-value" id="detectionRate">--/min</div>
+                            <div class="kpi-threshold">Real-time</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sensor Nodes -->
+            <section class="sensors-section">
+                <h2>📡 Sensor Nodes</h2>
+                <div class="sensors-grid" id="sensorsGrid">
+                    <!-- Sensor cards will be populated dynamically -->
+                </div>
+            </section>
+
+            <!-- Network Topology -->
+            <section class="network-section">
+                <h2>🌐 Network Topology</h2>
+                <div class="network-container">
+                    <div class="network-visualization" id="networkViz">
+                        <div class="apartment-layout">
+                            <div class="room living-room">
+                                <div class="room-label">Living Room</div>
+                                <div class="sensor-node" data-node="0">
+                                    <span class="node-id">0</span>
+                                    <span class="node-status" id="nodeStatus0">●</span>
+                                </div>
+                            </div>
+                            
+                            <div class="room bedroom-1">
+                                <div class="room-label">Bedroom 1</div>
+                                <div class="sensor-node" data-node="1">
+                                    <span class="node-id">1</span>
+                                    <span class="node-status" id="nodeStatus1">●</span>
+                                </div>
+                            </div>
+                            
+                            <div class="room bedroom-2">
+                                <div class="room-label">Bedroom 2</div>
+                                <div class="sensor-node" data-node="2">
+                                    <span class="node-id">2</span>
+                                    <span class="node-status" id="nodeStatus2">●</span>
+                                </div>
+                            </div>
+                            
+                            <div class="room kitchen">
+                                <div class="room-label">Kitchen</div>
+                                <div class="sensor-node" data-node="3">
+                                    <span class="node-id">3</span>
+                                    <span class="node-status" id="nodeStatus3">●</span>
+                                </div>
+                            </div>
+                            
+                            <div class="room hallway">
+                                <div class="room-label">Hallway</div>
+                                <div class="sensor-node" data-node="4">
+                                    <span class="node-id">4</span>
+                                    <span class="node-status" id="nodeStatus4">●</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="network-stats">
+                        <h3>Network Statistics</h3>
+                        <div class="stat-item">
+                            <span class="stat-label">Packet Loss:</span>
+                            <span class="stat-value" id="packetLoss">0%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Avg Latency:</span>
+                            <span class="stat-value" id="avgLatency">0ms</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Throughput:</span>
+                            <span class="stat-value" id="throughput">0 Mbps</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Detection Events -->
+            <section class="events-section">
+                <h2>👤 Detection Events</h2>
+                <div class="events-container">
+                    <div class="events-list" id="eventsList">
+                        <!-- Events will be populated dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts -->
+            <section class="charts-section">
+                <h2>📊 Real-time Analytics</h2>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3>Temperature Trends</h3>
+                        <canvas id="temperatureChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <h3>Battery Voltage</h3>
+                        <canvas id="batteryChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <h3>Network Latency</h3>
+                        <canvas id="latencyChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <h3>Detection Events</h3>
+                        <canvas id="detectionChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <span>Project Olympus Digital Twin Platform</span>
+                <span id="uptimeDisplay">Uptime: 0s</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Connecting to Olympus...</div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html> 

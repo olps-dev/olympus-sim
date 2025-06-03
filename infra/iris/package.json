@@ -1,0 +1,25 @@
+{
+  "name": "olympus-iris-dashboard",
+  "version": "1.0.0",
+  "description": "Project Olympus IRIS Web Dashboard",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "build": "echo 'Build complete'",
+    "dev": "nodemon src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "mqtt": "^5.3.0",
+    "@influxdata/influxdb-client": "^1.30.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["olympus", "iot", "dashboard", "mqtt", "influxdb"],
+  "author": "Project Olympus Team",
+  "license": "MIT"
+} 

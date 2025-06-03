@@ -1,0 +1,2 @@
+source /workspace/firmware/hello_world/build/gdbinit/symbols
+source /workspace/firmware/hello_world/build/gdbinit/connect

@@ -1,0 +1,96 @@
+cpu: CPU.Xtensa @ sysbus
+    cpuType: "esp32"
+
+// Memory regions - ESP32 specific
+dram0: Memory.MappedMemory @ sysbus 0x3FFB0000
+    size: 0x50000
+
+dram1: Memory.MappedMemory @ sysbus 0x3F400000
+    size: 0x100000
+
+iram0: Memory.MappedMemory @ sysbus 0x40080000
+    size: 0x20000
+
+iram1: Memory.MappedMemory @ sysbus 0x400D0000
+    size: 0x330000
+
+flash: Memory.MappedMemory @ sysbus 0x400D0000
+    size: 0x400000
+
+rtc_slow: Memory.MappedMemory @ sysbus 0x50000000
+    size: 0x2000
+
+rtc_fast: Memory.MappedMemory @ sysbus 0x3FF80000
+    size: 0x2000
+
+// UART0 with TCP server
+uart0: UART.PL011 @ sysbus 0x3FF40000
+    IRQ -> cpu@2
+
+// I2C0 Controller - Real ESP32 I2C peripheral model
+i2c0: I2C.ESP32_I2C @ sysbus 0x3FF53000
+    IRQ -> cpu@23
+
+// I2C1 Controller
+i2c1: I2C.ESP32_I2C @ sysbus 0x3FF67000
+    IRQ -> cpu@24
+
+// SPI2 Controller (HSPI)
+spi2: SPI.ESP32_SPI @ sysbus 0x3FF64000
+    IRQ -> cpu@25
+
+// SPI3 Controller (VSPI)  
+spi3: SPI.ESP32_SPI @ sysbus 0x3FF65000
+    IRQ -> cpu@26
+
+// ADC1 Controller
+adc1: Analog.ESP32_ADC @ sysbus 0x3FF48000
+    IRQ -> cpu@27
+
+// ADC2 Controller
+adc2: Analog.ESP32_ADC @ sysbus 0x3FF48800
+    IRQ -> cpu@28
+
+// GPIO Controller
+gpio: GPIOPort.ESP32_GPIO @ sysbus 0x3FF44000
+    IRQ -> cpu@10
+
+// BME680 Environmental Sensor on I2C0
+bme680: Sensors.BME680 @ i2c0 0x76
+    temperatureRange: [-40, 85]
+    pressureRange: [300, 1100]
+    humidityRange: [0, 100]
+    gasResistanceRange: [0, 100000]
+
+// SSD1306 OLED Display on SPI2
+ssd1306: Video.SSD1306 @ spi2
+    csPin: 5
+    dcPin: 2
+    resetPin: 4
+
+// Battery voltage divider on ADC1 Channel 0
+batteryVoltage: Analog.VoltageSource @ adc1 0
+    defaultVoltage: 4.2
+
+// Interrupts and system peripherals
+dport: Miscellaneous.ESP32_DPORT @ sysbus 0x3FF00000
+
+// Timer Group 0
+timer0: Timers.ESP32_TimerGroup @ sysbus 0x3FF5F000
+    IRQ -> cpu@14
+
+// Timer Group 1
+timer1: Timers.ESP32_TimerGroup @ sysbus 0x3FF60000
+    IRQ -> cpu@15
+
+// Real-time Clock
+rtc: Timers.ESP32_RTC @ sysbus 0x3FF48000
+    IRQ -> cpu@16
+
+// System tags for unmapped regions
+sysbus:
+    init:
+        Tag <0x3FF42000, 0x3FF42FFF> "RTCIO"
+        Tag <0x3FF43000, 0x3FF43FFF> "IO_MUX"
+        Tag <0x3FF5A000, 0x3FF5AFFF> "RTC_CNTL"
+        Tag <0x3FF60000, 0x3FF6FFFF> "DPORT_backup" 

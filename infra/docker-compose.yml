@@ -1,11 +1,184 @@
+version: '3.8'
+
 services:
+  # Development Environment with Full Toolchain
   dev:
     build:
       context: .
       dockerfile: Dockerfile
-    environment:
-      - IDF_PATH=/opt/esp/idf
     volumes:
-      - ../:/workspace:rw
-    tty: true
-    stdin_open: true
+      - ../:/workspace:delegated
+      - qemu_cache:/home/developer/.cache/qemu
+      - gazebo_cache:/home/developer/.gazebo
+    working_dir: /workspace
+    privileged: true  # For TAP interfaces
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    devices:
+      - /dev/net/tun
+    ports:
+      - "3333:3333"   # ESP32 UART
+      - "8080:8080"   # IRIS Dashboard
+      - "11311:11311" # ROS Master
+      - "8888:8888"   # Gazebo Web
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - ROS_DOMAIN_ID=42
+      - GAZEBO_MODEL_PATH=/workspace/sim/gazebo/models
+      - IGN_GAZEBO_RESOURCE_PATH=/workspace/sim/gazebo
+    networks:
+      - olympus_mesh
+      - olympus_backend
+
+  # MQTT Broker (Mosquitto)
+  mqtt:
+    image: eclipse-mosquitto:2.0
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    networks:
+      - olympus_backend
+
+  # Time Series Database (InfluxDB)
+  influxdb:
+    image: influxdb:2.7
+    environment:
+      - INFLUXDB_DB=olympus
+      - INFLUXDB_ADMIN_USER=admin
+      - INFLUXDB_ADMIN_PASSWORD=olympus123
+      - INFLUXDB_USER=olympus
+      - INFLUXDB_USER_PASSWORD=sensor123
+    volumes:
+      - influx_data:/var/lib/influxdb2
+    ports:
+      - "8086:8086"
+    networks:
+      - olympus_backend
+
+  # Node-RED for Rule Logic
+  nodered:
+    image: nodered/node-red:3.1
+    volumes:
+      - nodered_data:/data
+      - ./nodered/flows.json:/data/flows.json:ro
+    ports:
+      - "1880:1880"
+    environment:
+      - TZ=UTC
+    networks:
+      - olympus_backend
+    depends_on:
+      - mqtt
+      - influxdb
+
+  # IRIS Web Dashboard
+  iris:
+    build:
+      context: ./iris
+      dockerfile: Dockerfile
+    volumes:
+      - ./iris/src:/app/src:ro
+    ports:
+      - "8080:8080"
+    environment:
+      - MQTT_URL=mqtt://mqtt:1883
+      - INFLUX_URL=http://influxdb:8086
+    networks:
+      - olympus_backend
+    depends_on:
+      - mqtt
+      - influxdb
+
+  # Network Simulation Controller
+  ns3:
+    build:
+      context: ./ns3
+      dockerfile: Dockerfile
+    volumes:
+      - ../sim/ns3:/workspace/ns3:delegated
+      - /dev/net/tun:/dev/net/tun
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - olympus_mesh
+    command: >
+      bash -c "cd /workspace/ns3 && 
+               python3 mesh_controller.py --nodes=5 --loss_rate=0.05"
+
+  # Physical World Simulation
+  gazebo:
+    image: osrf/ros:humble-desktop
+    volumes:
+      - ../sim/gazebo:/workspace/gazebo:delegated
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - gazebo_cache:/home/ubuntu/.gazebo
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - ROS_DOMAIN_ID=42
+      - IGN_GAZEBO_RESOURCE_PATH=/workspace/gazebo
+    networks:
+      - olympus_mesh
+    ports:
+      - "8888:8888"
+    command: >
+      bash -c "source /opt/ros/humble/setup.bash && 
+               cd /workspace/gazebo && 
+               ign gazebo apartment_world.sdf --verbose"
+
+  # ROS 2 Bridge for Time Sync
+  ros_bridge:
+    image: osrf/ros:humble-desktop
+    volumes:
+      - ../sim/ros2:/workspace/ros2:delegated
+    environment:
+      - ROS_DOMAIN_ID=42
+    networks:
+      - olympus_mesh
+      - olympus_backend
+    depends_on:
+      - gazebo
+      - mqtt
+    command: >
+      bash -c "source /opt/ros/humble/setup.bash && 
+               cd /workspace/ros2 && 
+               python3 time_sync_bridge.py"
+
+  # KPI Collection and Analysis
+  metrics:
+    build:
+      context: ./metrics
+      dockerfile: Dockerfile
+    volumes:
+      - ../results:/workspace/results:delegated
+      - metrics_data:/data
+    environment:
+      - INFLUX_URL=http://influxdb:8086
+      - MQTT_URL=mqtt://mqtt:1883
+    networks:
+      - olympus_backend
+    depends_on:
+      - influxdb
+      - mqtt
+
+networks:
+  olympus_mesh:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24
+  olympus_backend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.200.0/24
+
+volumes:
+  qemu_cache:
+  gazebo_cache:
+  influx_data:
+  nodered_data:
+  metrics_data:

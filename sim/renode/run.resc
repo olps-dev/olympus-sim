@@ -1,0 +1,6 @@
+mach create "node0"
+machine LoadPlatformDescription @/workspace/sim/renode/esp32_wroom32.repl
+sysbus LoadELF @/workspace/firmware/build/olympus.elf
+emulation CreateServerSocketTerminal 3333 "uart_terminal"
+connector Connect sysbus.uart0 uart_terminal
+start 

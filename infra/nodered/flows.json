@@ -1,0 +1,254 @@
+[
+    {
+        "id": "olympus_main_flow",
+        "type": "tab",
+        "label": "Olympus Smart Home",
+        "disabled": false,
+        "info": "Main flow for Project Olympus smart home automation"
+    },
+    {
+        "id": "mqtt_sensor_in",
+        "type": "mqtt in",
+        "z": "olympus_main_flow",
+        "name": "Sensor Data",
+        "topic": "olympus/sensors/+/+",
+        "qos": "2",
+        "datatype": "json",
+        "broker": "mqtt_broker",
+        "x": 120,
+        "y": 80,
+        "wires": [["sensor_processor"]]
+    },
+    {
+        "id": "sensor_processor",
+        "type": "function",
+        "z": "olympus_main_flow",
+        "name": "Process Sensor Data",
+        "func": "// Extract node and sensor info from topic\nconst topicParts = msg.topic.split('/');\nconst nodeId = topicParts[2];\nconst sensorType = topicParts[3];\n\n// Add metadata\nmsg.nodeId = nodeId;\nmsg.sensorType = sensorType;\nmsg.timestamp = new Date().toISOString();\n\n// Store in flow context for rule processing\nconst sensors = flow.get('sensors') || {};\nif (!sensors[nodeId]) sensors[nodeId] = {};\nsensors[nodeId][sensorType] = msg.payload;\nflow.set('sensors', sensors);\n\nreturn msg;",
+        "outputs": 1,
+        "x": 320,
+        "y": 80,
+        "wires": [["temperature_check", "battery_check", "influx_output"]]
+    },
+    {
+        "id": "temperature_check",
+        "type": "switch",
+        "z": "olympus_main_flow",
+        "name": "Temperature Alert",
+        "property": "payload.temperature",
+        "rules": [
+            {
+                "t": "gt",
+                "v": "25",
+                "vt": "num"
+            },
+            {
+                "t": "lt",
+                "v": "18",
+                "vt": "num"
+            }
+        ],
+        "checkall": "false",
+        "repair": false,
+        "outputs": 2,
+        "x": 550,
+        "y": 120,
+        "wires": [["high_temp_alert"], ["low_temp_alert"]]
+    },
+    {
+        "id": "battery_check",
+        "type": "switch",
+        "z": "olympus_main_flow",
+        "name": "Battery Monitor",
+        "property": "payload.voltage",
+        "rules": [
+            {
+                "t": "lt",
+                "v": "3.5",
+                "vt": "num"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 550,
+        "y": 200,
+        "wires": [["low_battery_alert"]]
+    },
+    {
+        "id": "high_temp_alert",
+        "type": "function",
+        "z": "olympus_main_flow",
+        "name": "High Temperature",
+        "func": "msg.payload = {\n    alert: 'HIGH_TEMPERATURE',\n    nodeId: msg.nodeId,\n    temperature: msg.payload.temperature,\n    timestamp: msg.timestamp,\n    message: `High temperature detected: ${msg.payload.temperature}°C`\n};\nreturn msg;",
+        "outputs": 1,
+        "x": 780,
+        "y": 100,
+        "wires": [["alert_output"]]
+    },
+    {
+        "id": "low_temp_alert",
+        "type": "function",
+        "z": "olympus_main_flow",
+        "name": "Low Temperature", 
+        "func": "msg.payload = {\n    alert: 'LOW_TEMPERATURE',\n    nodeId: msg.nodeId,\n    temperature: msg.payload.temperature,\n    timestamp: msg.timestamp,\n    message: `Low temperature detected: ${msg.payload.temperature}°C`\n};\nreturn msg;",
+        "outputs": 1,
+        "x": 780,
+        "y": 140,
+        "wires": [["alert_output"]]
+    },
+    {
+        "id": "low_battery_alert",
+        "type": "function",
+        "z": "olympus_main_flow",
+        "name": "Low Battery",
+        "func": "msg.payload = {\n    alert: 'LOW_BATTERY',\n    nodeId: msg.nodeId,\n    voltage: msg.payload.voltage,\n    timestamp: msg.timestamp,\n    message: `Low battery detected: ${msg.payload.voltage}V`\n};\nreturn msg;",
+        "outputs": 1,
+        "x": 780,
+        "y": 200,
+        "wires": [["alert_output"]]
+    },
+    {
+        "id": "alert_output",
+        "type": "mqtt out",
+        "z": "olympus_main_flow",
+        "name": "Alerts",
+        "topic": "olympus/alerts",
+        "qos": "1",
+        "retain": "false",
+        "broker": "mqtt_broker",
+        "x": 990,
+        "y": 150,
+        "wires": []
+    },
+    {
+        "id": "influx_output",
+        "type": "influxdb out",
+        "z": "olympus_main_flow",
+        "influxdb": "influx_db",
+        "name": "Store Metrics",
+        "measurement": "sensor_data",
+        "precision": "ms",
+        "retentionPolicy": "",
+        "x": 550,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "detection_in",
+        "type": "mqtt in",
+        "z": "olympus_main_flow",
+        "name": "Detection Events",
+        "topic": "olympus/detections/+",
+        "qos": "2",
+        "datatype": "json",
+        "broker": "mqtt_broker",
+        "x": 130,
+        "y": 300,
+        "wires": [["automation_trigger"]]
+    },
+    {
+        "id": "automation_trigger",
+        "type": "function",
+        "z": "olympus_main_flow",
+        "name": "Smart Automation",
+        "func": "// Get current time\nconst now = new Date();\nconst hour = now.getHours();\n\n// Night mode (22:00 - 06:00)\nconst isNightMode = hour >= 22 || hour < 6;\n\n// Process detection event\nconst nodeId = msg.topic.split('/')[2];\nconst detection = msg.payload;\n\n// Create automation response\nlet response = {\n    nodeId: nodeId,\n    timestamp: now.toISOString(),\n    detection: detection\n};\n\nif (isNightMode) {\n    // Night mode: dim lighting\n    response.action = 'DIM_LIGHTS';\n    response.brightness = 30;\n    response.message = 'Motion detected - night mode lighting';\n} else {\n    // Day mode: normal lighting\n    response.action = 'NORMAL_LIGHTS';\n    response.brightness = 80;\n    response.message = 'Motion detected - day mode lighting';\n}\n\nmsg.payload = response;\nreturn msg;",
+        "outputs": 1,
+        "x": 350,
+        "y": 300,
+        "wires": [["lighting_control"]]
+    },
+    {
+        "id": "lighting_control",
+        "type": "mqtt out",
+        "z": "olympus_main_flow",
+        "name": "Lighting Commands",
+        "topic": "olympus/commands/lighting",
+        "qos": "1",
+        "retain": "false",
+        "broker": "mqtt_broker",
+        "x": 580,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "system_health",
+        "type": "inject",
+        "z": "olympus_main_flow",
+        "name": "Health Check",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "10",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 400,
+        "wires": [["health_monitor"]]
+    },
+    {
+        "id": "health_monitor",
+        "type": "function",
+        "z": "olympus_main_flow",
+        "name": "Health Monitor",
+        "func": "// Get sensor data from flow context\nconst sensors = flow.get('sensors') || {};\nconst now = Date.now();\n\nlet health = {\n    timestamp: new Date().toISOString(),\n    activeNodes: Object.keys(sensors).length,\n    status: 'OK',\n    issues: []\n};\n\n// Check each node for recent data\nfor (const nodeId in sensors) {\n    const nodeData = sensors[nodeId];\n    let hasRecentData = false;\n    \n    for (const sensorType in nodeData) {\n        const sensor = nodeData[sensorType];\n        if (sensor.timestamp && (now - new Date(sensor.timestamp).getTime()) < 300000) {\n            hasRecentData = true;\n            break;\n        }\n    }\n    \n    if (!hasRecentData) {\n        health.issues.push(`Node ${nodeId} not responding`);\n        health.status = 'WARNING';\n    }\n}\n\nif (health.issues.length === 0) {\n    health.message = 'All systems operational';\n} else {\n    health.message = `${health.issues.length} issue(s) detected`;\n}\n\nmsg.payload = health;\nreturn msg;",
+        "outputs": 1,
+        "x": 340,
+        "y": 400,
+        "wires": [["health_output"]]
+    },
+    {
+        "id": "health_output",
+        "type": "mqtt out",
+        "z": "olympus_main_flow",
+        "name": "System Health",
+        "topic": "olympus/system/health",
+        "qos": "1",
+        "retain": "true",
+        "broker": "mqtt_broker",
+        "x": 550,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "mqtt_broker",
+        "type": "mqtt-broker",
+        "name": "Olympus MQTT",
+        "broker": "mqtt",
+        "port": "1883",
+        "clientid": "nodered_olympus",
+        "usetls": false,
+        "compatmode": false,
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "olympus/system/nodered",
+        "birthQos": "1",
+        "birthPayload": "online",
+        "closeTopic": "olympus/system/nodered", 
+        "closeQos": "1",
+        "closePayload": "offline",
+        "willTopic": "olympus/system/nodered",
+        "willQos": "1",
+        "willPayload": "offline"
+    },
+    {
+        "id": "influx_db",
+        "type": "influxdb",
+        "hostname": "influxdb",
+        "port": "8086",
+        "protocol": "http",
+        "database": "olympus",
+        "name": "Olympus InfluxDB",
+        "usetls": false,
+        "tls": "",
+        "influxdbVersion": "2.0",
+        "url": "http://influxdb:8086",
+        "rejectUnauthorized": false
+    }
+] 
