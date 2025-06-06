@@ -1,6 +1,15 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
-  <world name="olympus_simulation">
+  <world name="olympus_simulation_simple">
+    <!-- Scene broadcaster for clock and basic scene info -->
+    <plugin filename="gz-sim8-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+
+    <!-- Physics -->
+    <plugin filename="gz-sim8-physics-system" name="gz::sim::systems::Physics"/>
+
+    <!-- User commands -->
+    <plugin filename="gz-sim8-user-commands-system" name="gz::sim::systems::UserCommands"/>
+
     <!-- A global light source -->
     <include>
       <uri>model://sun</uri>
@@ -11,57 +20,66 @@
       <uri>model://ground_plane</uri>
     </include>
     
-    <!-- Physics -->
-    <physics type="ode">
-      <real_time_update_rate>1000.0</real_time_update_rate>
-      <max_step_size>0.001</max_step_size>
-      <real_time_factor>1</real_time_factor>
-      <ode>
-        <solver>
-          <type>quick</type>
-          <iters>150</iters>
-          <precon_iters>0</precon_iters>
-          <sor>1.400000</sor>
-          <use_dynamic_moi_rescaling>1</use_dynamic_moi_rescaling>
-        </solver>
-        <constraints>
-          <cfm>0.00001</cfm>
-          <erp>0.2</erp>
-          <contact_max_correcting_vel>2000.000000</contact_max_correcting_vel>
-          <contact_surface_layer>0.01000</contact_surface_layer>
-        </constraints>
-      </ode>
-    </physics>
-    
-    <!-- Olympus sensor grid layout -->
-    <model name="sensor_grid">
+    <!-- Static sensor grid model -->
+    <model name="sensor_grid_static">
       <static>true</static>
-      <pose>0 0 0 0 0 0</pose>
+      <pose>0 0 0.1 0 0 0</pose>
       <link name="link">
         <visual name="visual">
           <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>10 10</size>
-            </plane>
+            <box><size>10 10 0.2</size></box>
           </geometry>
           <material>
-            <ambient>0.8 0.8 0.8 1</ambient>
-            <diffuse>0.8 0.8 0.8 1</diffuse>
-            <specular>0.1 0.1 0.1 1</specular>
+            <ambient>0.5 0.5 0.5 1</ambient>
+            <diffuse>0.5 0.5 0.5 1</diffuse>
+          </material>
+        </visual>
+      </link>
+      <!-- Static pose publisher attached to the model -->
+      <plugin filename="gz-sim8-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+        <publish_link_pose>true</publish_link_pose>
+        <use_sim_time>true</use_sim_time>
+        <static_publisher>true</static_publisher>
+        <update_frequency>1</update_frequency>
+      </plugin>
+    </model>
+
+    <!-- Dynamic walker box model -->
+    <model name="walker_box_dynamic">
+      <pose>1 0 0.5 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.083</ixx><iyy>0.083</iyy><izz>0.083</izz>
+          </inertia>
+        </inertial>
+        <visual name="visual">
+          <geometry>
+            <box><size>0.5 0.5 1.0</size></box>
+          </geometry>
+          <material>
+            <ambient>0.0 0.0 0.8 1</ambient>
+            <diffuse>0.0 0.0 0.8 1</diffuse>
           </material>
         </visual>
         <collision name="collision">
           <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>10 10</size>
-            </plane>
+            <box><size>0.5 0.5 1.0</size></box>
           </geometry>
         </collision>
       </link>
+      <!-- Dynamic pose publisher attached to the model -->
+      <plugin filename="gz-sim8-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+        <publish_link_pose>true</publish_link_pose>
+        <use_sim_time>true</use_sim_time>
+        <static_publisher>false</static_publisher>
+        <update_frequency>20</update_frequency>
+      </plugin>
     </model>
-    
+
+    <!-- No world-level plugins needed for pose publishing. Plugins are now attached directly to models. -->
+
     <!-- GUI settings -->
     <gui fullscreen='0'>
       <camera name='user_camera'>

@@ -1,26 +1,29 @@
-<model name="human_walker">
-  <link name="link">
-    <visual name="mesh">
-      <geometry>
-        <cylinder>
-          <radius>0.3</radius>
-          <length>1.8</length>
-        </cylinder>
-      </geometry>
-      <material>
-        <ambient>0.2 0.2 0.8 1</ambient>
-        <diffuse>0.2 0.2 0.8 1</diffuse>
-        <specular>0.1 0.1 0.1 1</specular>
-      </material>
-    </visual>
-  </link>
-  <plugin name="gz::sim::systems::Actor" filename="libgz-sim-actor-system.so">
-    <trajectory id="0" type="repeat">
-      <waypoint time="0"   x="0"  y="0"  z="0"/>
-      <waypoint time="4"   x="4"  y="0"  z="0"/>
-      <waypoint time="8"   x="4"  y="4"  z="0"/>
-      <waypoint time="12"  x="0"  y="4"  z="0"/>
-      <waypoint time="16"  x="0"  y="0"  z="0"/>
-    </trajectory>
-  </plugin>
-</model>
+<?xml version="1.0"?>
+<sdf version="1.6">
+  <model name="human_walker">
+    <link name="link">
+      <visual name="mesh">
+        <geometry>
+          <cylinder>
+            <radius>0.3</radius>
+            <length>1.8</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.2 0.2 0.8 1</ambient>
+          <diffuse>0.2 0.2 0.8 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+        </material>
+      </visual>
+    </link>
+    <plugin name="gz::sim::systems::Actor" filename="libgz-sim-actor-system.so">
+      <trajectory id="0" type="repeat">
+        <waypoint time="0"   x="0"  y="0"  z="0"/>
+        <waypoint time="4"   x="4"  y="0"  z="0"/>
+        <waypoint time="8"   x="4"  y="4"  z="0"/>
+        <waypoint time="12"  x="0"  y="4"  z="0"/>
+        <waypoint time="16"  x="0"  y="0"  z="0"/>
+      </trajectory>
+    </plugin>
+  </model>
+</sdf>

@@ -159,26 +159,37 @@ def main(duration=None, tick_interval=None, launch_gazebo=None):
             ros2_thread.start()
             log.info("ROS2 integration enabled")
             
-            # Launch Gazebo if requested
+            # Launch Gazebo Harmonic if requested
             if args.gazebo:
                 try:
-                    log.info("Launching Gazebo...")
+                    log.info("Launching Gazebo Harmonic...")
                     # Check if we have the gazebo launch file
                     gazebo_launch_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
                                                     "ros2", "launch", "olympus_gazebo.launch.py")
                     
                     if os.path.exists(gazebo_launch_file):
-                        # Launch Gazebo using ros2 launch
+                        # Launch Gazebo Harmonic using ros2 launch
                         cmd = ["ros2", "launch", gazebo_launch_file]
                         gazebo_process = subprocess.Popen(cmd, 
                                                         stdout=subprocess.PIPE,
                                                         stderr=subprocess.PIPE,
                                                         text=True)
-                        log.info("Gazebo launched successfully")
+                        log.info("Gazebo Harmonic launched successfully")
+                        
+                        # Wait a moment for Gazebo to initialize
+                        time.sleep(2)
+                        
+                        # Check if Gazebo is running
+                        if gazebo_process.poll() is not None:
+                            log.error(f"Gazebo Harmonic failed to start. Return code: {gazebo_process.returncode}")
+                            # Get error output
+                            _, stderr = gazebo_process.communicate()
+                            log.error(f"Gazebo error: {stderr}")
+                            gazebo_process = None
                     else:
                         log.error(f"Gazebo launch file not found at {gazebo_launch_file}")
                 except Exception as e:
-                    log.error(f"Failed to launch Gazebo: {e}")
+                    log.error(f"Failed to launch Gazebo Harmonic: {e}")
         except Exception as e:
             log.error(f"Failed to initialize ROS2: {e}")
             args.ros2 = False
@@ -291,15 +302,21 @@ def main(duration=None, tick_interval=None, launch_gazebo=None):
                     rclpy.shutdown()
                     ros2_thread.join(timeout=1.0)
                     
-                # Terminate Gazebo if it was launched
+                # Terminate Gazebo Harmonic if it was launched
                 if gazebo_process:
-                    log.info("Shutting down Gazebo...")
+                    log.info("Shutting down Gazebo Harmonic...")
+                    # First try a graceful termination
                     gazebo_process.terminate()
                     try:
                         gazebo_process.wait(timeout=5)
                     except subprocess.TimeoutExpired:
+                        log.warning("Gazebo Harmonic did not terminate gracefully, forcing shutdown...")
                         gazebo_process.kill()
-                    log.info("Gazebo shutdown complete")
+                        try:
+                            gazebo_process.wait(timeout=2)
+                        except subprocess.TimeoutExpired:
+                            log.error("Failed to kill Gazebo Harmonic process")
+                    log.info("Gazebo Harmonic shutdown complete")
             except Exception as e:
                 log.error(f"Error during ROS2/Gazebo shutdown: {e}")
 
