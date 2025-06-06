@@ -25,8 +25,7 @@
       </collision>
     </link>
     
-    <!-- Plugin temporarily removed -->
-    <!-- Original plugin was:
+    <!-- Sensor visualization plugin -->
     <plugin name="olympus_mqtt_plugin" filename="libOlympusMQTTPlugin.so">
       <ros_topic_prefix>/olympus/sensor/</ros_topic_prefix>
       <sensor_id>${sensor_id}</sensor_id>
@@ -34,6 +33,5 @@
       <text_size>12</text_size>
       <update_rate>1.0</update_rate>
     </plugin>
-    -->
   </model>
 </sdf>

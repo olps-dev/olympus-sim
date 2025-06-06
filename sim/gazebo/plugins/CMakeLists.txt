@@ -6,10 +6,10 @@ project(OlympusMQTTPlugin)
 find_package(gz-cmake3 REQUIRED)
 find_package(gz-plugin2 REQUIRED COMPONENTS register)
 find_package(gz-common5 REQUIRED COMPONENTS profiler)
-find_package(gz-sim7 REQUIRED)
-find_package(gz-rendering7 REQUIRED)
-find_package(gz-transport12 REQUIRED)
-find_package(gz-msgs9 REQUIRED)
+find_package(gz-sim8 REQUIRED)
+find_package(gz-rendering8 REQUIRED)
+find_package(gz-transport13 REQUIRED)
+find_package(gz-msgs10 REQUIRED)
 
 # Find Mosquitto MQTT library
 find_path(MOSQUITTO_INCLUDE_DIR mosquitto.h)
@@ -34,16 +34,16 @@ gz_add_plugin(OlympusMQTTPlugin
     ${MOSQUITTO_LIBRARY}
     nlohmann_json::nlohmann_json
   PUBLIC_LINK_LIBS
-    gz-sim7::gz-sim7
-    gz-rendering7::gz-rendering7
-    gz-transport12::gz-transport12
-    gz-msgs9::gz-msgs9
+    gz-sim8::gz-sim8
+    gz-rendering8::gz-rendering8
+    gz-transport13::gz-transport13
+    gz-msgs10::gz-msgs10
     gz-common5::profiler
 )
 
 # Install the plugin
 install(TARGETS OlympusMQTTPlugin
-  DESTINATION lib/gz-sim-7/plugins)
+  DESTINATION lib/gz-sim-8/plugins)
 
 # Install the header (optional)
 install(FILES OlympusMQTTPlugin.hh
