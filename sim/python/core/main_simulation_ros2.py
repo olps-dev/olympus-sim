@@ -13,6 +13,7 @@ import os
 import sys
 import signal
 import logging
+import subprocess
 from typing import Optional, List
 
 # Add parent directory to path for imports
@@ -56,7 +57,8 @@ except ImportError:
 NUM_MID_TIER_NODES = 2
 NUM_SENSORS_PER_MID_TIER = 3
 SIMULATION_DURATION_SECONDS = 3600  # 1 hour by default
-SIMULATION_TICK_INTERVAL = 1.0  # Seconds per tick
+SIMULATION_TICK_INTERVAL = 1.0    # 1 second by default
+LAUNCH_GAZEBO = False             # Whether to launch Gazebo
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -109,21 +111,35 @@ class OlympusROS2Bridge(ROS2Node):
         msg.data = "running"
         self.sim_status_pub.publish(msg)
 
-def main():
+def main(duration=None, tick_interval=None, launch_gazebo=None):
     """Main simulation function."""
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(description='Olympus Simulation with ROS2 Integration')
-    parser.add_argument('--duration', type=int, default=SIMULATION_DURATION_SECONDS,
-                        help='Simulation duration in seconds')
-    parser.add_argument('--tick', type=float, default=SIMULATION_TICK_INTERVAL,
-                        help='Simulation tick interval in seconds')
-    parser.add_argument('--ros2', action='store_true', default=ROS2_AVAILABLE,
-                        help='Enable ROS2 integration')
-    args = parser.parse_args()
+    # Parse command line arguments if not provided as parameters
+    if duration is None or tick_interval is None or launch_gazebo is None:
+        parser = argparse.ArgumentParser(description='Olympus Simulation with ROS2 Integration')
+        parser.add_argument('--duration', type=int, default=SIMULATION_DURATION_SECONDS,
+                            help='Simulation duration in seconds')
+        parser.add_argument('--tick', type=float, default=SIMULATION_TICK_INTERVAL,
+                            help='Simulation tick interval in seconds')
+        parser.add_argument('--ros2', action='store_true', default=ROS2_AVAILABLE,
+                            help='Enable ROS2 integration')
+        parser.add_argument('--gazebo', action='store_true', default=LAUNCH_GAZEBO,
+                            help='Launch Gazebo visualization')
+        args = parser.parse_args()
+        duration = args.duration
+        tick_interval = args.tick
+        launch_gazebo = args.gazebo
+    else:
+        # Use provided parameters
+        args = argparse.Namespace()
+        args.duration = duration
+        args.tick = tick_interval
+        args.ros2 = ROS2_AVAILABLE
+        args.gazebo = launch_gazebo
     
     # Initialize ROS2 if available and enabled
     ros2_node = None
     ros2_thread = None
+    gazebo_process = None
     if args.ros2 and ROS2_AVAILABLE:
         try:
             rclpy.init()
@@ -141,11 +157,31 @@ def main():
             ros2_thread = threading.Thread(target=spin_ros2)
             ros2_thread.daemon = True
             ros2_thread.start()
-            
             log.info("ROS2 integration enabled")
+            
+            # Launch Gazebo if requested
+            if args.gazebo:
+                try:
+                    log.info("Launching Gazebo...")
+                    # Check if we have the gazebo launch file
+                    gazebo_launch_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
+                                                    "ros2", "launch", "olympus_gazebo.launch.py")
+                    
+                    if os.path.exists(gazebo_launch_file):
+                        # Launch Gazebo using ros2 launch
+                        cmd = ["ros2", "launch", gazebo_launch_file]
+                        gazebo_process = subprocess.Popen(cmd, 
+                                                        stdout=subprocess.PIPE,
+                                                        stderr=subprocess.PIPE,
+                                                        text=True)
+                        log.info("Gazebo launched successfully")
+                    else:
+                        log.error(f"Gazebo launch file not found at {gazebo_launch_file}")
+                except Exception as e:
+                    log.error(f"Failed to launch Gazebo: {e}")
         except Exception as e:
             log.error(f"Failed to initialize ROS2: {e}")
-            ros2_node = None
+            args.ros2 = False
             # Create a dummy ROS2 node for compatibility
             ros2_node = OlympusROS2Bridge()
     else:
@@ -249,11 +285,23 @@ def main():
         print("-" * 50)
         
         # Clean up ROS2 resources
-        if ros2_node and ROS2_AVAILABLE:
+        if args.ros2 and ROS2_AVAILABLE:
             try:
-                rclpy.shutdown()
+                if ros2_thread and ros2_thread.is_alive():
+                    rclpy.shutdown()
+                    ros2_thread.join(timeout=1.0)
+                    
+                # Terminate Gazebo if it was launched
+                if gazebo_process:
+                    log.info("Shutting down Gazebo...")
+                    gazebo_process.terminate()
+                    try:
+                        gazebo_process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        gazebo_process.kill()
+                    log.info("Gazebo shutdown complete")
             except Exception as e:
-                log.error(f"Error shutting down ROS2: {e}")
+                log.error(f"Error during ROS2/Gazebo shutdown: {e}")
 
 if __name__ == "__main__":
     main()

@@ -12,8 +12,10 @@ if ! pgrep -x "mosquitto" > /dev/null; then
     sleep 2
 fi
 
-# Run the simulation
+# Run the simulation using the wrapper script
 echo "Starting Olympus simulation (MQTT-only mode)..."
-python3 "$PROJECT_ROOT/sim/python/core/main_simulation.py"
+cd "$PROJECT_ROOT"
+python3 -m scripts.run_simulation --duration 60
 
 echo "Simulation complete!"
+
