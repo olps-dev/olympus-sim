@@ -1,4 +1,4 @@
-.PHONY: sim build shell clean sim_phase1 sim_with_bridge test demo hardware_test hw_bridge full_sim startup_stack shutdown_stack
+.PHONY: sim build shell clean sim_phase1 sim_with_bridge test demo hardware_test hw_bridge full_sim startup_stack shutdown_stack ros2_sim ros2_gazebo_sim ros2_setup
 
 DOCKER_COMPOSE = docker compose -f infra/docker-compose.yml
 
@@ -120,6 +120,24 @@ demo:
 	@echo "  * Battery discharge simulation"
 	@echo "  * Motion detection based on occupancy"
 	docker run --rm --network infra_olympus_backend -p 3333:3333 -v ${PWD}:/workspace python:3.11-slim bash -c "pip install paho-mqtt numpy && python3 /workspace/scripts/physics_simulation.py"
+
+# =============================================================================
+# ROS2 AND GAZEBO INTEGRATION TARGETS
+# =============================================================================
+
+ros2_setup:
+	@echo "Setting up ROS2 environment..."
+	@chmod +x scripts/run_integrated_simulation.sh
+
+ros2_sim: ros2_setup
+	@echo "Starting Olympus simulation with ROS2 integration..."
+	@echo "This runs the simulation with ROS2 but without Gazebo"
+	python3 sim/python/core/main_simulation_ros2.py --ros2
+
+ros2_gazebo_sim: ros2_setup
+	@echo "Starting full Olympus simulation with ROS2 and Gazebo integration..."
+	@echo "This launches ROS2, Gazebo, and the Olympus simulation"
+	./scripts/run_integrated_simulation.sh
 
 # =============================================================================
 # TESTING TARGETS

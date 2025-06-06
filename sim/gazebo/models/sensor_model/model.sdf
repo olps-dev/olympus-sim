@@ -1,0 +1,37 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="sensor_model">
+    <static>true</static>
+    <link name="link">
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.1 0.1 0.1</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.0 0.5 1.0 1</ambient>
+          <diffuse>0.0 0.5 1.0 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+          <emissive>0 0 0 1</emissive>
+        </material>
+      </visual>
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.1 0.1 0.1</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    
+    <!-- Sensor visualization plugin -->
+    <plugin name="olympus_mqtt_plugin" filename="libOlympusMQTTPlugin.so">
+      <ros_topic_prefix>/olympus/sensor/</ros_topic_prefix>
+      <sensor_id>${sensor_id}</sensor_id>
+      <display_offset>0 0 0.15</display_offset>
+      <text_size>12</text_size>
+      <update_rate>1.0</update_rate>
+    </plugin>
+  </model>
+</sdf>
