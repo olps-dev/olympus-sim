@@ -1,9 +1,9 @@
 import time
 import random
 
-from sim.python.olympus_nodes import Node
-from sim.python.mqtt_broker_sim import MQTTBrokerSim, MQTTSimulatedClient
-from sim.python.hardware_sensor_bridge import HardwareSensorBridge
+from ..olympus_nodes import Node
+from ..mqtt_broker_sim import MQTTBrokerSim, MQTTSimulatedClient
+from ..hardware_sensor_bridge import HardwareSensorBridge
 
 # Simulation Configuration
 NUM_MID_TIER_NODES = 2

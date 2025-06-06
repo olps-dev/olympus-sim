@@ -140,15 +140,15 @@ test_all:
 	$(DOCKER_COMPOSE) run --rm dev bash -c "cd /workspace && python3 -m pytest tests/ -v --tb=short"
 
 test_network:
-	@echo "🌐 Testing ns-3 Mesh Network Simulation"
+	@echo " Testing ns-3 Mesh Network Simulation"
 	$(DOCKER_COMPOSE) run --rm dev bash -c "cd /workspace && python3 -m pytest tests/test_mesh_network.py -v"
 
 test_gazebo:
-	@echo "🏠 Testing Gazebo World Simulation"
-	$(DOCKER_COMPOSE) run --rm dev bash -c "cd /workspace && python3 -m pytest tests/test_gazebo_world.py -v"
+	@echo " Testing Gazebo World Simulation"
+	$(DOCKER_COMPOSE) run --rm dev bash -c "cd /workspace && python3 -m pytest tests/./scripts/launch/launch_ros_gazebo.sh_world.py -v"
 
 test_integration:
-	@echo "🔄 Running Full Integration Tests"
+	@echo " Running Full Integration Tests"
 	@echo "End-to-end validation of actor detection → sensor triggers → MQTT → dashboard"
 	$(DOCKER_COMPOSE) run --rm dev bash -c "cd /workspace && python3 -m pytest tests/test_integration.py -v --tb=short"
 
@@ -157,27 +157,27 @@ test_integration:
 # =============================================================================
 
 validate_power:
-	@echo "⚡ Power Consumption and Timing Validation"
+	@echo " Power Consumption and Timing Validation"
 	@echo "Validates power models, timing constraints, and battery life predictions"
 	$(DOCKER_COMPOSE) run --rm dev bash -c "cd /workspace && python3 -m pytest tests/test_hardware_level.py::test_power_consumption_timing -v"
 
 validate_protocols:
-	@echo "📡 Bus Protocol Compliance Testing"
+	@echo " Bus Protocol Compliance Testing"
 	@echo "I2C/SPI timing validation, error injection, NACK handling"
 	$(DOCKER_COMPOSE) run --rm dev bash -c "cd /workspace && python3 -m pytest tests/test_hardware_level.py::test_i2c_bus_protocol_compliance tests/test_hardware_level.py::test_spi_bus_protocol_compliance -v"
 
 validate_latency:
-	@echo "⏱️  End-to-End Latency Validation"
+	@echo "  End-to-End Latency Validation"
 	@echo "Validates <300ms sensor-to-dashboard pipeline requirement"
 	$(DOCKER_COMPOSE) run --rm dev bash -c "cd /workspace && python3 -m pytest tests/test_full_simulation.py::test_end_to_end_latency -v"
 
 validate_battery:
-	@echo "🔋 Battery Life Validation"
+	@echo " Battery Life Validation"
 	@echo "Validates ≥9 day battery life requirement with realistic power models"
 	$(DOCKER_COMPOSE) run --rm dev bash -c "cd /workspace && python3 -m pytest tests/test_full_simulation.py::test_battery_life_projection -v"
 
 validate_mesh:
-	@echo "📶 Mesh Network Validation"
+	@echo " Mesh Network Validation"
 	@echo "Validates >95% packet delivery ratio and <100ms mesh latency"
 	$(DOCKER_COMPOSE) run --rm dev bash -c "cd /workspace && python3 -m pytest tests/test_mesh_network.py::test_packet_delivery_ratio -v"
 
@@ -186,18 +186,18 @@ validate_mesh:
 # =============================================================================
 
 ci_test:
-	@echo "🤖 CI/CD Pipeline Test Suite"
+	@echo " CI/CD Pipeline Test Suite"
 	@echo "Automated testing for continuous integration"
 	$(DOCKER_COMPOSE) run --rm dev bash -c "cd /workspace && python3 -m pytest tests/ -v --tb=line --maxfail=3 --timeout=600"
 
 regression:
-	@echo "🔄 Regression Testing Suite"
+	@echo " Regression Testing Suite"
 	@echo "Complete hardware-level regression tests for CI/CD pipeline"
 	@echo "Validates that code changes don't break hardware behavior"
 	$(DOCKER_COMPOSE) run --rm dev bash -c "cd /workspace && python3 -m pytest tests/test_hardware_level.py -v --tb=line --maxfail=1"
 
 ci_full_sim:
-	@echo "🏭 CI Full Simulation Test"
+	@echo " CI Full Simulation Test"
 	@echo "Runs complete simulation for 5 minutes and validates all KPIs"
 	@echo "Designed for automated CI/CD pipeline validation"
 	$(DOCKER_COMPOSE) run --rm --env CI_MODE=true dev bash -c "\
@@ -208,15 +208,16 @@ ci_full_sim:
 		pkill -f 'full_sim' || true"
 
 benchmark:
-	@echo "📊 Performance Benchmarking"
+	@echo " Performance Benchmarking"
 	@echo "Measures simulation performance and generates benchmark report"
-	$(DOCKER_COMPOSE) run --rm dev bash -c "cd /workspace && python3 scripts/benchmark_simulation.py --output results/benchmark_$(shell date +%Y%m%d_%H%M%S).json"
+	$(DOCKER_COMPOSE) run --rm dev bash -c "cd /workspace && python3 ./scripts/launch/launch_integrated_simulation.shpy --output results/benchmark_$(shell date +%Y%m%d_%H%M%S).json"
 
 # =============================================================================
 # DEBUGGING AND ANALYSIS TARGETS
 # =============================================================================
 
 debug_hardware:
+	@echo " Hardware Debug Mode"
 	@echo "🐛 Hardware Debug Mode"
 	@echo "Interactive session with hardware monitoring enabled"
 	$(DOCKER_COMPOSE) run --rm -it dev bash -c "cd /workspace && python3 -c 'from tests.test_hardware_level import hardware_monitor; import IPython; IPython.embed()'"
