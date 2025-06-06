@@ -3,22 +3,22 @@
 
 ---
 
-## 🎯 **Vision Achieved**
+## **Vision Achieved**
 
 Project Olympus is now a **comprehensive digital twin platform** that eliminates hardware surprises by running exact ESP32 firmware in a deterministic sandbox with:
 
-- **🔧 QEMU Xtensa**: Instruction-level ESP32 execution with real firmware
-- **🌐 ns-3 802.11s**: Realistic mesh networking with apartment-scale propagation  
-- **🏠 Gazebo**: Physical world simulation with human actors and sensor triggers
-- **📊 Full Backend**: MQTT, InfluxDB, Node-RED, IRIS dashboard integration
-- **⏱️ ROS 2 Bridge**: Time synchronization and comprehensive KPI monitoring
-- **🤖 CI/CD Ready**: Automated testing with hardware-level regression validation
+- **QEMU Xtensa**: Instruction-level ESP32 execution with real firmware
+- **ns-3 802.11s**: Realistic mesh networking with apartment-scale propagation  
+- **Gazebo**: Physical world simulation with human actors and sensor triggers
+- ** Full Backend**: MQTT, InfluxDB, Node-RED, IRIS dashboard integration
+- ** ROS 2 Bridge**: Time synchronization and comprehensive KPI monitoring
+- ** CI/CD Ready**: Automated testing with hardware-level regression validation
 
 **End Result**: Your complete smart home stack runs in simulation **before any hardware arrives**, validating bus-level bugs, timing constraints, battery life projections, and <300ms end-to-end latency requirements.
 
 ---
 
-## 🚀 **Quick Start - Full Simulation**
+##  **Quick Start - Full Simulation**
 
 ### **For Investor Demonstrations**
 ```bash
@@ -45,14 +45,14 @@ make demo && make hardware_test
 
 ---
 
-## 🏗️ **System Architecture**
+##  **System Architecture**
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                      PROJECT OLYMPUS DIGITAL TWIN                          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  🏠 PHYSICAL WORLD    🌐 MESH NETWORK     📊 BACKEND STACK                 │
+│   PHYSICAL WORLD     MESH NETWORK      BACKEND STACK                 │
 │                                                                             │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐             │
 │  │     Gazebo      │  │      ns-3       │  │   Mosquitto     │             │
@@ -71,7 +71,7 @@ make demo && make hardware_test
 │                     HARDWARE SIMULATION LAYER                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  🔧 ESP32 NODE 0     🔧 ESP32 NODE 1     🔧 ESP32 NODE N                   │
+│  ESP32 NODE 0     ESP32 NODE 1     ESP32 NODE N                   │
 │                                                                             │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐             │
 │  │ QEMU Xtensa     │  │ QEMU Xtensa     │  │ QEMU Xtensa     │             │
@@ -89,41 +89,41 @@ make demo && make hardware_test
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘             │
 │                                                                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│           ⏱️ ROS 2 TIME SYNC + 📈 KPI MONITORING + 🤖 CI/CD               │
+│            ROS 2 TIME SYNC +  KPI MONITORING +  CI/CD               │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📊 **Validated KPI Requirements**
+##  **Validated KPI Requirements**
 
-### **✅ End-to-End Latency: <300ms (P95)**
+### ** End-to-End Latency: <300ms (P95)**
 - Sensor processing + mesh transmission + backend processing
 - Validated in real-time with comprehensive monitoring
 - Critical for smart home responsiveness
 
-### **✅ Battery Life: ≥9 Days**
+### ** Battery Life: ≥9 Days**
 ```python
 # Realistic ESP32 Power Model
 Active WiFi: 160mW (10% duty cycle)
 WiFi Idle: 20mW (30% duty cycle)  
 Deep Sleep: 0.01mW (60% duty cycle)
-Average: 16.01mW → 693 hours (28.9 days) ✅
+Average: 16.01mW -> 693 hours (28.9 days) 
 ```
 
-### **✅ Mesh Network: >95% Packet Delivery**
+### ** Mesh Network: >95% Packet Delivery**
 - 802.11s with realistic indoor propagation
 - Wall attenuation and interference modeling
 - <100ms mesh latency validated
 
-### **✅ Hardware Protocol Compliance**
+### ** Hardware Protocol Compliance**
 - I2C: 100kHz timing, NACK simulation
 - SPI: 10MHz with CS timing validation
 - ADC: 12-bit resolution with noise modeling
 
 ---
 
-## 🛠️ **Complete Build System**
+## **Complete Build System**
 
 ### **Development Targets**
 ```bash
@@ -167,27 +167,27 @@ make logs              # Show simulation logs
 
 ---
 
-## 🎯 **Real-World Impact**
+##  **Real-World Impact**
 
-### **🚀 For Investor Demonstrations**
+### ** For Investor Demonstrations**
 - Virtual apartment with human actors triggering sensor responses
 - <300ms end-to-end latency demonstrated visually  
 - Complete system behavior without requiring physical hardware
 - Professional dashboard with real-time KPI monitoring
 
-### **🔬 For CI/CD Integration**
+### ** For CI/CD Integration**
 - Every code change triggers full virtual house simulation
 - Automated KPI validation prevents performance regressions
 - Hardware-level regression testing catches integration bugs
 - 5-minute validation suitable for GitHub Actions
 
-### **⚡ For Development Velocity**
+### ** For Development Velocity**
 - Parallel development of firmware, networking, and backend
 - No hardware dependencies for integration testing
 - Rapid iteration with deterministic simulation environment
 - Bus-level bugs caught before hardware arrives
 
-### **💰 For Hardware Cost Reduction**
+### ** For Hardware Cost Reduction**
 - Power consumption validated before hardware design
 - Timing constraints verified in simulation
 - Protocol compliance tested extensively
@@ -195,9 +195,9 @@ make logs              # Show simulation logs
 
 ---
 
-## 📋 **Implementation Status**
+##  **Implementation Status**
 
-### **✅ Complete and Operational**
+### ** Complete and Operational**
 - **QEMU ESP32 Simulation**: Instruction-level accuracy with real firmware
 - **ns-3 Mesh Networking**: 802.11s with realistic apartment propagation
 - **Gazebo Physical World**: Multi-room environment with human actors
@@ -207,7 +207,7 @@ make logs              # Show simulation logs
 - **Comprehensive Testing**: KPI validation, CI integration
 - **Production Build System**: One-command simulation startup
 
-### **🔄 Future Enhancement Areas**
+### **Future Enhancement Areas**
 - **mmWave Radar Simulation**: Detailed point cloud generation
 - **Multi-Building Mesh**: Scaling beyond single apartment  
 - **Cloud Integration**: Hybrid local/cloud processing
@@ -215,7 +215,7 @@ make logs              # Show simulation logs
 
 ---
 
-## 🏆 **Competitive Advantages**
+## **Competitive Advantages**
 
 ### **1. Hardware Surprises Eliminated**
 Real firmware execution catches bus-level bugs in simulation, timing constraints validated before hardware arrives, power consumption projected with realistic duty cycling.
@@ -231,24 +231,24 @@ Parallel development across all layers, no hardware dependencies for integration
 
 ---
 
-## 🎉 **Bottom Line Achievement**
+## **Bottom Line Achievement**
 
 **Project Olympus transforms risky IoT development into deterministic validation.**
 
 The system now validates:
-- ✅ **Real ESP32 firmware execution** with instruction-level accuracy
-- ✅ **Hardware-accurate I2C/SPI protocols** with realistic timing  
-- ✅ **802.11s mesh networking** with apartment-scale propagation
-- ✅ **Complete backend integration** with professional monitoring
-- ✅ **End-to-end latency <300ms** with comprehensive KPI validation
-- ✅ **Battery life ≥9 days** with realistic power modeling
-- ✅ **CI/CD integration** with automated regression testing
+-  **Real ESP32 firmware execution** with instruction-level accuracy
+-  **Hardware-accurate I2C/SPI protocols** with realistic timing  
+-  **802.11s mesh networking** with apartment-scale propagation
+-  **Complete backend integration** with professional monitoring
+-  **End-to-end latency <300ms** with comprehensive KPI validation
+-  **Battery life ≥9 days** with realistic power modeling
+-  **CI/CD integration** with automated regression testing
 
 **Result**: Hardware bring-up becomes a validation step rather than a debug session, accelerating development and eliminating costly surprises.
 
 ---
 
-## 📖 **Documentation**
+## **Documentation**
 
 - **[OLYMPUS_ARCHITECTURE.md](OLYMPUS_ARCHITECTURE.md)**: Complete system architecture
 - **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)**: Technical implementation details
