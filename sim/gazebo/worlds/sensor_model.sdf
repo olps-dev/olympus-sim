@@ -1,0 +1,54 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <model name="sensor_node">
+    <static>true</static>
+    <link name="link">
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.05</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.0 0.5 0.0 1.0</ambient>
+          <diffuse>0.0 0.7 0.0 1.0</diffuse>
+          <specular>0.0 0.0 0.0 1.0</specular>
+        </material>
+      </visual>
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.05</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    
+    <!-- MQTT Integration Plugin -->
+    <plugin
+      filename="OlympusMQTTPlugin"
+      name="olympus::OlympusMQTTPlugin">
+      <broker_host>localhost</broker_host>
+      <broker_port>1883</broker_port>
+      <topic_prefix>olympus</topic_prefix>
+      <visual_type>text</visual_type>
+      <position>0 0 0.1</position>
+      <data_field>temperature_c</data_field>
+      <topic>sensor_data/{sensor_id}/bme680</topic>
+    </plugin>
+
+    <!-- Plugin for battery visualization -->
+    <plugin
+      filename="OlympusMQTTPlugin"
+      name="olympus::OlympusMQTTPlugin">
+      <broker_host>localhost</broker_host>
+      <broker_port>1883</broker_port>
+      <client_id>gazebo_battery_{sensor_id}</client_id>
+      <topic_prefix>olympus</topic_prefix>
+      <visual_type>color</visual_type>
+      <position>0 0 0.05</position>
+      <data_field>voltage_v</data_field>
+      <topic>sensor_data/{sensor_id}/battery</topic>
+    </plugin>
+  </model>
+</sdf>

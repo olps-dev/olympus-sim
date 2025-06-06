@@ -1,0 +1,652 @@
+<?xml version="1.0" ?>
+<!--
+Project Olympus - Apartment World Simulation
+Gazebo SDF file for realistic smart home environment testing
+-->
+
+<sdf version="1.8">
+  <world name="olympus_apartment">
+    
+    <!-- Physics settings for realistic simulation -->
+    <physics name="default_physics" default="0" type="ode">
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>250</real_time_update_rate>
+    </physics>
+    
+    <!-- Scene lighting -->
+    <scene>
+      <sky>
+        <clouds>
+          <speed>12</speed>
+        </clouds>
+      </sky>
+      <ambient>0.4 0.4 0.4 1</ambient>
+      <background>0.7 0.7 0.7 1</background>
+      <shadows>1</shadows>
+    </scene>
+    
+    <!-- Sun light source -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+    
+    <!-- Indoor ceiling lights -->
+    <light type="point" name="living_room_light">
+      <pose>2 2 2.5 0 0 0</pose>
+      <diffuse>1.0 1.0 0.9 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>8</range>
+        <constant>0.5</constant>
+        <linear>0.2</linear>
+        <quadratic>0.01</quadratic>
+      </attenuation>
+      <cast_shadows>false</cast_shadows>
+    </light>
+    
+    <light type="point" name="bedroom1_light">
+      <pose>8 2 2.5 0 0 0</pose>
+      <diffuse>1.0 1.0 0.9 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>6</range>
+        <constant>0.5</constant>
+        <linear>0.2</linear>
+        <quadratic>0.01</quadratic>
+      </attenuation>
+      <cast_shadows>false</cast_shadows>
+    </light>
+    
+    <light type="point" name="bedroom2_light">
+      <pose>8 6 2.5 0 0 0</pose>
+      <diffuse>1.0 1.0 0.9 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>6</range>
+        <constant>0.5</constant>
+        <linear>0.2</linear>
+        <quadratic>0.01</quadratic>
+      </attenuation>
+      <cast_shadows>false</cast_shadows>
+    </light>
+    
+    <light type="point" name="kitchen_light">
+      <pose>2 6 2.5 0 0 0</pose>
+      <diffuse>1.0 1.0 0.9 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>6</range>
+        <constant>0.5</constant>
+        <linear>0.2</linear>
+        <quadratic>0.01</quadratic>
+      </attenuation>
+      <cast_shadows>false</cast_shadows>
+    </light>
+    
+    <!-- Ground plane -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>20 20</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>20 20</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+            <specular>0.0 0.0 0.0 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <!-- Apartment walls -->
+    <!-- Outer walls -->
+    <model name="wall_north">
+      <static>true</static>
+      <pose>5 8 1.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>10 0.2 2.5</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>10 0.2 2.5</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.9 0.9 0.9 1</ambient>
+            <diffuse>0.9 0.9 0.9 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <model name="wall_south">
+      <static>true</static>
+      <pose>5 0 1.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>10 0.2 2.5</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>10 0.2 2.5</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.9 0.9 0.9 1</ambient>
+            <diffuse>0.9 0.9 0.9 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <model name="wall_east">
+      <static>true</static>
+      <pose>10 4 1.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>0.2 8 2.5</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.2 8 2.5</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.9 0.9 0.9 1</ambient>
+            <diffuse>0.9 0.9 0.9 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <model name="wall_west">
+      <static>true</static>
+      <pose>0 4 1.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>0.2 8 2.5</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.2 8 2.5</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.9 0.9 0.9 1</ambient>
+            <diffuse>0.9 0.9 0.9 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <!-- Interior walls -->
+    <model name="wall_interior_1">
+      <static>true</static>
+      <pose>5 4 1.25 0 0 1.5708</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>4 0.15 2.5</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>4 0.15 2.5</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.95 0.95 0.95 1</ambient>
+            <diffuse>0.95 0.95 0.95 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <model name="wall_interior_2">
+      <static>true</static>
+      <pose>6 6 1.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>4 0.15 2.5</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>4 0.15 2.5</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.95 0.95 0.95 1</ambient>
+            <diffuse>0.95 0.95 0.95 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <!-- Furniture -->
+    <!-- Living room sofa -->
+    <model name="sofa">
+      <static>true</static>
+      <pose>1.5 1.5 0.4 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>1.8 0.8 0.8</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>1.8 0.8 0.8</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.3 0.3 0.6 1</ambient>
+            <diffuse>0.3 0.3 0.6 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <!-- Coffee table -->
+    <model name="coffee_table">
+      <static>true</static>
+      <pose>2.5 2.5 0.2 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>1.0 0.6 0.4</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>1.0 0.6 0.4</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.6 0.4 0.2 1</ambient>
+            <diffuse>0.6 0.4 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <!-- Bedroom beds -->
+    <model name="bed1">
+      <static>true</static>
+      <pose>8.5 1.5 0.3 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>1.4 2.0 0.6</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>1.4 2.0 0.6</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.8 0.8 0.9 1</ambient>
+            <diffuse>0.8 0.8 0.9 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <model name="bed2">
+      <static>true</static>
+      <pose>8.5 6.5 0.3 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>1.4 2.0 0.6</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>1.4 2.0 0.6</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.8 0.9 0.8 1</ambient>
+            <diffuse>0.8 0.9 0.8 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <!-- Kitchen counter -->
+    <model name="kitchen_counter">
+      <static>true</static>
+      <pose>1.5 6.5 0.45 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>2.0 1.0 0.9</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>2.0 1.0 0.9</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.7 0.7 0.7 1</ambient>
+            <diffuse>0.7 0.7 0.7 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <!-- ESP32 sensor nodes (visual representations) -->
+    <model name="sensor_node_0">
+      <static>true</static>
+      <pose>2 2 1.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.1 0.1 0.05</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0 1 0 1</ambient>
+            <diffuse>0 1 0 1</diffuse>
+            <emissive>0 0.3 0 1</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <model name="sensor_node_1">
+      <static>true</static>
+      <pose>8 2 1.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.1 0.1 0.05</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0 1 0 1</ambient>
+            <diffuse>0 1 0 1</diffuse>
+            <emissive>0 0.3 0 1</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <model name="sensor_node_2">
+      <static>true</static>
+      <pose>8 6 1.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.1 0.1 0.05</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0 1 0 1</ambient>
+            <diffuse>0 1 0 1</diffuse>
+            <emissive>0 0.3 0 1</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <model name="sensor_node_3">
+      <static>true</static>
+      <pose>2 6 1.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.1 0.1 0.05</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0 1 0 1</ambient>
+            <diffuse>0 1 0 1</diffuse>
+            <emissive>0 0.3 0 1</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <model name="sensor_node_4">
+      <static>true</static>
+      <pose>5 4 1.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.1 0.1 0.05</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0 1 0 1</ambient>
+            <diffuse>0 1 0 1</diffuse>
+            <emissive>0 0.3 0 1</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <!-- Simulated human actors with scripted movement -->
+    <actor name="person_1">
+      <link name="person_1_link">
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>0.25</radius>
+              <length>1.7</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.0 0.5 0.0 1</ambient>
+            <diffuse>0.0 0.5 0.0 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+        <!-- Add a minimal collision shape for the actor -->
+        <collision name="collision">
+            <geometry>
+                <cylinder>
+                    <radius>0.25</radius>
+                    <length>1.7</length>
+                </cylinder>
+            </geometry>
+        </collision>
+      </link>
+      <!-- Animation removed to prevent Fuel download issues -->
+      <script>
+        <loop>true</loop>
+        <delay_start>0.000000</delay_start>
+        <auto_start>true</auto_start>
+        <!-- Living room to kitchen path -->
+        <trajectory id="0" type="walking">
+          <waypoint>
+            <time>0.0</time>
+            <pose>1.5 2.0 0.0 0 0 0</pose>
+          </waypoint>
+          <waypoint>
+            <time>3.0</time>
+            <pose>2.0 4.0 0.0 0 0 1.57</pose>
+          </waypoint>
+          <waypoint>
+            <time>6.0</time>
+            <pose>2.0 6.0 0.0 0 0 0</pose>
+          </waypoint>
+          <waypoint>
+            <time>9.0</time>
+            <pose>2.0 4.0 0.0 0 0 -1.57</pose>
+          </waypoint>
+          <waypoint>
+            <time>12.0</time>
+            <pose>1.5 2.0 0.0 0 0 0</pose>
+          </waypoint>
+        </trajectory>
+      </script>
+    </actor>
+    
+    <actor name="person_2">
+      <link name="person_2_link">
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>0.25</radius>
+              <length>1.6</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.5 0.0 0.5 1</ambient>
+            <diffuse>0.5 0.0 0.5 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+        <!-- Add a minimal collision shape for the actor -->
+        <collision name="collision">
+            <geometry>
+                <cylinder>
+                    <radius>0.25</radius>
+                    <length>1.6</length>
+                </cylinder>
+            </geometry>
+        </collision>
+      </link>
+      <!-- Animation removed to prevent Fuel download issues -->
+      <script>
+        <loop>true</loop>
+        <delay_start>6.000000</delay_start>
+        <auto_start>true</auto_start>
+        <!-- Bedroom 1 to living room path -->
+        <trajectory id="0" type="walking">
+          <waypoint>
+            <time>0.0</time>
+            <pose>7.5 2.0 0.0 0 0 3.14</pose>
+          </waypoint>
+          <waypoint>
+            <time>4.0</time>
+            <pose>5.0 2.0 0.0 0 0 3.14</pose>
+          </waypoint>
+          <waypoint>
+            <time>8.0</time>
+            <pose>2.5 2.0 0.0 0 0 0</pose>
+          </waypoint>
+          <waypoint>
+            <time>12.0</time>
+            <pose>5.0 2.0 0.0 0 0 0</pose>
+          </waypoint>
+          <waypoint>
+            <time>16.0</time>
+            <pose>7.5 2.0 0.0 0 0 0</pose>
+          </waypoint>
+        </trajectory>
+      </script>
+    </actor>
+    
+    <model name="hall_lamp">
+      <static>true</static>
+      <pose>5 0.5 2.5 0 0 0</pose> <!-- Adjust pose as needed -->
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>0.1</radius>
+              <length>0.3</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.8 0.8 0.2 1</ambient> <!-- Yellowish when off -->
+            <diffuse>0.8 0.8 0.2 1</diffuse>
+            <emissive>0 0 0 1</emissive> <!-- No emission when off -->
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry>
+            <cylinder>
+              <radius>0.1</radius>
+              <length>0.3</length>
+            </cylinder>
+          </geometry>
+        </collision>
+      </link>
+      <!-- Ensure you have a 'libgz-sim-lamp.so' plugin compiled for Gazebo Harmonic
+           or replace this with a standard Gazebo light and control mechanism. 
+           This plugin is assumed to subscribe to /hall_lamp/cmd (std_msgs/msg/Bool) -->
+      <plugin name="lamp_control_plugin" filename="libgz-sim-lamp.so"/>
+    </model>
+
+<!-- Old Gazebo Classic ROS plugins removed. Functionality handled by ros_gz_bridge and system plugins like PosePublisher (added in launch command). -->
+    
+  </world>
+</sdf> 

@@ -1,533 +1,354 @@
-#!/usr/bin/env python3
-"""
-Hardware-Accurate Sensor Bridge for Project Olympus
-Simulates real I2C/SPI/ADC timing, register-level behavior, error conditions
-"""
-
-import socket
 import time
-import threading
-import struct
 import random
 import math
 from enum import Enum
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Union
+from dataclasses import dataclass, field
+from typing import List, Dict, Any, Optional, Callable
+import socket
+import json
+import struct
 
-class BusError(Exception):
-    """Bus transaction error"""
-    pass
+# This will be resolved if mqtt_broker_sim.py is in the same directory or PYTHONPATH is set up.
+# from .mqtt_broker_sim import MQTTSimulatedClient 
 
-class I2CError(BusError):
-    """I2C specific error"""
-    pass
+# Constants
+BME680_I2C_ADDR = 0x77 # Example I2C Address for BME680
+SSD1306_I2C_ADDR = 0x3C # Example I2C Address for SSD1306
 
-class SPIError(BusError):
-    """SPI specific error"""
-    pass
-
-class I2CState(Enum):
-    IDLE = "idle"
-    START = "start"
-    ADDRESS = "address"
-    REGISTER = "register"
-    DATA = "data"
-    STOP = "stop"
-    NACK = "nack"
-
-@dataclass
-class I2CTransaction:
-    device_addr: int
-    register_addr: int
-    data: bytes
-    is_read: bool
-    timestamp: float
-    duration: float
-    success: bool
-
-@dataclass
-class SPITransaction:
-    cs_pin: int
-    data: bytes
-    clock_speed: int
-    timestamp: float
-    duration: float
-    success: bool
-
+# --- Basic Sensor Simulation Models ---
 class BME680RegisterMap:
-    """BME680 sensor register map with realistic behavior"""
-    
+    """Simplified BME680 model for simulation purposes."""
     def __init__(self):
-        self.registers = {
-            # Chip identification
-            0xD0: 0x61,  # chip_id
-            0xD1: 0x00,  # variant_id
-            
-            # Temperature calibration coefficients (simplified)
-            0xE1: 0x67, 0xE2: 0x67, 0xE3: 0x03,  # par_t1
-            0xE4: 0x08, 0xE5: 0x67,              # par_t2
-            0xE6: 0x03,                          # par_t3
-            
-            # Control registers
-            0x72: 0x00,  # ctrl_hum
-            0x74: 0x00,  # ctrl_meas
-            0x75: 0x00,  # config
-            
-            # Status register
-            0x73: 0x00,  # meas_status_0
-            
-            # Data registers (updated by measurement cycle)
-            0x22: 0x80, 0x23: 0x00, 0x24: 0x00,  # temp_adc
-            0x1F: 0x80, 0x20: 0x00, 0x21: 0x00,  # press_adc
-            0x25: 0x80, 0x26: 0x00,              # hum_adc
-            0x2A: 0x00, 0x2B: 0x00,              # gas_r_adc
-            0x2C: 0x00,                          # gas_range
-        }
-        
-        self.measurement_active = False
-        self.measurement_start_time = 0
-        self.last_temp_raw = 0x800000
-        self.temp_drift = 0.0
-        
-    def read_register(self, addr: int) -> int:
-        """Read register with realistic timing and side effects"""
-        
-        # Simulate register read timing
-        time.sleep(0.00005)  # 50μs register access time
-        
-        if addr not in self.registers:
-            raise I2CError(f"Invalid register address: 0x{addr:02X}")
-            
-        # Special handling for data registers
-        if addr in [0x22, 0x23, 0x24]:  # Temperature data
-            if self.measurement_active:
-                self._update_temperature_data()
-            
-        elif addr == 0x73:  # Status register
-            # Update measurement status
-            if self.measurement_active:
-                elapsed = time.time() - self.measurement_start_time
-                if elapsed >= 0.150:  # 150ms measurement time
-                    self.registers[0x73] |= 0x80  # new_data_0 bit
-                    self.measurement_active = False
-                else:
-                    self.registers[0x73] &= 0x7F  # Clear new_data_0
-                    
-        return self.registers[addr]
-    
-    def write_register(self, addr: int, value: int):
-        """Write register with realistic timing and side effects"""
-        
-        # Simulate register write timing
-        time.sleep(0.00005)  # 50μs register access time
-        
-        if addr not in self.registers:
-            raise I2CError(f"Invalid register address: 0x{addr:02X}")
-            
-        # Read-only registers
-        if addr in [0xD0, 0xD1] or (0xE1 <= addr <= 0xF0):
-            raise I2CError(f"Attempted write to read-only register: 0x{addr:02X}")
-            
-        self.registers[addr] = value & 0xFF
-        
-        # Special handling for control registers
-        if addr == 0x74:  # ctrl_meas
-            if (value & 0x03) != 0:  # mode bits != sleep
-                self._start_measurement()
-                
-    def _start_measurement(self):
-        """Start measurement cycle with realistic timing"""
-        self.measurement_active = True
-        self.measurement_start_time = time.time()
-        self.registers[0x73] &= 0x7F  # Clear new_data_0
-        
-    def _update_temperature_data(self):
-        """Update temperature data with realistic values and noise"""
-        # Simulate realistic temperature with drift and noise
-        base_temp = 22.0  # 22°C base temperature
-        drift = math.sin(time.time() / 60.0) * 2.0  # 2°C sinusoidal drift
-        noise = random.gauss(0, 0.1)  # 0.1°C noise
-        
-        actual_temp = base_temp + drift + noise
-        
-        # Convert to ADC counts (simplified BME680 conversion)
-        temp_adc = int((actual_temp + 50) * 0x1000)
-        temp_adc = max(0, min(0xFFFFF, temp_adc))  # 20-bit ADC
-        
-        # Store in registers (big-endian, left-justified in 24 bits)
-        self.registers[0x22] = (temp_adc >> 12) & 0xFF  # MSB
-        self.registers[0x23] = (temp_adc >> 4) & 0xFF   # LSB
-        self.registers[0x24] = (temp_adc << 4) & 0xF0   # XLSB
+        self.temperature = 25.0  # deg C
+        self.humidity = 50.0  # %RH
+        self.pressure = 1012.0  # hPa
+        self.gas_resistance = 50000.0  # Ohms
+        self.chip_id = 0x61 # Default BME680 chip ID
+
+    def read_temp_c(self):
+        # Simulate slight variations
+        self.temperature += random.uniform(-0.1, 0.1)
+        return round(self.temperature, 2)
+
+    def read_humidity_rh(self):
+        self.humidity += random.uniform(-0.5, 0.5)
+        self.humidity = max(0, min(100, self.humidity))
+        return round(self.humidity, 2)
+
+    def read_pressure_hpa(self):
+        self.pressure += random.uniform(-0.2, 0.2)
+        return round(self.pressure, 2)
+
+    def read_gas_resistance_ohm(self):
+        # Simulate gas sensor changes
+        self.gas_resistance += random.uniform(-100, 100)
+        self.gas_resistance = max(10000, min(1000000, self.gas_resistance))
+        return round(self.gas_resistance)
 
 class SSD1306Controller:
-    """SSD1306 OLED controller with register-level behavior"""
-    
-    def __init__(self):
-        self.display_ram = bytearray(1024)  # 128x64 bits / 8 = 1024 bytes
-        self.command_buffer = []
-        self.data_mode = False  # True = data, False = command
-        self.column_addr = 0
-        self.page_addr = 0
-        self.display_on = False
-        
-        # Initialize with default configuration
-        self.contrast = 0x7F
-        self.display_offset = 0x00
-        self.start_line = 0x00
-        self.addressing_mode = 0x02  # Page addressing mode
-        
-    def process_spi_data(self, data: bytes, dc_pin: bool) -> bool:
-        """Process SPI data with realistic timing"""
-        
-        # Simulate SPI processing time
-        time.sleep(len(data) * 0.000001)  # 1μs per byte processing
-        
-        if dc_pin:  # Data mode
-            return self._write_display_data(data)
-        else:  # Command mode
-            return self._process_commands(data)
-            
-    def _process_commands(self, data: bytes) -> bool:
-        """Process display commands"""
-        for byte in data:
-            if byte == 0xAE:  # Display OFF
-                self.display_on = False
-            elif byte == 0xAF:  # Display ON
-                self.display_on = True
-            elif byte == 0x20:  # Set Memory Addressing Mode
-                self.command_buffer = [byte]
-            elif len(self.command_buffer) == 1 and self.command_buffer[0] == 0x20:
-                self.addressing_mode = byte & 0x03
-                self.command_buffer = []
-            elif byte == 0x21:  # Set Column Address
-                self.command_buffer = [byte]
-            elif (byte & 0xF0) == 0x10:  # Set Higher Column Start Address
-                self.column_addr = (self.column_addr & 0x0F) | ((byte & 0x0F) << 4)
-            elif (byte & 0xF0) == 0x00:  # Set Lower Column Start Address
-                self.column_addr = (self.column_addr & 0xF0) | (byte & 0x0F)
-            # Add more commands as needed
-                
-        return True
-        
-    def _write_display_data(self, data: bytes) -> bool:
-        """Write data to display RAM"""
-        for byte in data:
-            if self.page_addr < 8 and self.column_addr < 128:
-                addr = self.page_addr * 128 + self.column_addr
-                if addr < len(self.display_ram):
-                    self.display_ram[addr] = byte
-                    
-                # Auto-increment based on addressing mode
-                if self.addressing_mode == 0x00:  # Horizontal addressing
-                    self.column_addr += 1
-                    if self.column_addr >= 128:
-                        self.column_addr = 0
-                        self.page_addr = (self.page_addr + 1) % 8
-                        
-        return True
+    """Simplified SSD1306 OLED display model."""
+    def __init__(self, width=128, height=64):
+        self.width = width
+        self.height = height
+        self.buffer = [[0] * width for _ in range(height)]
+        # print(f"[{time.strftime('%H:%M:%S')}] SSD1306 Initialized ({width}x{height})")
+
+    def display_text(self, line: int, text: str):
+        # This is a stub. In a real sim, this would update the buffer.
+        # For MQTT, we might send the text or a status update.
+        # print(f"[{time.strftime('%H:%M:%S')}] [SSD1306] Line {line}: {text}")
+        pass
+
+    def clear_display(self):
+        self.buffer = [[0] * self.width for _ in range(self.height)]
+        # print(f"[{time.strftime('%H:%M:%S')}] [SSD1306] Display Cleared")
+        pass
 
 class ESP32ADCController:
-    """ESP32 ADC controller with realistic noise and calibration"""
-    
+    """Simplified ESP32 ADC model, e.g., for battery voltage."""
     def __init__(self):
-        self.calibration_enabled = False
-        self.attenuation = 3  # ADC_ATTEN_DB_11
-        self.resolution = 12  # 12-bit ADC
-        self.vref = 1100  # 1.1V internal reference (mV)
-        
-        # Calibration coefficients (simplified)
-        self.gain_cal = 1.0
-        self.offset_cal = 0
-        
-        # Noise characteristics
-        self.thermal_noise_std = 2.0  # 2 LSB thermal noise
-        self.linearity_error = 0.5   # 0.5% linearity error
-        
-    def read_channel(self, channel: int, num_samples: int = 1) -> List[int]:
-        """Read ADC channel with realistic timing and noise"""
-        
-        # Simulate ADC conversion time
-        conversion_time = num_samples * 0.001  # 1ms per conversion
-        time.sleep(conversion_time)
-        
-        readings = []
-        
-        for _ in range(num_samples):
-            # Simulate actual input voltage (battery monitoring)
-            base_voltage = 4.1  # 4.1V battery voltage
-            voltage_noise = random.gauss(0, 0.005)  # 5mV noise
-            actual_voltage = base_voltage + voltage_noise
-            
-            # Voltage divider (2:1 ratio)
-            adc_voltage = actual_voltage / 2.0
-            
-            # Attenuation calculation
-            if self.attenuation == 3:  # 11dB attenuation
-                max_voltage = 3.3
-            elif self.attenuation == 2:  # 6dB attenuation
-                max_voltage = 2.2
-            elif self.attenuation == 1:  # 2.5dB attenuation
-                max_voltage = 1.5
-            else:  # 0dB attenuation
-                max_voltage = 1.0
-                
-            # Convert to ADC counts
-            max_counts = (1 << self.resolution) - 1
-            ideal_counts = int((adc_voltage / max_voltage) * max_counts)
-            
-            # Add noise and non-linearity
-            thermal_noise = random.gauss(0, self.thermal_noise_std)
-            linearity_error = ideal_counts * random.gauss(0, self.linearity_error / 100)
-            
-            actual_counts = ideal_counts + thermal_noise + linearity_error
-            actual_counts = max(0, min(max_counts, int(actual_counts)))
-            
-            readings.append(actual_counts)
-            
-        return readings
+        self.battery_voltage = 4.2  # Volts, fully charged
+        self.min_voltage = 3.0
+        self.discharge_rate = 0.0001 # Small voltage drop per read
 
+    def read_battery_voltage(self):
+        self.battery_voltage -= self.discharge_rate
+        if self.battery_voltage < self.min_voltage:
+            self.battery_voltage = self.min_voltage
+        # Simulate ADC noise/precision
+        return round(self.battery_voltage + random.uniform(-0.01, 0.01), 3)
+
+# --- Hardware Sensor Bridge (MQTT Refactored) ---
 class HardwareSensorBridge:
-    """Hardware-accurate sensor bridge with real bus timing and protocols"""
-    
-    def __init__(self, host='localhost', port=3333):
-        self.host = host
-        self.port = port
-        self.socket = None
-        self.running = False
+    def __init__(self, mqtt_client_sim, node_id: str):
+        """
+        Initializes the hardware bridge with an MQTT client for communication.
+        Args:
+            mqtt_client_sim: An instance of MQTTSimulatedClient or MQTTClientAdapter.
+            node_id: The ID of the sensor node, used for MQTT topic construction.
+        """
+        if mqtt_client_sim is None:
+            raise ValueError("MQTT client cannot be None")
+        self.mqtt_client = mqtt_client_sim
+        self.node_id = node_id
         
         # Initialize peripheral models
         self.bme680 = BME680RegisterMap()
         self.ssd1306 = SSD1306Controller()
         self.adc = ESP32ADCController()
+
+        # Radar connection attributes
+        self.radar_host = 'localhost'
+        self.radar_port = 7654
+        self.radar_socket: Optional[socket.socket] = None
+        self.radar_buffer = b''
+        self.human_present = False
+        self._connect_to_radar_server()
         
-        # Bus state tracking
-        self.i2c_state = I2CState.IDLE
-        self.i2c_device_addr = 0
-        self.i2c_register_addr = 0
-        self.i2c_data_buffer = bytearray()
+        # Check if we're using a real MQTT client (MQTTClientAdapter) or a simulated one
+        self.using_real_mqtt = hasattr(mqtt_client_sim, 'real_client')
         
-        # Transaction logging
-        self.i2c_transactions = []
-        self.spi_transactions = []
+        print(f"[{time.strftime('%H:%M:%S')}] HardwareSensorBridge for node '{self.node_id}' initialized with {'real' if self.using_real_mqtt else 'simulated'} MQTT client.")
+
+    def read_all_sensors_and_publish(self):
+        """Reads data from all simulated sensors and publishes it via MQTT."""
+        timestamp = time.time()
+
+        # BME680 readings
+        temp = self.bme680.read_temp_c()
+        humidity = self.bme680.read_humidity_rh()
+        pressure = self.bme680.read_pressure_hpa()
+        gas = self.bme680.read_gas_resistance_ohm()
+
+        bme_payload = {
+            'timestamp': timestamp,
+            'temperature_c': temp,
+            'humidity_rh': humidity,
+            'pressure_hpa': pressure,
+            'gas_resistance_ohm': gas
+        }
+        topic_bme = f"sensor_data/{self.node_id}/bme680"
+        self._publish_to_mqtt(topic_bme, bme_payload)
+        # print(f"[{time.strftime('%H:%M:%S')}] [{self.node_id}] Published to {topic_bme}: {bme_payload}")
+
+        # Battery ADC reading
+        battery_voltage = self.adc.read_battery_voltage()
+        battery_payload = {'timestamp': timestamp, 'voltage_v': battery_voltage}
+        topic_battery = f"sensor_data/{self.node_id}/battery"
+        self._publish_to_mqtt(topic_battery, battery_payload)
+        # print(f"[{time.strftime('%H:%M:%S')}] [{self.node_id}] Published to {topic_battery}: {battery_payload}")
         
-    def connect(self):
-        """Connect to UART TCP server with error handling"""
+        # SSD1306 (Example: publish a status or some data that would be displayed)
+        # For simulation, we might not publish the entire display buffer.
+        # Instead, publish a representative status or key metric.
+        display_status_payload = {
+            'timestamp': timestamp, 
+            'status': "OK", 
+            'message': f"Temp: {temp:.1f}C, Batt: {battery_voltage:.2f}V"
+        }
+        topic_display = f"sensor_data/{self.node_id}/display_status"
+        self._publish_to_mqtt(topic_display, display_status_payload)
+        # print(f"[{time.strftime('%H:%M:%S')}] [{self.node_id}] Published to {topic_display}: {display_status_payload}")
+        
+    def _publish_to_mqtt(self, topic, payload):
+        """Helper method to publish to MQTT with proper topic prefixing for real clients."""
+        if self.using_real_mqtt:
+            # Real MQTT client expects topics to be prefixed with 'olympus/'
+            full_topic = f"olympus/{topic}"
+            self.mqtt_client.publish(full_topic, payload)
+        else:
+            # Simulated MQTT client uses topics as-is
+            self.mqtt_client.publish(topic, payload)
+
+    def _connect_to_radar_server(self):
         try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.socket.settimeout(5.0)
-            self.socket.connect((self.host, self.port))
-            print(f"Connected to hardware simulation at {self.host}:{self.port}")
+            if self.radar_socket:
+                self.radar_socket.close()
+            self.radar_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.radar_socket.settimeout(1.0) # Timeout for connection attempt
+            self.radar_socket.connect((self.radar_host, self.radar_port))
+            self.radar_socket.setblocking(False) # Non-blocking for reads
+            print(f"[{time.strftime('%H:%M:%S')}] [{self.node_id}] Connected to Radar Server at {self.radar_host}:{self.radar_port}")
+        except socket.error as e:
+            # print(f"[{time.strftime('%H:%M:%S')}] [{self.node_id}] Error connecting to Radar Server: {e}. Will retry on next cycle.")
+            self.radar_socket = None # Ensure it's None if connection failed
+
+    def _read_radar_data(self):
+        if not self.radar_socket:
+            # Attempt to reconnect if socket is not valid
+            # print(f"[{time.strftime('%H:%M:%S')}] [{self.node_id}] No radar socket, attempting to reconnect...")
+            self._connect_to_radar_server()
+            if not self.radar_socket:
+                self.human_present = False # Assume no human if no radar connection
+                return
+
+        try:
+            # Read data in a non-blocking way
+            while True:
+                chunk = self.radar_socket.recv(4096)
+                if not chunk:
+                    # Connection closed by server
+                    print(f"[{time.strftime('%H:%M:%S')}] [{self.node_id}] Radar server closed connection.")
+                    self.radar_socket.close()
+                    self.radar_socket = None
+                    self.human_present = False
+                    return
+                self.radar_buffer += chunk
+                
+                # Process buffer for complete messages (length-prefixed)
+                while len(self.radar_buffer) >= 2:
+                    payload_len = struct.unpack('<H', self.radar_buffer[:2])[0]
+                    if len(self.radar_buffer) >= 2 + payload_len:
+                        payload_bytes = self.radar_buffer[2:2+payload_len]
+                        self.radar_buffer = self.radar_buffer[2+payload_len:]
+                        try:
+                            frame_str = payload_bytes.decode('utf-8').strip()
+                            if frame_str:
+                                frame_json = json.loads(frame_str)
+                                # print(f"[{time.strftime('%H:%M:%S')}] [{self.node_id}] Received radar frame: {frame_json}")
+                                if 'points' in frame_json and len(frame_json['points']) > 0:
+                                    self.human_present = True
+                                else:
+                                    self.human_present = False
+                            else:
+                                self.human_present = False # Empty payload considered no detection
+                        except json.JSONDecodeError as e:
+                            print(f"[{time.strftime('%H:%M:%S')}] [{self.node_id}] Error decoding radar JSON: {e} on payload: {payload_bytes}")
+                            self.human_present = False
+                        except Exception as e:
+                            print(f"[{time.strftime('%H:%M:%S')}] [{self.node_id}] Unexpected error processing radar frame: {e}")
+                            self.human_present = False
+                    else:
+                        break # Not enough data for full payload
+        except BlockingIOError:
+            # No data available to read, which is normal for non-blocking sockets
+            pass # self.human_present remains its previous state until new data comes
+        except socket.error as e:
+            print(f"[{time.strftime('%H:%M:%S')}] [{self.node_id}] Radar socket error: {e}")
+            if self.radar_socket:
+                self.radar_socket.close()
+            self.radar_socket = None
+            self.human_present = False
+        except Exception as e:
+            print(f"[{time.strftime('%H:%M:%S')}] [{self.node_id}] Unexpected error in _read_radar_data: {e}")
+            if self.radar_socket:
+                self.radar_socket.close()
+            self.radar_socket = None
+            self.human_present = False
+
+    def read_all_sensors_and_publish(self):
+        """Reads data from all simulated sensors and publishes it via MQTT."""
+        self._read_radar_data() # Update human_present status
+        timestamp = time.time()
+
+        # BME680 readings
+        temp = self.bme680.read_temp_c()
+        humidity = self.bme680.read_humidity_rh()
+        pressure = self.bme680.read_pressure_hpa()
+        gas = self.bme680.read_gas_resistance_ohm()
+
+        bme_payload = {
+            'timestamp': timestamp,
+            'temperature_c': temp,
+            'humidity_rh': humidity,
+            'pressure_hpa': pressure,
+            'gas_resistance_ohm': gas
+        }
+        topic_bme = f"sensor_data/{self.node_id}/bme680"
+        self._publish_to_mqtt(topic_bme, bme_payload)
+
+        # Battery ADC reading
+        battery_voltage = self.adc.read_battery_voltage()
+        battery_payload = {'timestamp': timestamp, 'voltage_v': battery_voltage}
+        topic_battery = f"sensor_data/{self.node_id}/battery"
+        self._publish_to_mqtt(topic_battery, battery_payload)
+        
+        # SSD1306 (Example: publish a status or some data that would be displayed)
+        display_status_payload = {
+            'timestamp': timestamp, 
+            'status': "OK", 
+            'message': f"Temp: {temp:.1f}C, Batt: {battery_voltage:.2f}V",
+            'lamp_on': self.human_present # Add lamp status based on radar
+        }
+        topic_display = f"sensor_data/{self.node_id}/display_status"
+        self._publish_to_mqtt(topic_display, display_status_payload)
+        # print(f"[{time.strftime('%H:%M:%S')}] [{self.node_id}] Published to {topic_display}: {display_status_payload}")
+
+    # --- I2C/SPI Methods (Stubs for potential future firmware-level simulation) ---
+    # These methods would typically be called by a simulated firmware interacting with the bridge.
+    # For the current MQTT-based data publishing, they are not directly used by read_all_sensors_and_publish(),
+    # but are kept as stubs to represent the hardware interface layer.
+
+    def i2c_master_write_to_device(self, i2c_port, device_address, write_buffer, write_size, ticks_to_wait):
+        # print(f"[{time.strftime('%H:%M:%S')}] [HW BRIDGE {self.node_id}] I2C Write to {hex(device_address)}: {bytes(write_buffer[:write_size])}")
+        # Simulate success for now
+        return True
+
+    def i2c_master_read_from_device(self, i2c_port, device_address, read_buffer, read_size, ticks_to_wait):
+        # print(f"[{time.strftime('%H:%M:%S')}] [HW BRIDGE {self.node_id}] I2C Read from {hex(device_address)} (requesting {read_size} bytes)")
+        if device_address == BME680_I2C_ADDR:
+            # Example: Return Chip ID if register for chip ID is read (highly simplified)
+            if read_size > 0: read_buffer[0] = self.bme680.chip_id 
             return True
-        except Exception as e:
-            print(f"Connection failed: {e}")
-            return False
-    
-    def process_i2c_transaction(self, device_addr: int, register_addr: int, 
-                               data: Optional[bytes] = None, is_read: bool = False) -> bytes:
-        """Process I2C transaction with realistic timing and error handling"""
-        
-        transaction_start = time.time()
-        
-        try:
-            # Validate device address
-            if device_addr == 0x76:  # BME680
-                if is_read:
-                    if data is None:
-                        # Single register read
-                        result = bytes([self.bme680.read_register(register_addr)])
-                    else:
-                        # Multi-register read
-                        result = bytearray()
-                        for i in range(len(data)):
-                            result.append(self.bme680.read_register(register_addr + i))
-                        result = bytes(result)
-                else:
-                    # Register write
-                    if data:
-                        for i, byte in enumerate(data):
-                            self.bme680.write_register(register_addr + i, byte)
-                    else:
-                        raise I2CError("No data provided for write operation")
-                    result = b''
-                    
-            else:
-                raise I2CError(f"Device not found at address 0x{device_addr:02X}")
-                
-            # Simulate I2C bus timing
-            # Address phase: 9 clock cycles (8 bits + ACK) at 100kHz = 90μs
-            # Data phase: 9 clock cycles per byte
-            # Start/Stop conditions: ~10μs each
-            
-            total_bytes = 1 + (len(data) if data else 0) + (len(result) if is_read else 0)
-            bus_time = 0.00002 + (total_bytes * 0.00009)  # Start/Stop + data time
-            time.sleep(bus_time)
-            
-            transaction = I2CTransaction(
-                device_addr=device_addr,
-                register_addr=register_addr,
-                data=data or result,
-                is_read=is_read,
-                timestamp=transaction_start,
-                duration=time.time() - transaction_start,
-                success=True
-            )
-            self.i2c_transactions.append(transaction)
-            
-            return result
-            
-        except Exception as e:
-            # Log failed transaction
-            transaction = I2CTransaction(
-                device_addr=device_addr,
-                register_addr=register_addr,
-                data=data,
-                is_read=is_read,
-                timestamp=transaction_start,
-                duration=time.time() - transaction_start,
-                success=False
-            )
-            self.i2c_transactions.append(transaction)
-            raise I2CError(f"I2C transaction failed: {e}")
-    
-    def process_spi_transaction(self, cs_pin: int, data: bytes, 
-                               dc_pin: bool = False, clock_speed: int = 10000000) -> bool:
-        """Process SPI transaction with realistic timing"""
-        
-        transaction_start = time.time()
-        
-        try:
-            # Validate CS pin
-            if cs_pin == 5:  # SSD1306 CS pin
-                success = self.ssd1306.process_spi_data(data, dc_pin)
-            else:
-                raise SPIError(f"No device connected to CS pin {cs_pin}")
-                
-            # Simulate SPI timing
-            # Setup time + data transfer + hold time
-            bit_time = 1.0 / clock_speed
-            transfer_time = len(data) * 8 * bit_time
-            total_time = 0.000002 + transfer_time  # 2μs setup/hold
-            time.sleep(total_time)
-            
-            transaction = SPITransaction(
-                cs_pin=cs_pin,
-                data=data,
-                clock_speed=clock_speed,
-                timestamp=transaction_start,
-                duration=time.time() - transaction_start,
-                success=success
-            )
-            self.spi_transactions.append(transaction)
-            
-            return success
-            
-        except Exception as e:
-            transaction = SPITransaction(
-                cs_pin=cs_pin,
-                data=data,
-                clock_speed=clock_speed,
-                timestamp=transaction_start,
-                duration=time.time() - transaction_start,
-                success=False
-            )
-            self.spi_transactions.append(transaction)
-            raise SPIError(f"SPI transaction failed: {e}")
-    
-    def process_adc_conversion(self, channel: int, samples: int = 1) -> float:
-        """Process ADC conversion with realistic timing and noise"""
-        
-        readings = self.adc.read_channel(channel, samples)
-        
-        # Convert ADC counts to voltage
-        max_counts = (1 << self.adc.resolution) - 1
-        voltage_per_count = 3.3 / max_counts  # 3.3V reference with 11dB attenuation
-        
-        # Average multiple samples
-        avg_counts = sum(readings) / len(readings)
-        voltage = avg_counts * voltage_per_count * 2.0  # Account for voltage divider
-        
-        return voltage
-    
-    def simulate_hardware_errors(self):
-        """Periodically inject hardware errors for testing"""
-        while self.running:
-            time.sleep(30 + random.uniform(0, 30))  # Random interval 30-60s
-            
-            if random.random() < 0.1:  # 10% chance of error injection
-                error_type = random.choice(['i2c_nack', 'spi_timeout', 'adc_overrange'])
-                
-                if error_type == 'i2c_nack':
-                    # Simulate temporary I2C NACK (e.g., sensor busy)
-                    print("DEBUG: Injecting I2C NACK error")
-                    # This would be implemented in the actual I2C peripheral model
-                    
-                elif error_type == 'spi_timeout':
-                    # Simulate SPI timeout
-                    print("DEBUG: Injecting SPI timeout error")
-                    
-                elif error_type == 'adc_overrange':
-                    # Simulate ADC overrange condition
-                    print("DEBUG: Injecting ADC overrange error")
-    
-    def run(self):
-        """Main bridge loop with hardware-accurate behavior"""
-        if not self.connect():
-            return
-            
-        self.running = True
-        
-        # Start error injection thread
-        error_thread = threading.Thread(target=self.simulate_hardware_errors, daemon=True)
-        error_thread.start()
-        
-        print("Hardware-accurate sensor bridge running")
-        print("Simulating real I2C/SPI/ADC timing and protocols")
-        
-        try:
-            while self.running:
-                # In a real implementation, this would interface with Renode's
-                # peripheral models to respond to actual bus transactions
-                # For now, we maintain compatibility with the existing demo
-                time.sleep(0.1)
-                
-        except KeyboardInterrupt:
-            print("\nHardware bridge interrupted by user")
-        finally:
-            self.cleanup()
-    
-    def cleanup(self):
-        """Clean up resources"""
-        self.running = False
-        if self.socket:
-            self.socket.close()
-        print("Hardware bridge cleanup complete")
-        
-        # Print transaction statistics
-        print(f"\nTransaction Statistics:")
-        print(f"I2C transactions: {len(self.i2c_transactions)}")
-        print(f"SPI transactions: {len(self.spi_transactions)}")
-        
-        successful_i2c = sum(1 for t in self.i2c_transactions if t.success)
-        successful_spi = sum(1 for t in self.spi_transactions if t.success)
-        
-        print(f"I2C success rate: {successful_i2c}/{len(self.i2c_transactions)}")
-        print(f"SPI success rate: {successful_spi}/{len(self.spi_transactions)}")
+        # Simulate success for now, actual data would depend on emulated device state
+        return True
 
-def main():
-    """Main entry point"""
-    bridge = HardwareSensorBridge()
-    
-    print("Starting Hardware-Accurate Sensor Bridge")
-    print("Real I2C/SPI/ADC timing, register-level behavior, error injection")
-    print("Press Ctrl+C to stop")
-    
+    def spi_master_transmit_receive(self, spi_host, spi_transaction):
+        # print(f"[{time.strftime('%H:%M:%S')}] [HW BRIDGE {self.node_id}] SPI Transaction on host {spi_host}")
+        # Simulate success for now
+        return True
+
+# Conceptual standalone test code for HardwareSensorBridge (MQTT version)
+if __name__ == '__main__':
+    # This test requires MQTTSimulatedClient, which is in mqtt_broker_sim.py
+    # To run this standalone, ensure mqtt_broker_sim.py is in PYTHONPATH or same directory.
     try:
-        bridge.run()
-    except KeyboardInterrupt:
-        print("\nShutting down hardware bridge...")
-    finally:
-        bridge.cleanup()
+        from mqtt_broker_sim import MQTTBrokerSim, MQTTSimulatedClient
+    except ImportError:
+        print("Error: MQTTSimulatedClient not found. Ensure mqtt_broker_sim.py is accessible.")
+        print("This test might not run correctly without it.")
+        # Define dummy classes if import fails, so the rest of the test can be parsed
+        class MQTTSimulatedClient:
+            def __init__(self, client_id_node, broker_sim):
+                self.client_id = client_id_node.node_id if hasattr(client_id_node, 'node_id') else client_id_node
+                self.broker_sim = broker_sim
+                print(f"[{time.strftime('%H:%M:%S')}] (Dummy) MQTT Client '{self.client_id}' created for test.")
+            def publish(self, topic, message, qos=0, retain=False):
+                print(f"[{time.strftime('%H:%M:%S')}] (Dummy Client:{self.client_id}) Publishing to topic '{topic}': {message}")
+                if self.broker_sim:
+                    self.broker_sim.receive_publish(self.client_id, topic, message, qos, retain)
+        class MQTTBrokerSim:
+            def __init__(self, broker_id, owner_node=None): # Added owner_node for compatibility with main_sim
+                self.broker_id = broker_id
+                self.owner_node = owner_node # Not used in this dummy version
+                print(f"[{time.strftime('%H:%M:%S')}] (Dummy) MQTT Broker '{self.broker_id}' created.")
+            def receive_publish(self, client_id, topic, message, qos, retain):
+                print(f"[{time.strftime('%H:%M:%S')}] (Dummy Broker) Received from {client_id} on topic '{topic}': {message}")
 
-if __name__ == "__main__":
-    main() 
+    print("\nRunning HardwareSensorBridge Standalone Test (MQTT Version)")
+
+    @dataclass
+    class TestNode:
+        node_id: str
+
+    # Setup a dummy broker and client for the bridge to use
+    test_broker_instance = MQTTBrokerSim(broker_id="test_bridge_broker") # Assuming MQTTBrokerSim can be instantiated
+    sensor_node_for_test = TestNode(node_id="standalone_sensor_123")
+    mqtt_client_for_bridge = MQTTSimulatedClient(client_id_node=sensor_node_for_test, broker_sim=test_broker_instance)
+    
+    # Instantiate the bridge
+    bridge = HardwareSensorBridge(mqtt_client_sim=mqtt_client_for_bridge, 
+                                  node_id_for_topic=sensor_node_for_test.node_id)
+
+    print("\nSimulating sensor reads and publishes for 3 ticks...")
+    for i in range(3):
+        print(f"--- Tick {i+1} ---")
+        bridge.read_all_sensors_and_publish()
+    print("\nHardwareSensorBridge test finished.")
+
+    # Clean up radar socket if it was created by the bridge
+    if hasattr(bridge, 'radar_socket') and bridge.radar_socket:
+        print("Closing radar socket for standalone test.")
+        bridge.radar_socket.close() # Simulate time passing between reads
+    
+    print("\nHardwareSensorBridge Standalone Test Finished.")
