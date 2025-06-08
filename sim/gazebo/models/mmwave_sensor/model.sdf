@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<sdf version="1.10">
+  <model name="mmwave_sensor">
+    <!-- Main sensor body -->
+    <link name="link">
+      <pose>0 0 0 0 0 0</pose>
+      <inertial>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.000166667</ixx>
+          <iyy>0.000166667</iyy>
+          <izz>0.000166667</izz>
+        </inertia>
+      </inertial>
+      
+      <!-- Visual representation of the mmWave sensor -->
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.2 0.2 0.2 1.0</ambient>
+          <diffuse>0.2 0.2 0.2 1.0</diffuse>
+          <specular>0.2 0.2 0.2 1.0</specular>
+        </material>
+      </visual>
+      
+      <!-- Collision geometry for the sensor -->
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      
+      <!-- MmWaveSensorPlugin Sensor -->
+      <sensor name="mmwave" type="custom" gz:type="custom">
+        <pose>0 0 0 0 0 0</pose>
+        <topic>mmwave</topic>
+        <update_rate>10</update_rate>
+        
+        <!-- The custom mmWave sensor plugin -->
+        <plugin
+          filename="libMmWaveSensorPlugin.so"
+          name="olympus_sim::MmWaveSensorPlugin">
+          
+          <!-- Sensor parameters -->
+          <update_rate>10</update_rate>
+          <topic>mmwave</topic>
+          
+          <!-- Field of view in degrees -->
+          <horizontal_fov>90</horizontal_fov>
+          <vertical_fov>20</vertical_fov>
+          
+          <!-- Range parameters (in meters) -->
+          <min_range>0.2</min_range>
+          <max_range>30.0</max_range>
+          
+          <!-- Resolution parameters -->
+          <range_resolution>0.1</range_resolution>
+          <horizontal_resolution>1.0</horizontal_resolution>
+          <vertical_resolution>2.0</vertical_resolution>
+          
+          <!-- Noise parameters -->
+          <range_noise_mean>0.0</range_noise_mean>
+          <range_noise_stddev>0.03</range_noise_stddev>
+          
+          <!-- Radar Cross Section (RCS) parameters -->
+          <min_rcs>0.1</min_rcs>
+          <max_rcs>20.0</max_rcs>
+          
+          <!-- Velocity detection parameters -->
+          <min_doppler_vel>-30.0</min_doppler_vel>
+          <max_doppler_vel>30.0</max_doppler_vel>
+          <velocity_resolution>0.1</velocity_resolution>
+          
+          <!-- Visualization -->
+          <visualize>true</visualize>
+        </plugin>
+      </sensor>
+    </link>
+    
+    <!-- Make the sensor static so it doesn't fall -->
+    <static>true</static>
+  </model>
+</sdf>

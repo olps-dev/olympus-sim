@@ -1,8 +1,7 @@
-cmake_minimum_required(VERSION 3.10.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10.2)
+project(olympus_gazebo_plugins)
 
-project(OlympusMQTTPlugin)
-
-# Find dependencies
+# Find Gazebo Sim (Harmonic is version 8) and its components
 find_package(gz-cmake3 REQUIRED)
 find_package(gz-plugin2 REQUIRED COMPONENTS register)
 find_package(gz-common5 REQUIRED COMPONENTS profiler)
@@ -10,41 +9,52 @@ find_package(gz-sim8 REQUIRED)
 find_package(gz-rendering8 REQUIRED)
 find_package(gz-transport13 REQUIRED)
 find_package(gz-msgs10 REQUIRED)
+find_package(gz-math7 REQUIRED)
 
-# Find Mosquitto MQTT library
-find_path(MOSQUITTO_INCLUDE_DIR mosquitto.h)
-find_library(MOSQUITTO_LIBRARY mosquitto)
-if(NOT MOSQUITTO_INCLUDE_DIR OR NOT MOSQUITTO_LIBRARY)
-  message(FATAL_ERROR "Mosquitto library not found")
-endif()
+# Add more find_package for gz-rendering if direct raycasting API is used from there
 
-# Find nlohmann_json
-include(FetchContent)
-FetchContent_Declare(json
-  URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz)
-FetchContent_MakeAvailable(json)
+# Include directories
+include_directories(
+  include
+  ${gz-sim8_INCLUDE_DIRS}
+  ${gz-plugin2_INCLUDE_DIRS}
+  ${gz-transport13_INCLUDE_DIRS}
+  ${gz-msgs10_INCLUDE_DIRS}
+  ${gz-math7_INCLUDE_DIRS}
+)
 
-# Add the plugin library
-gz_add_plugin(OlympusMQTTPlugin
-  SOURCES
-    OlympusMQTTPlugin.cc
-  INCLUDE_DIRS
-    ${MOSQUITTO_INCLUDE_DIR}
-  PRIVATE_LINK_LIBS
-    ${MOSQUITTO_LIBRARY}
-    nlohmann_json::nlohmann_json
-  PUBLIC_LINK_LIBS
+# Create a shared library for the plugin
+add_library(MmWaveSensorPlugin SHARED MmWaveSensorPlugin.cc)
+
+# Target specific include directories (if your .hh files are in an 'include' subdirectory)
+# target_include_directories(MmWaveSensorPlugin PUBLIC
+#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#   $<INSTALL_INTERFACE:include>)
+
+# Link against Gazebo libraries
+target_link_libraries(MmWaveSensorPlugin
+  PRIVATE
     gz-sim8::gz-sim8
     gz-rendering8::gz-rendering8
     gz-transport13::gz-transport13
     gz-msgs10::gz-msgs10
     gz-common5::profiler
+    gz-plugin2::register
+    gz-math7::gz-math7
 )
 
-# Install the plugin
-install(TARGETS OlympusMQTTPlugin
-  DESTINATION lib/gz-sim-8/plugins)
+# Installation
+# Installs the plugin library to a standard location
+install(TARGETS MmWaveSensorPlugin
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/gz-sim-8/plugins
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
-# Install the header (optional)
-install(FILES OlympusMQTTPlugin.hh
-  DESTINATION include/gz/sim/plugins)
+# This ensures that Gazebo can find the plugin.
+# You might need to set GZ_SIM_SYSTEM_PLUGIN_PATH environment variable
+# to include the build or install directory if it's not a standard path.
+# Example: export GZ_SIM_SYSTEM_PLUGIN_PATH=$GZ_SIM_SYSTEM_PLUGIN_PATH:$HOME/olympus-sim/build/sim/gazebo/plugins
+# Or after install: export GZ_SIM_SYSTEM_PLUGIN_PATH=$GZ_SIM_SYSTEM_PLUGIN_PATH:/usr/local/lib/gz-sim-8/plugins (if installed to /usr/local)
+
+# Print install path for convenience
+message(STATUS "Plugin will be installed to: ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/gz-sim-8/plugins")
