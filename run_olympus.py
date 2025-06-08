@@ -69,6 +69,11 @@ def main():
                       help='Launch Gazebo visualization (requires ROS2)')
     args = parser.parse_args()
     
+    # If Gazebo is requested, it implies ROS2 is also needed
+    if args.gazebo and not args.ros2:
+        log.info("Gazebo requested, enabling ROS2 mode implicitly.")
+        args.ros2 = True
+    
     # Make sure MQTT broker is running
     ensure_mqtt_broker()
     
@@ -131,14 +136,28 @@ def main():
             log.info("Falling back to standard simulation")
             main_sim.main()
     else:
-        if args.gazebo:
-            log.warning("Gazebo requested but requires ROS2. Ignoring Gazebo flag.")
-        if args.ros2 and not ros2_available:
-            log.warning("ROS2 requested but not available. Running standard simulation.")
-        elif args.mqtt_only:
-            log.info("MQTT-only mode selected")
-        else:
-            log.info("Running standard simulation")
+        # We are in this block if:
+        # 1. ROS2 was not requested at all (args.ros2 is False, and args.gazebo was False).
+        # 2. ROS2 was requested (explicitly or via --gazebo, so args.ros2 is True), BUT ROS2 is not available.
+        # 3. ROS2 was requested (explicitly or via --gazebo, so args.ros2 is True), AND ROS2 is available, BUT --mqtt-only was also specified.
+
+        if args.gazebo: # Gazebo was requested
+            # Since args.gazebo implies args.ros2 = True, we are here because:
+            # (not ros2_available) OR (args.mqtt_only)
+            if not ros2_available:
+                log.warning("Gazebo requested, but ROS2 is not available. Gazebo will not be launched.")
+            elif args.mqtt_only: # This case implies ros2 IS available, but mqtt_only overrides.
+                log.warning("Gazebo requested, but MQTT-only mode is selected. Gazebo will not be launched.")
+        
+        # General messages about simulation mode:
+        if args.mqtt_only:
+            log.info("MQTT-only mode selected. Running standard simulation.")
+        elif args.ros2 and not ros2_available: # ROS2 was desired (explicitly or via --gazebo) but not available
+            log.warning("ROS2 support was requested but ROS2 is not available. Running standard simulation.")
+        elif not args.ros2: # Neither --ros2 nor --gazebo was specified initially.
+            log.info("Running standard simulation.")
+        # If (args.ros2 and ros2_available and args.mqtt_only), the gazebo warning (if applicable)
+        # and mqtt_only info message cover it. The standard simulation will run.
         
         # Run the standard simulation without parameters
         main_sim.main()

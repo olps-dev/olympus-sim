@@ -1,0 +1,47 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="sensor_model">
+    <static>true</static>
+    <link name="link">
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.1 0.1 0.1</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.0 0.5 1.0 1</ambient>
+          <diffuse>0.0 0.5 1.0 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+          <emissive>0 0 0 1</emissive>
+        </material>
+      </visual>
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.1 0.1 0.1</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    
+    <!-- Standard pose publisher (works without custom plugins) -->
+    <plugin name="gz::sim::systems::PosePublisher"
+            filename="gz-sim8-pose-publisher-system">
+      <publish_nested_model_pose>true</publish_nested_model_pose>
+      <publish_link_pose>true</publish_link_pose>
+      <static_publisher>true</static_publisher>
+      <update_frequency>1</update_frequency>
+    </plugin>
+    
+    <!-- Original MQTT plugin (commented out until rebuilt)
+    <plugin name="olympus_mqtt_plugin" filename="libOlympusMQTTPlugin.so">
+      <ros_topic_prefix>/olympus/sensor/</ros_topic_prefix>
+      <sensor_id>${sensor_id}</sensor_id>
+      <display_offset>0 0 0.15</display_offset>
+      <text_size>12</text_size>
+      <update_rate>1.0</update_rate>
+    </plugin>
+    -->
+  </model>
+</sdf>
