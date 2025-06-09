@@ -420,6 +420,41 @@ CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorPlugin.cc.o: \
  /opt/ros/jazzy/opt/gz_msgs_vendor/include/gz/msgs10/gz/msgs/details/empty.pb.h \
  /opt/ros/jazzy/opt/gz_msgs_vendor/include/gz/msgs10/gz/msgs/pointcloud_packed.pb.h \
  /opt/ros/jazzy/opt/gz_msgs_vendor/include/gz/msgs10/gz/msgs/details/pointcloud_packed.pb.h \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/Scene.hh \
+ /opt/ros/jazzy/opt/gz_common_vendor/include/gz/common5/gz/common/Material.hh \
+ /opt/ros/jazzy/opt/gz_common_vendor/include/gz/common5/gz/common/graphics/Export.hh \
+ /opt/ros/jazzy/opt/gz_common_vendor/include/gz/common5/gz/common/graphics/detail/Export.hh \
+ /opt/ros/jazzy/opt/gz_common_vendor/include/gz/common5/gz/common/EnumIface.hh \
+ /opt/ros/jazzy/opt/gz_common_vendor/include/gz/common5/gz/common/Image.hh \
+ /opt/ros/jazzy/opt/gz_common_vendor/include/gz/common5/gz/common/Pbr.hh \
+ /opt/ros/jazzy/opt/gz_common_vendor/include/gz/common5/gz/common/Mesh.hh \
+ /opt/ros/jazzy/opt/gz_common_vendor/include/gz/common5/gz/common/graphics/Types.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/base/SceneExt.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/config.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/RenderTypes.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/Export.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/detail/Export.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/HeightmapDescriptor.hh \
+ /opt/ros/jazzy/opt/gz_common_vendor/include/gz/common5/gz/common/geospatial/HeightmapData.hh \
+ /opt/ros/jazzy/opt/gz_common_vendor/include/gz/common5/gz/common/geospatial/Export.hh \
+ /opt/ros/jazzy/opt/gz_common_vendor/include/gz/common5/gz/common/geospatial/detail/Export.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/MeshDescriptor.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/Storage.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/Node.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/Object.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/Light.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/Sensor.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/Visual.hh \
+ /opt/ros/jazzy/opt/gz_math_vendor/include/gz/math7/gz/math/AxisAlignedBox.hh \
+ /opt/ros/jazzy/opt/gz_math_vendor/include/gz/math7/gz/math/Line3.hh \
+ /opt/ros/jazzy/opt/gz_math_vendor/include/gz/math7/gz/math/MassMatrix3.hh \
+ /opt/ros/jazzy/opt/gz_math_vendor/include/gz/math7/gz/math/Material.hh \
+ /opt/ros/jazzy/opt/gz_math_vendor/include/gz/math7/gz/math/MaterialType.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/Geometry.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/Material.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/ShaderType.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/Mesh.hh \
+ /opt/ros/jazzy/opt/gz_math_vendor/include/gz/math7/gz/math/Matrix4.hh \
  /opt/ros/jazzy/opt/gz_plugin_vendor/include/gz/plugin2/gz/plugin/Register.hh \
  /opt/ros/jazzy/opt/gz_plugin_vendor/include/gz/plugin2/gz/plugin/detail/Register.hh \
  /opt/ros/jazzy/opt/gz_plugin_vendor/include/gz/plugin2/gz/plugin/Info.hh \
@@ -436,15 +471,8 @@ CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorPlugin.cc.o: \
  /opt/ros/jazzy/opt/gz_sim_vendor/include/gz/sim8/gz/sim/Util.hh \
  /opt/ros/jazzy/opt/gz_msgs_vendor/include/gz/msgs10/gz/msgs/entity.pb.h \
  /opt/ros/jazzy/opt/gz_msgs_vendor/include/gz/msgs10/gz/msgs/details/entity.pb.h \
- /opt/ros/jazzy/opt/gz_common_vendor/include/gz/common5/gz/common/Mesh.hh \
- /opt/ros/jazzy/opt/gz_common_vendor/include/gz/common5/gz/common/graphics/Types.hh \
- /opt/ros/jazzy/opt/gz_common_vendor/include/gz/common5/gz/common/graphics/Export.hh \
- /opt/ros/jazzy/opt/gz_common_vendor/include/gz/common5/gz/common/graphics/detail/Export.hh \
  /opt/ros/jazzy/opt/sdformat_vendor/include/gz/sdformat14/sdf/Mesh.hh \
  /opt/ros/jazzy/opt/gz_math_vendor/include/gz/math7/gz/math/Inertial.hh \
- /opt/ros/jazzy/opt/gz_math_vendor/include/gz/math7/gz/math/MassMatrix3.hh \
- /opt/ros/jazzy/opt/gz_math_vendor/include/gz/math7/gz/math/Material.hh \
- /opt/ros/jazzy/opt/gz_math_vendor/include/gz/math7/gz/math/MaterialType.hh \
  /opt/ros/jazzy/opt/gz_math_vendor/include/gz/math7/gz/math/Matrix6.hh \
  /opt/ros/jazzy/opt/sdformat_vendor/include/gz/sdformat14/sdf/CustomInertiaCalcProperties.hh \
  /opt/ros/jazzy/opt/gz_sim_vendor/include/gz/sim8/gz/sim/components/Environment.hh \
@@ -608,8 +636,6 @@ CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorPlugin.cc.o: \
  /opt/ros/jazzy/opt/gz_msgs_vendor/include/gz/msgs10/gz/msgs/details/battery.pb.h \
  /opt/ros/jazzy/opt/gz_msgs_vendor/include/gz/msgs10/gz/msgs/density.pb.h \
  /opt/ros/jazzy/opt/gz_msgs_vendor/include/gz/msgs10/gz/msgs/details/density.pb.h \
- /opt/ros/jazzy/opt/gz_math_vendor/include/gz/math7/gz/math/AxisAlignedBox.hh \
- /opt/ros/jazzy/opt/gz_math_vendor/include/gz/math7/gz/math/Line3.hh \
  /opt/ros/jazzy/opt/sdformat_vendor/include/gz/sdformat14/sdf/Actor.hh \
  /opt/ros/jazzy/opt/sdformat_vendor/include/gz/sdformat14/sdf/Link.hh \
  /opt/ros/jazzy/opt/sdformat_vendor/include/gz/sdformat14/sdf/Joint.hh \
@@ -672,6 +698,12 @@ CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorPlugin.cc.o: \
  /opt/ros/jazzy/opt/gz_msgs_vendor/include/gz/msgs10/gz/msgs/detail/PointCloudPackedUtils.hh \
  /opt/ros/jazzy/opt/gz_sim_vendor/include/gz/sim8/gz/sim/components/Pose.hh \
  /opt/ros/jazzy/opt/gz_sim_vendor/include/gz/sim8/gz/sim/components/Sensor.hh \
+ /opt/ros/jazzy/opt/gz_sim_vendor/include/gz/sim8/gz/sim/components/LinearVelocity.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/RenderingIface.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/RayQuery.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/Camera.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/Image.hh \
+ /opt/ros/jazzy/opt/gz_rendering_vendor/include/gz/rendering8/gz/rendering/PixelFormat.hh \
  /opt/ros/jazzy/opt/gz_math_vendor/include/gz/math7/gz/math/Rand.hh \
  /usr/include/c++/13/random /usr/include/c++/13/bits/random.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/opt_random.h \
