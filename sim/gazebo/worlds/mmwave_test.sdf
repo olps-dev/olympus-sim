@@ -2,7 +2,7 @@
 <sdf version="1.10">
   <world name="mmwave_test">
     <!-- Physics -->
-    <physics name="1ms" type="ignored">
+    <physics name="1ms" type="dartsim">
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1.0</real_time_factor>
     </physics>

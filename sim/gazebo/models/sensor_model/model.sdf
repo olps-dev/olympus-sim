@@ -25,15 +25,28 @@
       </collision>
     </link>
     
-    <!-- Plugin temporarily removed -->
-    <!-- Original plugin was:
-    <plugin name="olympus_mqtt_plugin" filename="libOlympusMQTTPlugin.so">
+    <!-- MQTT Plugin for sensor visualization and messaging -->
+    <plugin name="olympus::OlympusMQTTPlugin" filename="libOlympusMQTTPlugin.so">
       <ros_topic_prefix>/olympus/sensor/</ros_topic_prefix>
       <sensor_id>${sensor_id}</sensor_id>
       <display_offset>0 0 0.15</display_offset>
       <text_size>12</text_size>
       <update_rate>1.0</update_rate>
     </plugin>
-    -->
+    
+    <!-- mmWave Sensor Plugin -->
+    <plugin name="olympus_sim::MmWaveSensorPlugin" filename="libMmWaveSensorPlugin.so">
+      <topic_name>/mmwave/points</topic_name>
+      <update_rate>10.0</update_rate>
+      <horizontal_fov>1.5708</horizontal_fov>
+      <vertical_fov>0.5236</vertical_fov>
+      <min_range>0.05</min_range>
+      <max_range>50.0</max_range>
+      <horizontal_resolution>32</horizontal_resolution>
+      <vertical_resolution>16</vertical_resolution>
+      <noise_mean>0.0</noise_mean>
+      <noise_stddev>0.01</noise_stddev>
+      <visualize>true</visualize>
+    </plugin>
   </model>
 </sdf>

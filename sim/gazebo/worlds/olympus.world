@@ -69,7 +69,7 @@
           </geometry>
         </collision>
       </link>
-      <plugin name="pose_publisher"
+      <plugin name="gz::sim::systems::PosePublisher"
               filename="gz-sim8-pose-publisher-system">
         <publish_nested_model_pose>true</publish_nested_model_pose>
         <publish_link_pose>false</publish_link_pose>
@@ -112,7 +112,7 @@
           </geometry>
         </collision>
       </link>
-      <plugin name="pose_publisher"
+      <plugin name="gz::sim::systems::PosePublisher"
               filename="gz-sim8-pose-publisher-system">
         <publish_link_pose>true</publish_link_pose>
         <update_frequency>30</update_frequency>

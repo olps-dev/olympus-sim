@@ -23,8 +23,17 @@ include_directories(
   ${gz-math7_INCLUDE_DIRS}
 )
 
-# Create a shared library for the plugin
+# Find mosquitto
+find_library(MOSQUITTO_LIBRARY NAMES mosquitto)
+if(NOT MOSQUITTO_LIBRARY)
+  message(FATAL_ERROR "Could not find libmosquitto")
+else()
+  message(STATUS "Found libmosquitto: ${MOSQUITTO_LIBRARY}")
+endif()
+
+# Create shared libraries for the plugins
 add_library(MmWaveSensorPlugin SHARED MmWaveSensorPlugin.cc)
+add_library(OlympusMQTTPlugin SHARED OlympusMQTTPlugin.cc)
 
 # Target specific include directories (if your .hh files are in an 'include' subdirectory)
 # target_include_directories(MmWaveSensorPlugin PUBLIC
@@ -43,9 +52,20 @@ target_link_libraries(MmWaveSensorPlugin
     gz-math7::gz-math7
 )
 
+target_link_libraries(OlympusMQTTPlugin
+  PRIVATE
+    gz-sim8::gz-sim8
+    gz-transport13::gz-transport13
+    gz-msgs10::gz-msgs10
+    gz-common5::profiler
+    gz-plugin2::register
+    gz-math7::gz-math7
+    ${MOSQUITTO_LIBRARY}
+)
+
 # Installation
-# Installs the plugin library to a standard location
-install(TARGETS MmWaveSensorPlugin
+# Installs the plugin libraries to a standard location
+install(TARGETS MmWaveSensorPlugin OlympusMQTTPlugin
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/gz-sim-8/plugins
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )

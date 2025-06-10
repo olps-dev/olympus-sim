@@ -38,14 +38,34 @@ def generate_launch_description():
         if os.path.exists(path):
             model_path_value += ":{}".format(path)
     
-    # Set the environment variable
+    # Set the environment variable for models
     os.environ["GZ_SIM_RESOURCE_PATH"] = model_path_value
+    
+    # Plugin paths for custom plugins
+    gazebo_plugin_path = os.path.join(olympus_sim_dir, 'sim', 'gazebo', 'plugins', 'build')
+    standard_plugin_paths = ["/usr/lib/x86_64-linux-gnu/gz-sim-8/plugins", "/gz-sim-8/plugins"]
+    
+    # Create the plugin path value
+    plugin_path_value = gazebo_plugin_path
+    
+    # Add standard plugin paths if they exist
+    for path in standard_plugin_paths:
+        if os.path.exists(path):
+            plugin_path_value += ":{}".format(path)
+    
+    # Set the environment variable for plugins
+    os.environ["GZ_SIM_SYSTEM_PLUGIN_PATH"] = plugin_path_value
+    print(f"[OlympusLaunch] Setting GZ_SIM_SYSTEM_PLUGIN_PATH to: {plugin_path_value}")
     
     # Default world file
     world_file = os.path.join(gazebo_worlds_path, 'olympus.world')
+    print(f"[OlympusLaunch] Checking for world file at: {world_file}") # Added for debugging
     if not os.path.exists(world_file):
+        print(f"[OlympusLaunch] World file NOT FOUND at: {world_file}. Gazebo will use an empty world.") # Added for debugging
         # If the world file doesn't exist, use an empty world
         world_file = ''
+    else:
+        print(f"[OlympusLaunch] World file FOUND at: {world_file}") # Added for debugging
     
     
     # Launch arguments

@@ -1,4 +1,5 @@
 /home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles/MmWaveSensorPlugin.dir
+/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles/OlympusMQTTPlugin.dir
 /home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles/edit_cache.dir
 /home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles/rebuild_cache.dir
 /home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles/list_install_components.dir

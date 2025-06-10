@@ -174,6 +174,19 @@ MmWaveSensorPlugin/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/build
 .PHONY : MmWaveSensorPlugin/fast
 
+#=============================================================================
+# Target rules for targets named OlympusMQTTPlugin
+
+# Build rule for target.
+OlympusMQTTPlugin: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 OlympusMQTTPlugin
+.PHONY : OlympusMQTTPlugin
+
+# fast build rule for target.
+OlympusMQTTPlugin/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/OlympusMQTTPlugin.dir/build.make CMakeFiles/OlympusMQTTPlugin.dir/build
+.PHONY : OlympusMQTTPlugin/fast
+
 MmWaveSensorPlugin.o: MmWaveSensorPlugin.cc.o
 .PHONY : MmWaveSensorPlugin.o
 
@@ -198,6 +211,30 @@ MmWaveSensorPlugin.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorPlugin.cc.s
 .PHONY : MmWaveSensorPlugin.cc.s
 
+OlympusMQTTPlugin.o: OlympusMQTTPlugin.cc.o
+.PHONY : OlympusMQTTPlugin.o
+
+# target to build an object file
+OlympusMQTTPlugin.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/OlympusMQTTPlugin.dir/build.make CMakeFiles/OlympusMQTTPlugin.dir/OlympusMQTTPlugin.cc.o
+.PHONY : OlympusMQTTPlugin.cc.o
+
+OlympusMQTTPlugin.i: OlympusMQTTPlugin.cc.i
+.PHONY : OlympusMQTTPlugin.i
+
+# target to preprocess a source file
+OlympusMQTTPlugin.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/OlympusMQTTPlugin.dir/build.make CMakeFiles/OlympusMQTTPlugin.dir/OlympusMQTTPlugin.cc.i
+.PHONY : OlympusMQTTPlugin.cc.i
+
+OlympusMQTTPlugin.s: OlympusMQTTPlugin.cc.s
+.PHONY : OlympusMQTTPlugin.s
+
+# target to generate assembly for a file
+OlympusMQTTPlugin.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/OlympusMQTTPlugin.dir/build.make CMakeFiles/OlympusMQTTPlugin.dir/OlympusMQTTPlugin.cc.s
+.PHONY : OlympusMQTTPlugin.cc.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -211,9 +248,13 @@ help:
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
 	@echo "... MmWaveSensorPlugin"
+	@echo "... OlympusMQTTPlugin"
 	@echo "... MmWaveSensorPlugin.o"
 	@echo "... MmWaveSensorPlugin.i"
 	@echo "... MmWaveSensorPlugin.s"
+	@echo "... OlympusMQTTPlugin.o"
+	@echo "... OlympusMQTTPlugin.i"
+	@echo "... OlympusMQTTPlugin.s"
 .PHONY : help
 
 

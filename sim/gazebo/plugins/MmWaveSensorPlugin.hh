@@ -2,6 +2,7 @@
 #define OLYMPUS_SIM_MMWAVE_SENSOR_HH_
 
 #include <gz/sim/System.hh>
+#include <gz/math/Rand.hh> // For NormalRealDist and random number generation
 #include <gz/transport/Node.hh>
 #include <gz/msgs/pointcloud_packed.pb.h> // For publishing point cloud data
 #include <gz/rendering/Scene.hh>
@@ -42,8 +43,9 @@ namespace olympus_sim
       
       // Calculate radial velocity (for Doppler effect)
       double CalculateRadialVelocity(const gz::sim::Entity &_entity,
-                                    const gz::math::Vector3d &_rayDirection,
-                                    const gz::sim::EntityComponentManager &_ecm) const;
+                                     const gz::math::Pose3d &_sensorPose,
+                                     const gz::math::Vector3d &_rayDirection,
+                                     const gz::sim::EntityComponentManager &_ecm) const;
 
       // Gazebo Sim entity for this plugin
       gz::sim::Entity entity;
@@ -74,7 +76,7 @@ namespace olympus_sim
       
       // Radar cross-section parameters
       double defaultRCS = 1.0;  // m^2
-      double minRCS = 0.1;       // m^2
+      double minRCS = 0.1;      // m^2
       
       // Doppler velocity parameters
       double maxRadialVelocity = 30.0;  // m/s
@@ -83,7 +85,9 @@ namespace olympus_sim
       bool visualize = false;
       
       // Rendering scene for ray casting
-      gz::rendering::ScenePtr scene = nullptr;
+      gz::rendering::ScenePtr scene{nullptr};
+      gz::rendering::RayQueryPtr rayQuery{nullptr};
+      gz::math::NormalRealDist gaussianNoise;
       
       // Last update time for rate limiting
       std::chrono::steady_clock::duration lastUpdateTime{std::chrono::seconds(0)};

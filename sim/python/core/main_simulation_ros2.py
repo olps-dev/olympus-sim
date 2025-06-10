@@ -170,22 +170,44 @@ def main(duration=None, tick_interval=None, launch_gazebo=None):
                     if os.path.exists(gazebo_launch_file):
                         # Launch Gazebo Harmonic using ros2 launch
                         cmd = ["ros2", "launch", gazebo_launch_file]
+                        # Launch Gazebo Harmonic using ros2 launch
+                        log.info(f"Launching Gazebo with command: {' '.join(cmd)}")
                         gazebo_process = subprocess.Popen(cmd, 
                                                         stdout=subprocess.PIPE,
                                                         stderr=subprocess.PIPE,
-                                                        text=True)
-                        log.info("Gazebo Harmonic launched successfully")
+                                                        text=True,
+                                                        bufsize=1,  # Line buffered
+                                                        universal_newlines=True)
+                        
+                        # Thread to continuously read and print stdout
+                        def log_gazebo_output(pipe, pipe_name):
+                            try:
+                                for line in iter(pipe.readline, ''):
+                                    log.info(f"[Gazebo {pipe_name}]: {line.strip()}")
+                                pipe.close()
+                            except Exception as e:
+                                log.error(f"Error reading Gazebo {pipe_name}: {e}")
+
+                        stdout_thread = threading.Thread(target=log_gazebo_output, args=(gazebo_process.stdout, 'stdout'))
+                        stderr_thread = threading.Thread(target=log_gazebo_output, args=(gazebo_process.stderr, 'stderr'))
+                        stdout_thread.daemon = True
+                        stderr_thread.daemon = True
+                        stdout_thread.start()
+                        stderr_thread.start()
+                        
+                        log.info("Gazebo Harmonic launch process started. Monitoring output...")
                         
                         # Wait a moment for Gazebo to initialize
-                        time.sleep(2)
+                        # Increased sleep to allow more time for initial output
+                        time.sleep(5) 
                         
-                        # Check if Gazebo is running
+                        # Check if Gazebo process has exited prematurely
                         if gazebo_process.poll() is not None:
-                            log.error(f"Gazebo Harmonic failed to start. Return code: {gazebo_process.returncode}")
-                            # Get error output
-                            _, stderr = gazebo_process.communicate()
-                            log.error(f"Gazebo error: {stderr}")
+                            log.error(f"Gazebo Harmonic launch process exited prematurely. Return code: {gazebo_process.returncode}")
+                            # Threads should capture remaining output
                             gazebo_process = None
+                        else:
+                            log.info("Gazebo Harmonic seems to be running.")
                     else:
                         log.error(f"Gazebo launch file not found at {gazebo_launch_file}")
                 except Exception as e:

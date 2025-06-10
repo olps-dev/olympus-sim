@@ -65,8 +65,8 @@ namespace olympus
     /// \brief Subscription topics
     public: std::vector<std::string> topics;
 
-    /// \brief Marker manager
-    public: std::shared_ptr<gz::sim::rendering::MarkerManager> markerManager;
+    // Visualization is disabled for now as the MarkerManager API has changed in Gazebo Sim v8
+    // public: std::shared_ptr<gz::sim::v8::MarkerManager> markerManager;
 
     /// \brief Visual name prefix for markers
     public: std::string visualNamePrefix;
@@ -196,78 +196,17 @@ namespace olympus
     /// \brief Update text visualization
     public: void UpdateTextVisualization(const std::string &text)
     {
-      if (!this->markerManager)
-        return;
-      
-      // Create or update text marker
-      std::string markerName = this->visualNamePrefix + "_text";
-      gz::math::Color color(1.0, 1.0, 1.0);
-      std::string parentName = this->parentLink.empty() ? this->entityName : this->parentLink;
-      
-      this->markerManager->SetText(
-        markerName, 
-        text,
-        gz::math::Pose3d(this->position, gz::math::Quaterniond::Identity),
-        parentName, 
-        1.0,  // scale
-        color);
+      // Visualization disabled in this version
+      // The MarkerManager API has changed in Gazebo Sim v8
+      std::cout << "Text Visualization [" << this->visualNamePrefix << "]: " << text << std::endl;
     }
 
     /// \brief Update color visualization
     public: void UpdateColorVisualization(const std::string &value)
     {
-      if (!this->markerManager)
-        return;
-      
-      // Set color based on value (e.g., "red", "green", "blue", or RGB values)
-      gz::math::Color color(1.0, 1.0, 1.0);  // default white
-      
-      if (value == "red")
-        color = gz::math::Color(1.0, 0.0, 0.0);
-      else if (value == "green")
-        color = gz::math::Color(0.0, 1.0, 0.0);
-      else if (value == "blue")
-        color = gz::math::Color(0.0, 0.0, 1.0);
-      else if (value == "yellow")
-        color = gz::math::Color(1.0, 1.0, 0.0);
-      else if (value == "off")
-        color = gz::math::Color(0.3, 0.3, 0.3);
-      else
-      {
-        // Try parsing as temperature
-        try
-        {
-          double temp = std::stod(value);
-          // Color gradient based on temperature
-          // Blue (cold) to Red (hot)
-          if (temp < 10.0)
-            color = gz::math::Color(0.0, 0.0, 1.0);  // cold - blue
-          else if (temp > 30.0)
-            color = gz::math::Color(1.0, 0.0, 0.0);  // hot - red
-          else
-          {
-            // Gradient between
-            double t = (temp - 10.0) / 20.0;  // normalized 0-1
-            color = gz::math::Color(t, 0.0, 1.0 - t);
-          }
-        }
-        catch (...)
-        {
-          // Keep default white
-        }
-      }
-      
-      // Create or update sphere marker
-      std::string markerName = this->visualNamePrefix + "_color";
-      std::string parentName = this->parentLink.empty() ? this->entityName : this->parentLink;
-      
-      gz::math::Pose3d pose(this->position, gz::math::Quaterniond::Identity);
-      this->markerManager->AddSphere(
-        markerName,
-        0.1,  // radius
-        pose,
-        parentName,
-        color);
+      // Visualization disabled in this version
+      // The MarkerManager API has changed in Gazebo Sim v8
+      std::cout << "Color Visualization [" << this->visualNamePrefix << "]: " << value << std::endl;
     }
   };
 
@@ -346,7 +285,9 @@ namespace olympus
     // Parse topics to subscribe
     if (_sdf->HasElement("topic"))
     {
-      auto topicElem = _sdf->GetElement("topic");
+      // Clone the const SDF element to get a non-const version to work with
+      auto sdfCopy = std::const_pointer_cast<sdf::Element>(_sdf->Clone());
+      auto topicElem = sdfCopy->GetElement("topic");
       while (topicElem)
       {
         this->dataPtr->topics.push_back(topicElem->Get<std::string>());
@@ -359,7 +300,7 @@ namespace olympus
     
     // Create MQTT client
     this->dataPtr->mosq = mosquitto_new(
-      this->dataPtr->clientId.c_str(), true, this->dataPtr);
+      this->dataPtr->clientId.c_str(), true, this->dataPtr.get());
     
     if (!this->dataPtr->mosq)
     {
@@ -391,9 +332,10 @@ namespace olympus
     this->dataPtr->mqttThread = std::thread(
       &OlympusMQTTPluginPrivate::MQTTThreadFunc, this->dataPtr.get());
     
-    // Get marker manager
-    this->dataPtr->markerManager =
-        std::make_shared<gz::sim::rendering::MarkerManager>();
+    // Visualization with MarkerManager is disabled in this version
+    // The MarkerManager API has changed in Gazebo Sim v8
+    // this->dataPtr->markerManager =
+    //    std::make_shared<gz::sim::v8::MarkerManager>();
   }
 
   //////////////////////////////////////////////////
