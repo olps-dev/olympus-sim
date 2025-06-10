@@ -211,6 +211,30 @@ MmWaveSensorPlugin.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorPlugin.cc.s
 .PHONY : MmWaveSensorPlugin.cc.s
 
+MmWaveSensorWslCompat.o: MmWaveSensorWslCompat.cc.o
+.PHONY : MmWaveSensorWslCompat.o
+
+# target to build an object file
+MmWaveSensorWslCompat.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorWslCompat.cc.o
+.PHONY : MmWaveSensorWslCompat.cc.o
+
+MmWaveSensorWslCompat.i: MmWaveSensorWslCompat.cc.i
+.PHONY : MmWaveSensorWslCompat.i
+
+# target to preprocess a source file
+MmWaveSensorWslCompat.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorWslCompat.cc.i
+.PHONY : MmWaveSensorWslCompat.cc.i
+
+MmWaveSensorWslCompat.s: MmWaveSensorWslCompat.cc.s
+.PHONY : MmWaveSensorWslCompat.s
+
+# target to generate assembly for a file
+MmWaveSensorWslCompat.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorWslCompat.cc.s
+.PHONY : MmWaveSensorWslCompat.cc.s
+
 OlympusMQTTPlugin.o: OlympusMQTTPlugin.cc.o
 .PHONY : OlympusMQTTPlugin.o
 
@@ -252,6 +276,9 @@ help:
 	@echo "... MmWaveSensorPlugin.o"
 	@echo "... MmWaveSensorPlugin.i"
 	@echo "... MmWaveSensorPlugin.s"
+	@echo "... MmWaveSensorWslCompat.o"
+	@echo "... MmWaveSensorWslCompat.i"
+	@echo "... MmWaveSensorWslCompat.s"
 	@echo "... OlympusMQTTPlugin.o"
 	@echo "... OlympusMQTTPlugin.i"
 	@echo "... OlympusMQTTPlugin.s"

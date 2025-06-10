@@ -393,151 +393,151 @@ ZeroMQ_LIBRARY_zmq:FILEPATH=/usr/lib/x86_64-linux-gnu/libzmq.so
 assimp_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/assimp-5.3
 
 //The directory containing a CMake configuration file for gz-cmake3.
-gz-cmake3_DIR:PATH=/opt/ros/jazzy/opt/gz_cmake_vendor/share/cmake/gz-cmake3
+gz-cmake3_DIR:PATH=/usr/share/cmake/gz-cmake3
 
 //The directory containing a CMake configuration file for gz-common5-av.
-gz-common5-av_DIR:PATH=/opt/ros/jazzy/opt/gz_common_vendor/lib/cmake/gz-common5-av
+gz-common5-av_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-common5-av
 
 //The directory containing a CMake configuration file for gz-common5-events.
-gz-common5-events_DIR:PATH=/opt/ros/jazzy/opt/gz_common_vendor/lib/cmake/gz-common5-events
+gz-common5-events_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-common5-events
 
 //The directory containing a CMake configuration file for gz-common5-geospatial.
-gz-common5-geospatial_DIR:PATH=/opt/ros/jazzy/opt/gz_common_vendor/lib/cmake/gz-common5-geospatial
+gz-common5-geospatial_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-common5-geospatial
 
 //The directory containing a CMake configuration file for gz-common5-graphics.
-gz-common5-graphics_DIR:PATH=/opt/ros/jazzy/opt/gz_common_vendor/lib/cmake/gz-common5-graphics
+gz-common5-graphics_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-common5-graphics
 
 //The directory containing a CMake configuration file for gz-common5-io.
-gz-common5-io_DIR:PATH=/opt/ros/jazzy/opt/gz_common_vendor/lib/cmake/gz-common5-io
+gz-common5-io_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-common5-io
 
 //The directory containing a CMake configuration file for gz-common5-profiler.
-gz-common5-profiler_DIR:PATH=/opt/ros/jazzy/opt/gz_common_vendor/lib/cmake/gz-common5-profiler
+gz-common5-profiler_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-common5-profiler
 
 //The directory containing a CMake configuration file for gz-common5-testing.
-gz-common5-testing_DIR:PATH=/opt/ros/jazzy/opt/gz_common_vendor/lib/cmake/gz-common5-testing
+gz-common5-testing_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-common5-testing
 
 //The directory containing a CMake configuration file for gz-common5.
-gz-common5_DIR:PATH=/opt/ros/jazzy/opt/gz_common_vendor/lib/cmake/gz-common5
+gz-common5_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-common5
 
 //The directory containing a CMake configuration file for gz-fuel_tools9.
-gz-fuel_tools9_DIR:PATH=/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib/cmake/gz-fuel_tools9
+gz-fuel_tools9_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-fuel_tools9
 
 //The directory containing a CMake configuration file for gz-gui8.
-gz-gui8_DIR:PATH=/opt/ros/jazzy/opt/gz_gui_vendor/lib/cmake/gz-gui8
+gz-gui8_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-gui8
 
 //The directory containing a CMake configuration file for gz-math7-eigen3.
-gz-math7-eigen3_DIR:PATH=/opt/ros/jazzy/opt/gz_math_vendor/lib/cmake/gz-math7-eigen3
+gz-math7-eigen3_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-math7-eigen3
 
 //The directory containing a CMake configuration file for gz-math7.
-gz-math7_DIR:PATH=/opt/ros/jazzy/opt/gz_math_vendor/lib/cmake/gz-math7
+gz-math7_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-math7
 
 //The directory containing a CMake configuration file for gz-msgs10.
-gz-msgs10_DIR:PATH=/opt/ros/jazzy/opt/gz_msgs_vendor/lib/cmake/gz-msgs10
+gz-msgs10_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-msgs10
 
 //The directory containing a CMake configuration file for gz-physics7-heightmap.
-gz-physics7-heightmap_DIR:PATH=/opt/ros/jazzy/opt/gz_physics_vendor/lib/cmake/gz-physics7-heightmap
+gz-physics7-heightmap_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-physics7-heightmap
 
 //The directory containing a CMake configuration file for gz-physics7-mesh.
-gz-physics7-mesh_DIR:PATH=/opt/ros/jazzy/opt/gz_physics_vendor/lib/cmake/gz-physics7-mesh
+gz-physics7-mesh_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-physics7-mesh
 
 //The directory containing a CMake configuration file for gz-physics7-sdf.
-gz-physics7-sdf_DIR:PATH=/opt/ros/jazzy/opt/gz_physics_vendor/lib/cmake/gz-physics7-sdf
+gz-physics7-sdf_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-physics7-sdf
 
 //The directory containing a CMake configuration file for gz-physics7.
-gz-physics7_DIR:PATH=/opt/ros/jazzy/opt/gz_physics_vendor/lib/cmake/gz-physics7
+gz-physics7_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-physics7
 
 //The directory containing a CMake configuration file for gz-plugin2-all.
-gz-plugin2-all_DIR:PATH=/opt/ros/jazzy/opt/gz_plugin_vendor/lib/cmake/gz-plugin2-all
+gz-plugin2-all_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-plugin2-all
 
 //The directory containing a CMake configuration file for gz-plugin2-loader.
-gz-plugin2-loader_DIR:PATH=/opt/ros/jazzy/opt/gz_plugin_vendor/lib/cmake/gz-plugin2-loader
+gz-plugin2-loader_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-plugin2-loader
 
 //The directory containing a CMake configuration file for gz-plugin2-register.
-gz-plugin2-register_DIR:PATH=/opt/ros/jazzy/opt/gz_plugin_vendor/lib/cmake/gz-plugin2-register
+gz-plugin2-register_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-plugin2-register
 
 //The directory containing a CMake configuration file for gz-plugin2.
-gz-plugin2_DIR:PATH=/opt/ros/jazzy/opt/gz_plugin_vendor/lib/cmake/gz-plugin2
+gz-plugin2_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-plugin2
 
 //The directory containing a CMake configuration file for gz-rendering8.
-gz-rendering8_DIR:PATH=/opt/ros/jazzy/opt/gz_rendering_vendor/lib/cmake/gz-rendering8
+gz-rendering8_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-rendering8
 
 //The directory containing a CMake configuration file for gz-sensors8-air_pressure.
-gz-sensors8-air_pressure_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-air_pressure
+gz-sensors8-air_pressure_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-air_pressure
 
 //The directory containing a CMake configuration file for gz-sensors8-air_speed.
-gz-sensors8-air_speed_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-air_speed
+gz-sensors8-air_speed_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-air_speed
 
 //The directory containing a CMake configuration file for gz-sensors8-altimeter.
-gz-sensors8-altimeter_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-altimeter
+gz-sensors8-altimeter_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-altimeter
 
 //The directory containing a CMake configuration file for gz-sensors8-boundingbox_camera.
-gz-sensors8-boundingbox_camera_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-boundingbox_camera
+gz-sensors8-boundingbox_camera_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-boundingbox_camera
 
 //The directory containing a CMake configuration file for gz-sensors8-camera.
-gz-sensors8-camera_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-camera
+gz-sensors8-camera_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-camera
 
 //The directory containing a CMake configuration file for gz-sensors8-depth_camera.
-gz-sensors8-depth_camera_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-depth_camera
+gz-sensors8-depth_camera_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-depth_camera
 
 //The directory containing a CMake configuration file for gz-sensors8-dvl.
-gz-sensors8-dvl_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-dvl
+gz-sensors8-dvl_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-dvl
 
 //The directory containing a CMake configuration file for gz-sensors8-force_torque.
-gz-sensors8-force_torque_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-force_torque
+gz-sensors8-force_torque_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-force_torque
 
 //The directory containing a CMake configuration file for gz-sensors8-gpu_lidar.
-gz-sensors8-gpu_lidar_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-gpu_lidar
+gz-sensors8-gpu_lidar_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-gpu_lidar
 
 //The directory containing a CMake configuration file for gz-sensors8-imu.
-gz-sensors8-imu_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-imu
+gz-sensors8-imu_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-imu
 
 //The directory containing a CMake configuration file for gz-sensors8-lidar.
-gz-sensors8-lidar_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-lidar
+gz-sensors8-lidar_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-lidar
 
 //The directory containing a CMake configuration file for gz-sensors8-logical_camera.
-gz-sensors8-logical_camera_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-logical_camera
+gz-sensors8-logical_camera_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-logical_camera
 
 //The directory containing a CMake configuration file for gz-sensors8-magnetometer.
-gz-sensors8-magnetometer_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-magnetometer
+gz-sensors8-magnetometer_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-magnetometer
 
 //The directory containing a CMake configuration file for gz-sensors8-navsat.
-gz-sensors8-navsat_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-navsat
+gz-sensors8-navsat_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-navsat
 
 //The directory containing a CMake configuration file for gz-sensors8-rendering.
-gz-sensors8-rendering_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-rendering
+gz-sensors8-rendering_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-rendering
 
 //The directory containing a CMake configuration file for gz-sensors8-rgbd_camera.
-gz-sensors8-rgbd_camera_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-rgbd_camera
+gz-sensors8-rgbd_camera_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-rgbd_camera
 
 //The directory containing a CMake configuration file for gz-sensors8-segmentation_camera.
-gz-sensors8-segmentation_camera_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-segmentation_camera
+gz-sensors8-segmentation_camera_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-segmentation_camera
 
 //The directory containing a CMake configuration file for gz-sensors8-thermal_camera.
-gz-sensors8-thermal_camera_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-thermal_camera
+gz-sensors8-thermal_camera_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-thermal_camera
 
 //The directory containing a CMake configuration file for gz-sensors8-wide_angle_camera.
-gz-sensors8-wide_angle_camera_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8-wide_angle_camera
+gz-sensors8-wide_angle_camera_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8-wide_angle_camera
 
 //The directory containing a CMake configuration file for gz-sensors8.
-gz-sensors8_DIR:PATH=/opt/ros/jazzy/opt/gz_sensors_vendor/lib/cmake/gz-sensors8
+gz-sensors8_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sensors8
 
 //The directory containing a CMake configuration file for gz-sim8.
-gz-sim8_DIR:PATH=/opt/ros/jazzy/opt/gz_sim_vendor/lib/cmake/gz-sim8
+gz-sim8_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-sim8
 
 //The directory containing a CMake configuration file for gz-transport13-log.
-gz-transport13-log_DIR:PATH=/opt/ros/jazzy/opt/gz_transport_vendor/lib/cmake/gz-transport13-log
+gz-transport13-log_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-transport13-log
 
 //The directory containing a CMake configuration file for gz-transport13-parameters.
-gz-transport13-parameters_DIR:PATH=/opt/ros/jazzy/opt/gz_transport_vendor/lib/cmake/gz-transport13-parameters
+gz-transport13-parameters_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-transport13-parameters
 
 //The directory containing a CMake configuration file for gz-transport13.
-gz-transport13_DIR:PATH=/opt/ros/jazzy/opt/gz_transport_vendor/lib/cmake/gz-transport13
+gz-transport13_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-transport13
 
 //The directory containing a CMake configuration file for gz-utils2-cli.
-gz-utils2-cli_DIR:PATH=/opt/ros/jazzy/opt/gz_utils_vendor/lib/cmake/gz-utils2-cli
+gz-utils2-cli_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-utils2-cli
 
 //The directory containing a CMake configuration file for gz-utils2.
-gz-utils2_DIR:PATH=/opt/ros/jazzy/opt/gz_utils_vendor/lib/cmake/gz-utils2
+gz-utils2_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/gz-utils2
 
 //The directory containing a CMake configuration file for jsoncpp.
 jsoncpp_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/jsoncpp
@@ -588,7 +588,7 @@ pkgcfg_lib_ZIP_zip:FILEPATH=/usr/lib/x86_64-linux-gnu/libzip.so
 pkgcfg_lib_ZeroMQ_zmq:FILEPATH=/usr/lib/x86_64-linux-gnu/libzmq.so
 
 //The directory containing a CMake configuration file for sdformat14.
-sdformat14_DIR:PATH=/opt/ros/jazzy/opt/sdformat_vendor/lib/cmake/sdformat14
+sdformat14_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/sdformat14
 
 //The directory containing a CMake configuration file for yaml.
 yaml_DIR:PATH=yaml_DIR-NOTFOUND

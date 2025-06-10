@@ -8,6 +8,8 @@
 #include <gz/rendering/Scene.hh>
 #include <gz/math/Angle.hh>
 #include <gz/math/Vector3.hh>
+#include <map> // For storing simplified world model
+#include "MmWaveSensorWslCompat.hh" // For WSL compatibility mode functions
 
 namespace olympus_sim
 {
@@ -37,16 +39,6 @@ namespace olympus_sim
       // Get the rendering scene
       gz::rendering::ScenePtr Scene() const;
       
-      // Calculate radar cross-section for an entity
-      double CalculateRCS(const gz::sim::Entity &_entity, 
-                         const gz::sim::EntityComponentManager &_ecm) const;
-      
-      // Calculate radial velocity (for Doppler effect)
-      double CalculateRadialVelocity(const gz::sim::Entity &_entity,
-                                     const gz::math::Pose3d &_sensorPose,
-                                     const gz::math::Vector3d &_rayDirection,
-                                     const gz::sim::EntityComponentManager &_ecm) const;
-
       // Gazebo Sim entity for this plugin
       gz::sim::Entity entity;
 
@@ -91,6 +83,15 @@ namespace olympus_sim
       
       // Last update time for rate limiting
       std::chrono::steady_clock::duration lastUpdateTime{std::chrono::seconds(0)};
+      
+      // WSL compatibility mode configuration
+      bool wslCompatMode{false};
+      std::map<gz::sim::Entity, std::pair<gz::math::Pose3d, gz::math::Vector3d>> simplifiedWorldModel;
+      int sceneAcquisitionAttempts{0};
+      const int maxSceneAcquisitionAttempts{5};
+      bool wslWarningShown{false};
+      std::chrono::time_point<std::chrono::steady_clock> lastWorldModelUpdate;
+      const std::chrono::milliseconds worldModelUpdatePeriod{500}; // Update simplified world model every 500ms
   };
 }
 

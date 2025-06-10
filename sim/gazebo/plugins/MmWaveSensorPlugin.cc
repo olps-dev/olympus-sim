@@ -19,14 +19,17 @@
 #include <algorithm>
 #include <cstring>
 #include <cmath>
+#include <cstdlib> // For setenv
+#include "MmWaveSensorWslCompat.hh" // For WSL compatibility functions
 
 using namespace olympus_sim;
 using namespace gz;
 using namespace gz::sim;
 
 MmWaveSensorPlugin::MmWaveSensorPlugin()
+: lastWorldModelUpdate(std::chrono::steady_clock::now())
 {
-  // Constructor can be used for initial member variable setup if needed
+  // Constructor initializes member variables
 }
 
 void MmWaveSensorPlugin::Configure(const Entity &_entity,
@@ -138,9 +141,23 @@ void MmWaveSensorPlugin::Configure(const Entity &_entity,
   // Check if running in WSL environment - this affects rendering behavior
   char* wslEnv = std::getenv("WSL_DISTRO_NAME");
   bool isRunningInWSL = (wslEnv != nullptr);
+  
   if (isRunningInWSL) {
-    gzwarn << "[" << pluginName << "] Running in WSL environment: " << wslEnv << "\n"
-           << "OpenGL rendering may have limitations. Will attempt to work in degraded mode if needed." << std::endl;
+    gzmsg << "[" << pluginName << "] Running in WSL environment: " << wslEnv << "\n";
+    
+    // Check if LIBGL_ALWAYS_SOFTWARE is already set
+    char* softwareRenderEnv = std::getenv("LIBGL_ALWAYS_SOFTWARE");
+    
+    if (!softwareRenderEnv || strcmp(softwareRenderEnv, "1") != 0) {
+      // Force software rendering for WSL environment if not already set
+      gzmsg << "[" << pluginName << "] Setting LIBGL_ALWAYS_SOFTWARE=1 to enable software rendering in WSL" << std::endl;
+      setenv("LIBGL_ALWAYS_SOFTWARE", "1", 1);
+      
+      // Notify if override was applied
+      gzmsg << "[" << pluginName << "] Software rendering has been enabled. This will help ensure ray casting works in WSL." << std::endl;
+    } else {
+      gzmsg << "[" << pluginName << "] LIBGL_ALWAYS_SOFTWARE already set to '" << softwareRenderEnv << "'" << std::endl;
+    }
   }
 
   // Defer scene acquisition to PostUpdate to give rendering system more time to initialize
@@ -168,8 +185,15 @@ gz::rendering::ScenePtr MmWaveSensorPlugin::Scene() const
     checkedWSL = true;
     
     if (isWSL) {
-      gzdbg << "[MmWaveSensorPlugin::Scene] WSL detected, will use all available scene finding strategies" << std::endl;
+      gzdbg << "[MmWaveSensorPlugin::Scene] WSL detected, will avoid scene creation to prevent crashes" << std::endl;
     }
+  }
+  
+  // In WSL environments, avoid any scene creation operations that cause segmentation faults
+  // Return nullptr immediately to force WSL compatibility mode
+  if (isWSL) {
+    gzdbg << "[MmWaveSensorPlugin::Scene] WSL detected - returning nullptr to force compatibility mode" << std::endl;
+    return nullptr;
   }
   
   // ====== APPROACH 1: Try the scene belonging to the current world ======
@@ -190,6 +214,10 @@ gz::rendering::ScenePtr MmWaveSensorPlugin::Scene() const
   // Try all loaded engines to find the scene with this world name
   const std::vector<std::string> engineNames = {"ogre2", "ogre"};
   
+  // Skip scene creation in WSL as it causes segmentation faults
+  // We'll rely on existing scenes or fall back to WSL compatibility mode
+  
+  // Continue with original approaches if the new approach didn't work
   for (const auto& engineName : engineNames)
   {
     try
@@ -276,6 +304,9 @@ gz::rendering::ScenePtr MmWaveSensorPlugin::Scene() const
     }
   }
   
+  // Skip scene creation entirely in WSL as it causes segmentation faults
+  // We'll fall back to WSL compatibility mode instead
+  
   // Do NOT create a new scene as it would be empty and causes crashes in WSL
   gzwarn << "[MmWaveSensorPlugin] Failed to find an existing scene.\n"
          << "Ray casting will not work until a scene is available.\n"
@@ -286,53 +317,9 @@ gz::rendering::ScenePtr MmWaveSensorPlugin::Scene() const
   return nullptr;
 }
 
-//////////////////////////////////////////////////
-double MmWaveSensorPlugin::CalculateRCS(const gz::sim::Entity &_entity,
-                                       const gz::sim::EntityComponentManager &_ecm) const
-{
-  // In a real implementation, we would look for a custom RCS component on the entity
-  // or calculate it based on the entity's material properties and geometry.
-  // For now, we'll return a default value.
-  
-  // Check if entity has a name component (for debugging)
-  auto nameComp = _ecm.Component<components::Name>(_entity);
-  if (nameComp)
-  {
-    // In the future, we could use the name to look up RCS values from a database
-    // or use pattern matching to assign different RCS values to different types of objects
-    const std::string &name = nameComp->Data();
-    
-    // Example: assign higher RCS to objects with "metal" in their name
-    if (name.find("metal") != std::string::npos)
-      return 2.0 * this->defaultRCS;
-  }
-  
-  // Default RCS value
-  return this->defaultRCS;
-}
+// CalculateRCS implementation moved to MmWaveSensorWslCompat.cc
 
-//////////////////////////////////////////////////
-double MmWaveSensorPlugin::CalculateRadialVelocity(const gz::sim::Entity &_entity,
-                                                 const gz::math::Pose3d &_sensorPose, // Added sensor pose
-                                                 const gz::math::Vector3d &_rayDirection,
-                                                 const gz::sim::EntityComponentManager &_ecm) const
-{
-  // Get the entity's linear velocity if available
-  auto velComp = _ecm.Component<components::LinearVelocity>(_entity);
-  if (!velComp)
-    return 0.0;  // No velocity component, assume stationary
-    
-  // Get the velocity vector
-  const auto &velocity = velComp->Data();
-  
-  // Calculate radial velocity (projection of velocity onto ray direction)
-  // Positive value means object is moving away from sensor
-  // Negative value means object is moving toward sensor
-  double radialVel = velocity.Dot(_rayDirection);
-  
-  // Clamp to maximum range
-  return std::max(-this->maxRadialVelocity, std::min(radialVel, this->maxRadialVelocity));
-}
+// CalculateRadialVelocity implementation moved to MmWaveSensorWslCompat.cc
 
 void MmWaveSensorPlugin::CastRays(const gz::math::Pose3d &_sensorPose,
                          const gz::sim::EntityComponentManager &_ecm,
@@ -447,7 +434,7 @@ void MmWaveSensorPlugin::CastRays(const gz::math::Pose3d &_sensorPose,
         const int numSegments = 10;
         for (int i = 1; i <= numSegments; i++) {
           double segmentDist = (testRange * i) / numSegments;
-          gz::math::Vector3d endPoint = origin + worldDir * segmentDist;
+          gz::math::Vector3 endPoint = origin + worldDir * segmentDist;
           
           // Segment test with direct line test
           this->rayQuery->SetOrigin(origin);
@@ -457,7 +444,7 @@ void MmWaveSensorPlugin::CastRays(const gz::math::Pose3d &_sensorPose,
           result = this->rayQuery->ClosestPoint();
           if (result) {
             // Hit detected with segmented approach
-            gz::math::Vector3d hitPoint = origin + worldDir * result.distance;
+            gz::math::Vector3 hitPoint = origin + worldDir * result.distance;
             hitPoints.push_back(hitPoint);
             hitCount++;
             hitDetected = true;
@@ -473,7 +460,7 @@ void MmWaveSensorPlugin::CastRays(const gz::math::Pose3d &_sensorPose,
         if (!hitDetected) {
           // No hit with either method
           gzdbg << "[MmWaveSensorPlugin] MISS: Ray " << dirName << " did not hit anything" << std::endl;
-          gz::math::Vector3d endPoint = origin + worldDir * this->maxRange;
+          gz::math::Vector3 endPoint = origin + worldDir * this->maxRange;
           gzdbg << "[MmWaveSensorPlugin] Ray end point (at max range): " << endPoint << std::endl;
         }
       }
@@ -516,49 +503,87 @@ void MmWaveSensorPlugin::PostUpdate(const gz::sim::UpdateInfo &_info,
     // Update last update time
     this->lastUpdateTime = simTime;
     
-    // Wait for rendering to be properly initialized
-    // In WSL/WSLg, rendering scenes may take longer to become available
-    static int retryCount = 0;
-    static auto lastSceneAttemptTime = std::chrono::steady_clock::now();
-    auto now = std::chrono::steady_clock::now();
-    
-    // Check if running in WSL to adjust retry strategy
+    // Check if running in WSL and handle compatibility mode setup
     static bool isWSL = false;
     static bool checkedWSL = false;
     if (!checkedWSL) {
         char* wslEnv = std::getenv("WSL_DISTRO_NAME");
         isWSL = (wslEnv != nullptr);
         checkedWSL = true;
+        
+        // Set up software rendering environment variables for WSL
+        if (isWSL) {
+            gzmsg << "[MmWaveSensorPlugin::PostUpdate] Running in WSL environment: " << wslEnv << std::endl;
+            
+            // Set up software rendering environment variables
+            char* softwareRenderEnv = std::getenv("LIBGL_ALWAYS_SOFTWARE");
+            if (!softwareRenderEnv || strcmp(softwareRenderEnv, "1") != 0) {
+                gzmsg << "[MmWaveSensorPlugin::PostUpdate] Setting LIBGL_ALWAYS_SOFTWARE=1 for WSL" << std::endl;
+                setenv("LIBGL_ALWAYS_SOFTWARE", "1", 1);
+            }
+            
+            // Also set these environment variables which can help with rendering in WSL
+            setenv("MESA_GL_VERSION_OVERRIDE", "3.3", 1);
+            setenv("MESA_GLSL_VERSION_OVERRIDE", "330", 1);
+            gzmsg << "[MmWaveSensorPlugin::PostUpdate] Set additional rendering environment variables for WSL" << std::endl;
+            
+            // Reset scene acquisition counters to ensure proper tracking in WSL
+            this->sceneAcquisitionAttempts = 0;
+        }
+        
+        // Note: We don't immediately enable compatibility mode
+        // Instead we'll give it maxSceneAcquisitionAttempts (5) attempts to get a scene before switching
     }
     
-    // In WSL, rendering often takes longer to initialize, so we use a more 
-    // aggressive retry strategy early on, then back off over time
-    std::chrono::seconds retryInterval;
-    int maxRetries = isWSL ? 60 : 30;  // More retries in WSL
+    // Different handling for WSL vs non-WSL environments
+    static int retryCount = 0;
+    static auto lastSceneAttemptTime = std::chrono::steady_clock::now();
+    auto now = std::chrono::steady_clock::now();
     
-    // Dynamic retry interval strategy
-    if (retryCount < 10) {
-        // Very frequent early retries
-        retryInterval = isWSL ? std::chrono::seconds(1) : std::chrono::seconds(2);
-    } else if (retryCount < 20) {
-        retryInterval = std::chrono::seconds(3);
-    } else if (retryCount < maxRetries) {
-        retryInterval = std::chrono::seconds(5);
-    } else {
-        retryInterval = std::chrono::seconds(10);
+    // WSL environment has a strict limit of this->maxSceneAcquisitionAttempts (5) attempts
+    // Non-WSL can try up to 30 times before giving up
+    const int MAX_WSL_RETRIES = this->maxSceneAcquisitionAttempts;  // 5 attempts for WSL
+    const int MAX_STANDARD_RETRIES = 30;  // 30 attempts for standard environments
+    
+    // In WSL, we need to activate compatibility mode after exactly maxSceneAcquisitionAttempts (5) attempts
+    if (isWSL && this->sceneAcquisitionAttempts >= MAX_WSL_RETRIES && !this->wslCompatMode) {
+        // Force compatibility mode activation after exactly 5 attempts in WSL
+        gzmsg << "===================================================================" << std::endl;
+        gzmsg << "[MmWaveSensorPlugin] WSL COMPATIBILITY MODE ACTIVATED after " 
+              << MAX_WSL_RETRIES << " failed scene acquisition attempts." << std::endl;
+        gzmsg << "[MmWaveSensorPlugin] Using simplified world model without ray casting" << std::endl;
+        gzmsg << "===================================================================" << std::endl;
+        
+        this->wslCompatMode = true;
+        this->wslWarningShown = true;
     }
     
-    // Try to get scene if we don't have one yet, or retry periodically with a maximum attempt count
-    if ((!this->scene || ((now - lastSceneAttemptTime) > retryInterval)) && retryCount < maxRetries) 
+    // Skip further scene acquisition attempts if we're already in WSL compatibility mode
+    if (isWSL && this->wslCompatMode) {
+        // Already in compatibility mode, no need to try scene acquisition
+    }
+    // Otherwise, try to get scene with appropriate limits
+    else if (!this->scene || ((now - lastSceneAttemptTime) > std::chrono::seconds(1)))
+    {
+        // Don't exceed the appropriate maximum number of attempts
+        int maxRetries = isWSL ? MAX_WSL_RETRIES : MAX_STANDARD_RETRIES;
+        
+        // Only attempt if we haven't reached the limit
+        if (retryCount < maxRetries)
     {
         lastSceneAttemptTime = now;
         retryCount++;
+        this->sceneAcquisitionAttempts++;
         
-        // More detailed logging for the early attempts and WSL environments
-        if ((retryCount <= 5) || (retryCount % 5 == 0) || (isWSL && retryCount <= 10)) {
+        // Enhanced logging for WSL environments to track scene acquisition attempts
+        if (isWSL) {
+            gzmsg << "[MmWaveSensorPlugin::PostUpdate] WSL scene acquisition attempt #" 
+                  << this->sceneAcquisitionAttempts << " of " << MAX_WSL_RETRIES << "..." << std::endl;
+        }
+        // Standard logging for normal environments
+        else if ((retryCount <= 5) || (retryCount % 5 == 0)) {
             gzdbg << "[MmWaveSensorPlugin::PostUpdate] Attempt #" << retryCount 
-                  << " to acquire rendering scene" 
-                  << (isWSL ? " (WSL environment)" : "") << "..." << std::endl;
+                  << " to acquire rendering scene..." << std::endl;
         }
         
         auto newScene = this->Scene();
@@ -600,15 +625,13 @@ void MmWaveSensorPlugin::PostUpdate(const gz::sim::UpdateInfo &_info,
             gzwarn << "[MmWaveSensorPlugin::PostUpdate] Still trying to find rendering scene "
                    << "(attempt " << retryCount << "" 
                    << (retryCount == maxRetries ? ", FINAL ATTEMPT" : "") 
-                   << "). This is normal in WSL/WSLg." << std::endl;
+                   << "). This is normal in some environments." << std::endl;
         }
     }
     
-    // We don't need this section anymore as ray query creation is now handled above
-    // when we successfully find a scene
-
-    // If scene or rayQuery is still null, log error and try again next update
-    if (!this->scene || !this->rayQuery)
+    // If we're in WSL compatibility mode, no need to check for scene or rayQuery
+    // Otherwise, if scene or rayQuery is still not available, log warning
+    if (!this->wslCompatMode && (!this->scene || !this->rayQuery))
     {
         static int error_count = 0;
         if (error_count % 100 == 0) { // Log periodically
@@ -619,20 +642,16 @@ void MmWaveSensorPlugin::PostUpdate(const gz::sim::UpdateInfo &_info,
         return;
     }
 
-  if (_info.simTime < this->lastUpdateTime + this->updatePeriod && _info.simTime > std::chrono::seconds(0)) {
-    return;
-  }
-  this->lastUpdateTime = _info.simTime;
-
-  // Skip ray-casting if scene or rayQuery aren't available (common in WSL)
-  if (!this->scene || !this->rayQuery) {
+  // Only skip ray-casting if scene or rayQuery aren't available AND we're not in WSL compatibility mode
+  // If we're in WSL compatibility mode, we should continue even without scene or rayQuery
+  if ((!this->scene || !this->rayQuery) && !this->wslCompatMode) {
     // Print warning message once per second to avoid console flooding
     static auto lastWarningTime = std::chrono::steady_clock::now();
     auto currentTime = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastWarningTime).count();
     
     if (elapsed >= 5) { // Only warn every 5 seconds
-      gzdbg << "[MmWaveSensorPlugin] Skipping update - ray casting not available in this environment.\n";
+      gzdbg << "[MmWaveSensorPlugin] Skipping normal update - ray casting not available.\n";
       lastWarningTime = currentTime;
     }
     return;
@@ -645,10 +664,26 @@ void MmWaveSensorPlugin::PostUpdate(const gz::sim::UpdateInfo &_info,
     gzerr << "[MmWaveSensorPlugin] Entity has no Pose component.\n";
     return;
   }
-  math::Pose3d sensorPose = poseComp->Data();
+  math::Pose3 sensorPose = poseComp->Data();
+  
+  // Get the world pose of the sensor
+  math::Pose3 worldSensorPose = gz::sim::worldPose(this->entity, _ecm);
+  
+  // Update the simplified world model for WSL compatibility mode if needed
+  if (this->wslCompatMode) {
+    auto currentTime = std::chrono::steady_clock::now();
+    if ((currentTime - this->lastWorldModelUpdate) > this->worldModelUpdatePeriod) {
+      olympus_sim::wsl_compat::UpdateSimplifiedWorldModel(this->entity, _ecm, this->simplifiedWorldModel, this->wslWarningShown);
+      this->lastWorldModelUpdate = currentTime;
+      gzmsg << "[MmWaveSensorPlugin] Updated simplified world model with " 
+            << this->simplifiedWorldModel.size() << " entities." << std::endl;
+    }
+  }
 
-  // Debug - Entity hierarchy and pose information
-  gzmsg << "[MmWaveSensorPlugin] Current entity ID: " << this->entity << "\n";
+  // Debug - Entity hierarchy and pose information (reduced in WSL mode)
+  if (!this->wslCompatMode) {
+    gzmsg << "[MmWaveSensorPlugin] Current entity ID: " << this->entity << "\n";
+  }
 
   // Get entity name for debug
   auto entityNameComp = _ecm.Component<components::Name>(this->entity);
@@ -674,7 +709,7 @@ void MmWaveSensorPlugin::PostUpdate(const gz::sim::UpdateInfo &_info,
     auto parentPoseComp = _ecm.Component<components::Pose>(parentEntity);
     if (parentPoseComp)
     {
-      math::Pose3d parentPose = parentPoseComp->Data();
+      math::Pose3 parentPose = parentPoseComp->Data();
       gzmsg << "[MmWaveSensorPlugin] Parent entity pose: " << parentPose << "\n";
     }
     
@@ -695,14 +730,14 @@ void MmWaveSensorPlugin::PostUpdate(const gz::sim::UpdateInfo &_info,
       auto grandparentPoseComp = _ecm.Component<components::Pose>(grandparentEntity);
       if (grandparentPoseComp)
       {
-        math::Pose3d grandparentPose = grandparentPoseComp->Data();
+        math::Pose3 grandparentPose = grandparentPoseComp->Data();
         gzmsg << "[MmWaveSensorPlugin] Grandparent entity pose: " << grandparentPose << "\n";
       }
     }
   }
   
   // Instead of just using the entity's pose, try to get the world pose
-  math::Pose3d worldSensorPose = gz::sim::worldPose(this->entity, _ecm);
+  // Already have worldSensorPose from above
   gzmsg << "[MmWaveSensorPlugin] Entity local pose: " << sensorPose << "\n";
   gzmsg << "[MmWaveSensorPlugin] Entity world pose: " << worldSensorPose << "\n";
 
@@ -767,49 +802,125 @@ void MmWaveSensorPlugin::PostUpdate(const gz::sim::UpdateInfo &_info,
   pointCloudMsg.set_is_dense(true);
   
   try {
-    // Cast rays to generate point cloud - use world pose instead of local pose
-    this->CastRays(worldSensorPose, _ecm, pointCloudMsg);
+    // In WSL compatibility mode, use the simplified approach
+    // Otherwise try ray casting if the scene is available
+    if (this->wslCompatMode) {
+      gzmsg << "[MmWaveSensorPlugin] ** ENTERING WSL COMPATIBILITY MODE **" << std::endl;
+      
+      // Update the simplified world model first
+      gzmsg << "[MmWaveSensorPlugin] Updating simplified world model..." << std::endl;
+      olympus_sim::wsl_compat::UpdateSimplifiedWorldModel(this->entity, _ecm, this->simplifiedWorldModel, this->wslWarningShown);
+      
+      // Generate the simulated data
+      gzmsg << "[MmWaveSensorPlugin] Generating simulated data in WSL compatibility mode..." << std::endl;
+      try {
+        olympus_sim::wsl_compat::GenerateSimulatedData(
+          this->entity,
+          worldSensorPose, 
+          _ecm, 
+          pointCloudMsg, 
+          this->simplifiedWorldModel,
+          this->horizontalFov,
+          this->horizontalResolution,
+          this->verticalFov,
+          this->verticalResolution,
+          this->minRange,
+          this->maxRange,
+          this->noiseMean,
+          this->noiseStdDev,
+          this->defaultRCS,
+          this->minRCS,
+          this->maxRadialVelocity
+        );
+        
+        // Show point count for debugging
+        size_t pointCount = pointCloudMsg.data().size() / 
+                          (pointCloudMsg.point_step() > 0 ? pointCloudMsg.point_step() : 1);
+        gzmsg << "[MmWaveSensorPlugin] --> Successfully generated " << pointCount 
+              << " points in WSL compatibility mode" << std::endl;
+      } 
+      catch (const std::exception& e) {
+        gzerr << "[MmWaveSensorPlugin] ERROR in GenerateSimulatedData: " << e.what() << std::endl;
+        throw; // Rethrow to outer catch block
+      }
+    } else {
+      // Cast rays to generate point cloud - use world pose instead of local pose
+      this->CastRays(worldSensorPose, _ecm, pointCloudMsg);
+    }
+    
+    // If no points were detected and we're in debug mode,
+    // add a single test point to verify the pipeline is working
+    if (pointCloudMsg.width() == 0 && this->visualize) {
+      // Add a single test point at 5 meters in front of the sensor
+      gzmsg << "[MmWaveSensorPlugin] No points detected, adding test point" << std::endl;
+      
+      // Clear any existing fields and add all required ones
+      pointCloudMsg.clear_field();
+      
+      // Add x field
+      auto field = pointCloudMsg.add_field();
+      field->set_name("x");
+      field->set_offset(0);
+      field->set_datatype(msgs::PointCloudPacked::Field::FLOAT32);
+      field->set_count(1);
+      
+      // Add y field
+      field = pointCloudMsg.add_field();
+      field->set_name("y");
+      field->set_offset(4);
+      field->set_datatype(msgs::PointCloudPacked::Field::FLOAT32);
+      field->set_count(1);
+      
+      // Add z field
+      field = pointCloudMsg.add_field();
+      field->set_name("z");
+      field->set_offset(8);
+      field->set_datatype(msgs::PointCloudPacked::Field::FLOAT32);
+      field->set_count(1);
+      
+      // Point at 5 meters in front of the sensor
+      float x = 5.0f;
+      float y = 0.0f;
+      float z = 0.0f;
+      
+      pointCloudMsg.set_point_step(12);  // 3 fields * 4 bytes (float32)
+      pointCloudMsg.set_height(1);
+      pointCloudMsg.set_width(1);
+      pointCloudMsg.set_row_step(12);
+      pointCloudMsg.set_is_dense(true);
+      
+      pointCloudMsg.mutable_data()->resize(12);
+      std::memcpy(&pointCloudMsg.mutable_data()->at(0), &x, 4);
+      std::memcpy(&pointCloudMsg.mutable_data()->at(4), &y, 4);
+      std::memcpy(&pointCloudMsg.mutable_data()->at(8), &z, 4);
+      
+      gzmsg << "[MmWaveSensorPlugin] Added test point at (" 
+            << x << ", " << y << ", " << z << ")" << std::endl;
+    }
     
     // Publish point cloud message
-    this->pointCloudPublisher.Publish(pointCloudMsg);
-  }
+    if (!this->pointCloudPublisher.Publish(pointCloudMsg)) {
+      gzwarn << "[MmWaveSensorPlugin] Failed to publish point cloud message." << std::endl;
+    } else {
+      size_t pointCount = pointCloudMsg.data().size() / 
+                        (pointCloudMsg.point_step() > 0 ? pointCloudMsg.point_step() : 1);
+      gzmsg << "[MmWaveSensorPlugin] Successfully published " << pointCount
+            << " points to topic: " << this->topicName 
+            << (this->wslCompatMode ? " (WSL compatibility mode)" : "") << std::endl;
+    }
+  } // End of try block
   catch (const std::exception& e) {
-    gzerr << "[MmWaveSensorPlugin] Exception during ray casting: " << e.what() << std::endl;
+    gzerr << "[MmWaveSensorPlugin] Exception during sensor data generation: " << e.what() << std::endl;
   }
   catch (...) {
-    gzerr << "[MmWaveSensorPlugin] Unknown exception during ray casting" << std::endl;
+    gzerr << "[MmWaveSensorPlugin] Unknown exception during sensor data generation" << std::endl;
   }
 
-  // If no points were detected through ray casting and we're in debug mode,
-  // add a single test point to verify the pipeline is working
-  if (pointCloudMsg.width() == 0 && this->visualize)
-  {
-    gzmsg << "No points detected by ray casting, adding test point\n";
-    
-    // Add a single test point directly in front of the sensor
-    pointCloudMsg.set_width(1);
-    pointCloudMsg.set_height(1);
-    pointCloudMsg.set_row_step(pointStep);
-    
-    std::vector<float> points;
-    points.push_back(5.0f);  // x
-    points.push_back(0.0f);  // y
-    points.push_back(0.0f);  // z
-    points.push_back(0.0f);  // velocity
-    points.push_back(1.0f);  // rcs
-    points.push_back(0.8f);  // intensity
-    
-    std::string data;
-    data.resize(points.size() * sizeof(float));
-    memcpy(&data[0], points.data(), points.size() * sizeof(float));
-    pointCloudMsg.set_data(data);
-  }
+} // End of PostUpdate method
 
-  if (this->pointCloudPublisher.HasConnections())
-  {
-    this->pointCloudPublisher.Publish(pointCloudMsg);
-  }
-}
+// GenerateSimulatedData implementation moved to MmWaveSensorWslCompat.cc
+
+} // End of olympus_sim namespace
 
 // Register this plugin with Gazebo
 GZ_ADD_PLUGIN(olympus_sim::MmWaveSensorPlugin,

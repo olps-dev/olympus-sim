@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorPlugin.cc.o"
   "CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorPlugin.cc.o.d"
+  "CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorWslCompat.cc.o"
+  "CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorWslCompat.cc.o.d"
   "libMmWaveSensorPlugin.pdb"
   "libMmWaveSensorPlugin.so"
 )
