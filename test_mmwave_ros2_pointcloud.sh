@@ -61,6 +61,34 @@ SIM_PID=$!
 # Wait for the simulation to start
 sleep 10
 
+# Launch the mmWave bridge node using ROS2 run to ensure proper node registration
+echo "==== Starting mmWave ROS2 bridge node ===="
+ros2 run --prefix "python3" "$SCRIPT_DIR/sim/ros2/mmwave_ros2_bridge.py" --output "bridge_output.log" &
+BRIDGE_PID=$!
+echo "Bridge node started with PID: $BRIDGE_PID"
+
+# Wait longer for the bridge node to fully initialize and connect
+sleep 5
+
+# Check if bridge node is running
+if ! ps -p $BRIDGE_PID > /dev/null; then
+    echo "ERROR: Bridge node failed to start or terminated prematurely!"
+    echo "Checking log output:"
+    tail -n 50 bridge_output.log 2>/dev/null || echo "No log file found"
+else
+    echo "Bridge node is running with PID: $BRIDGE_PID"
+fi
+
+# Check Gazebo topics to confirm points are being published
+echo "\n==== Checking Gazebo topics ===="
+gazebo_topics=$(gz topic -l)
+echo "$gazebo_topics" | grep -E "/mmwave/points"
+if echo "$gazebo_topics" | grep -q "/mmwave/points"; then
+    echo "SUCCESS: Gazebo is publishing on /mmwave/points topic"
+else
+    echo "WARNING: Gazebo topic /mmwave/points not found"
+fi
+
 # Terminal 2: Monitor and verify ROS2 topics
 echo "==== Monitoring ROS2 Environment ===="
 
@@ -129,21 +157,70 @@ RVIZ_PID=$!
 # Function to clean up all processes
 cleanup() {
     echo "\nCleaning up all processes..."
-    # Kill direct child processes
-    if [ -n "$SIM_PID" ]; then kill $SIM_PID 2>/dev/null || true; fi
-    if [ -n "$RVIZ_PID" ]; then kill $RVIZ_PID 2>/dev/null || true; fi
     
-    # Kill all related python and ROS2/Gazebo processes to ensure nothing lingers
-    echo "Stopping all related Python and ROS2/Gazebo processes..."
-    pkill -f "run_olympus.py" || true
-    pkill -f "ros2" || true
-    pkill -f "gz sim" || true
-    pkill -f "mmwave_ros2_bridge" || true
-    pkill -f "rviz2" || true
+    # First, terminate main processes gracefully with SIGTERM
+    echo "Step 1: Sending SIGTERM to known processes"
+    for pid in $SIM_PID $BRIDGE_PID $RVIZ_PID; do
+        if [ -n "$pid" ]; then
+            ps -p $pid >/dev/null 2>&1 && {
+                echo "Terminating PID $pid with SIGTERM"
+                kill -TERM $pid 2>/dev/null || true
+            }
+        fi
+    done
+    
+    # Short wait before more aggressive termination
+    echo "Waiting briefly for graceful termination..."
+    sleep 2
+    
+    # Now use SIGKILL for any processes that didn't terminate
+    echo "Step 2: Sending SIGKILL to remaining processes"
+    for pid in $SIM_PID $BRIDGE_PID $RVIZ_PID; do
+        if [ -n "$pid" ]; then
+            ps -p $pid >/dev/null 2>&1 && {
+                echo "Force killing PID $pid with SIGKILL"
+                kill -9 $pid 2>/dev/null || true
+            }
+        fi
+    done
+    
+    # Kill all related ROS2 nodes by name
+    echo "Step 3: Terminating all ROS2 nodes"
+    ros2 node list 2>/dev/null | grep -E 'mmwave|olympus' | while read node; do
+        echo "Killing ROS2 node: $node"
+        ros2 lifecycle set $node shutdown 2>/dev/null || true
+    done
+    sleep 1
+    
+    # Kill all related processes forcefully by pattern
+    echo "Step 4: Force killing all related processes by pattern"
+    pkill -9 -f "ros2.*mmwave" 2>/dev/null || true
+    pkill -9 -f "run_olympus\.py" 2>/dev/null || true
+    pkill -9 -f "mmwave_ros2_bridge" 2>/dev/null || true
+    pkill -9 -f "gz sim" 2>/dev/null || true
+    pkill -9 -f "_ros2_daemon" 2>/dev/null || true
+    
+    # Check if Gazebo is still running and try to terminate it properly
+    gazebo_pids=$(pgrep -f "gz sim")
+    if [ -n "$gazebo_pids" ]; then
+        echo "Step 5: Terminating remaining Gazebo processes"
+        echo "$gazebo_pids" | xargs kill -9 2>/dev/null || true
+    fi
     
     # Clean up temporary files
+    echo "Step 6: Cleaning up temporary files"
     rm -f "$RVIZ_CONFIG" 2>/dev/null || true
     rm -f "$SCRIPT_DIR/sim/gazebo/worlds/olympus.world" 2>/dev/null || true
+    rm -f "bridge_output.log" 2>/dev/null || true
+    
+    # Verify cleanup
+    remaining=$(pgrep -f "mmwave|olympus|gz sim" | wc -l)
+    if [ "$remaining" -gt 0 ]; then
+        echo "WARNING: $remaining related processes still running after cleanup"
+        pgrep -fa "mmwave|olympus|gz sim"
+    else
+        echo "All processes successfully terminated"
+    fi
     
     echo "Cleanup complete."
     exit 0

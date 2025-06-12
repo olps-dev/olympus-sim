@@ -113,7 +113,14 @@
     </include>
 
     <model name="mmwave_sensor">
+      <static>true</static>
       <pose>0 0 1 0 0 0</pose>
+      <plugin
+        filename="gz-sim-pose-publisher-system"
+        name="gz::sim::systems::PosePublisher">
+        <static_publisher>true</static_publisher>
+        <update_frequency>10</update_frequency>
+      </plugin>
       <link name="link">
         <sensor name="mmwave" type="custom">
           <always_on>1</always_on>
