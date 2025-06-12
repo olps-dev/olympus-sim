@@ -3,6 +3,7 @@
 Olympus Simulation Gazebo Launch File
 This launch file starts Gazebo Harmonic and loads the Olympus simulation world and models
 Using ros_gz integration for ROS 2 Jazzy
+Includes mmWave sensor ROS2 bridge
 """
 
 import os
@@ -75,6 +76,12 @@ def generate_launch_description():
         description='Whether to launch the sensor visualizer'
     )
     
+    use_mmwave_bridge = DeclareLaunchArgument(
+        'use_mmwave_bridge',
+        default_value='true',
+        description='Whether to launch the mmWave sensor ROS2 bridge'
+    )
+    
     # Launch Gazebo Harmonic with our world
     gazebo = ExecuteProcess(
         cmd=['gz', 'sim', '-r', world_file],
@@ -113,10 +120,26 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration('use_sensor_visualizer'))
     )
     
+    # Launch mmWave sensor ROS2 bridge
+    mmwave_bridge_script = os.path.join(olympus_sim_dir, 'sim', 'ros2', 'mmwave_ros2_bridge.py')
+    mmwave_bridge = Node(
+        executable=mmwave_bridge_script,
+        name='mmwave_ros2_bridge',
+        output='screen',
+        parameters=[{
+            'mmwave_gazebo_topic': '/mmwave/points',
+            'mmwave_ros2_topic': '/mmwave/pointcloud',
+            'frame_id': 'mmwave_sensor'
+        }],
+        condition=IfCondition(LaunchConfiguration('use_mmwave_bridge'))
+    )
+    
     # Return the launch description
     return LaunchDescription([
         use_sensor_visualizer,
+        use_mmwave_bridge,
         gazebo,
         bridge,
-        sensor_visualizer
+        sensor_visualizer,
+        mmwave_bridge
     ])

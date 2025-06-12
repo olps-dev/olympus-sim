@@ -81,15 +81,21 @@ void UpdateSimplifiedWorldModel(
   simplifiedWorldModel.clear();
   size_t entitiesAdded = 0;
 
-  _ecm.Each<gz::sim::components::Name, gz::sim::components::WorldPose>(
+  // Iterate over all models in the world that have a pose
+  _ecm.Each<gz::sim::components::Model, gz::sim::components::Name, gz::sim::components::WorldPose>(
     [&](const gz::sim::Entity &_entity,
-        const gz::sim::components::Name * /*_name*/,
+        const gz::sim::components::Model * /*_model*/,
+        const gz::sim::components::Name *_name,
         const gz::sim::components::WorldPose *_worldPose) -> bool
     {
-      if (_entity == _sensorEntity)
+      // Skip the sensor's own parent model entity
+      auto parent = _ecm.ParentEntity(_sensorEntity);
+      if (_entity == _sensorEntity || (parent != gz::sim::kNullEntity && _entity == parent))
       {
         return true; // continue iteration
       }
+
+      gzmsg << "[MmWaveSensorPlugin::UpdateSimplifiedWorldModel] Found model: " << _name->Data() << std::endl;
 
       gz::math::Pose3d pose = _worldPose->Data();
       gz::math::Vector3d velocity = gz::math::Vector3d::Zero;
@@ -132,6 +138,17 @@ void GenerateSimulatedData(
     double maxRadialVelocityValue)
 {
   gzmsg << "[MmWaveSensorPlugin::GenerateSimulatedData] Starting simulated data generation (WSL compat mode)" << std::endl;
+  gzmsg << "[MmWaveSensorPlugin::GenerateSimulatedData] Number of entities in simplified world model: " << simplifiedWorldModel.size() << std::endl;
+  
+  // Print all detected entities
+  for (const auto& [entityId, poseVel] : simplifiedWorldModel) {
+    auto nameComp = _ecm.Component<gz::sim::components::Name>(entityId);
+    if (nameComp) {
+      gzmsg << "[MmWaveSensorPlugin::GenerateSimulatedData] Entity: " << entityId 
+            << " Name: " << nameComp->Data() 
+            << " Pose: " << poseVel.first << std::endl;
+    }
+  }
 
   if (simplifiedWorldModel.empty()) {
     gzdbg << "[MmWaveSensorPlugin::GenerateSimulatedData] No objects in world model (WSL compat mode)" << std::endl;

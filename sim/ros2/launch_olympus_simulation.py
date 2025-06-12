@@ -23,7 +23,7 @@ def generate_launch_description():
     # Determine the path to the world file
     # This assumes the world file is in the sim/gazebo/worlds directory
     olympus_sim_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    world_file = os.path.join(olympus_sim_dir, 'sim', 'gazebo', 'worlds', 'apartment.sdf')
+    world_file = os.path.join(olympus_sim_dir, 'sim', 'gazebo', 'worlds', 'olympus.world')
     
     # Launch arguments
     declare_use_sim_time = DeclareLaunchArgument(
@@ -80,11 +80,25 @@ def generate_launch_description():
         }]
     )
     
+    # Launch mmWave ROS2 Bridge
+    mmwave_ros2_bridge = Node(
+        package='olympus_sim',
+        executable='mmwave_ros2_bridge.py',
+        name='mmwave_ros2_bridge',
+        output='screen',
+        parameters=[{
+            'use_sim_time': use_sim_time,
+            'mmwave_gazebo_topic': '/mmwave/points',
+            'mmwave_ros2_topic': '/mmwave/pointcloud'
+        }]
+    )
+    
     return LaunchDescription([
         declare_use_sim_time,
         declare_mqtt_broker,
         declare_mqtt_port,
         gazebo,
         mqtt_ros2_bridge,
-        time_sync_bridge
+        time_sync_bridge,
+        mmwave_ros2_bridge  # Add the mmWave ROS2 bridge
     ])

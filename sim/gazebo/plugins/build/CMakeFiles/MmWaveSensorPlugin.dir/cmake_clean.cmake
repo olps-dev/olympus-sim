@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/MmWaveSensorPlugin.dir/MmWavePointCloudLoader.cc.o"
+  "CMakeFiles/MmWaveSensorPlugin.dir/MmWavePointCloudLoader.cc.o.d"
   "CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorPlugin.cc.o"
   "CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorPlugin.cc.o.d"
   "CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorWslCompat.cc.o"

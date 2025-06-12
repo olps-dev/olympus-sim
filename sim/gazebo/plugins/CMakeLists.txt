@@ -32,7 +32,7 @@ else()
 endif()
 
 # Create shared libraries for the plugins
-add_library(MmWaveSensorPlugin SHARED MmWaveSensorPlugin.cc MmWaveSensorWslCompat.cc)
+add_library(MmWaveSensorPlugin SHARED MmWaveSensorPlugin.cc MmWaveSensorWslCompat.cc MmWavePointCloudLoader.cc)
 add_library(OlympusMQTTPlugin SHARED OlympusMQTTPlugin.cc)
 
 # Target specific include directories (if your .hh files are in an 'include' subdirectory)
