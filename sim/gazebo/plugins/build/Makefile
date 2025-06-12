@@ -187,6 +187,30 @@ OlympusMQTTPlugin/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/OlympusMQTTPlugin.dir/build.make CMakeFiles/OlympusMQTTPlugin.dir/build
 .PHONY : OlympusMQTTPlugin/fast
 
+MmWavePointCloudLoader.o: MmWavePointCloudLoader.cc.o
+.PHONY : MmWavePointCloudLoader.o
+
+# target to build an object file
+MmWavePointCloudLoader.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWavePointCloudLoader.cc.o
+.PHONY : MmWavePointCloudLoader.cc.o
+
+MmWavePointCloudLoader.i: MmWavePointCloudLoader.cc.i
+.PHONY : MmWavePointCloudLoader.i
+
+# target to preprocess a source file
+MmWavePointCloudLoader.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWavePointCloudLoader.cc.i
+.PHONY : MmWavePointCloudLoader.cc.i
+
+MmWavePointCloudLoader.s: MmWavePointCloudLoader.cc.s
+.PHONY : MmWavePointCloudLoader.s
+
+# target to generate assembly for a file
+MmWavePointCloudLoader.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWavePointCloudLoader.cc.s
+.PHONY : MmWavePointCloudLoader.cc.s
+
 MmWaveSensorPlugin.o: MmWaveSensorPlugin.cc.o
 .PHONY : MmWaveSensorPlugin.o
 
@@ -273,6 +297,9 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... MmWaveSensorPlugin"
 	@echo "... OlympusMQTTPlugin"
+	@echo "... MmWavePointCloudLoader.o"
+	@echo "... MmWavePointCloudLoader.i"
+	@echo "... MmWavePointCloudLoader.s"
 	@echo "... MmWaveSensorPlugin.o"
 	@echo "... MmWaveSensorPlugin.i"
 	@echo "... MmWaveSensorPlugin.s"
