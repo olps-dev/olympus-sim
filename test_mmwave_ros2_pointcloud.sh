@@ -146,7 +146,7 @@ Visualized Topics:
       Size: 0.009999999776482582
       Style: Points
 Global Options:
-  Fixed Frame: map
+  Fixed Frame: world
   Frame Rate: 30
 EOF
 

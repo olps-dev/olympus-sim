@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Gazebo-ROS2 Bridge for mmWave Sensor
 Subscribes to Gazebo transport topics for mmWave sensor data and republishes to ROS2
-v2: Improved stability and error handling
+v3: Enhanced debugging and subscription reliability
 """
 
 import sys
@@ -13,10 +13,25 @@ import struct
 import numpy as np
 from typing import List, Optional, Dict, Any
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, 
-                   format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Setup logging with both console and file output
 log = logging.getLogger('mmwave_ros2_bridge')
+log.setLevel(logging.DEBUG)  # Set to debug level
+
+# Console handler
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+log.addHandler(console_handler)
+
+# File handler - log to a file for detailed debugging
+log_file = os.path.expanduser('~/mmwave_bridge_debug.log')
+file_handler = logging.FileHandler(log_file, mode='w')
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+log.addHandler(file_handler)
+
+# Log startup information
+log.info(f"mmWave ROS2 Bridge starting, logging to {log_file}")
+log.info(f"Python version: {sys.version}")
+log.info(f"Environment: {os.environ.get('ROS_DISTRO', 'ROS_DISTRO not set')}")
 
 # Try to import ROS2 components
 try:
@@ -125,19 +140,90 @@ class MmWaveGazeboROS2Bridge(Node):
                 self.get_logger().info("Initializing Gazebo transport...")
                 self.gz_node = gz_transport.Node()
                 
-                # Define a simple callback that delegates to our processing method
+                # Define a more robust callback that delegates to our processing method
                 def callback(raw_msg):
                     try:
-                        self.get_logger().info(f"Data received on {self.mmwave_gazebo_topic}")
+                        self.get_logger().info(f"Data received on {self.mmwave_gazebo_topic} with type {type(raw_msg)}")
+                        
+                        # Debug log the first message received to understand its format
+                        if not self.received_data:
+                            if hasattr(raw_msg, '__str__'):
+                                self.get_logger().info(f"First message sample: {str(raw_msg)[:200]}...")
+                            if hasattr(raw_msg, 'SerializeToString'):
+                                self.get_logger().info(f"Message has SerializeToString method")
+                            if hasattr(raw_msg, 'data'):
+                                self.get_logger().info(f"Message has data field with length: {len(raw_msg.data)}")
+                            if hasattr(raw_msg, 'point_step'):
+                                self.get_logger().info(f"Message point_step: {raw_msg.point_step}")
+                        
+                        # Process the message
                         self.on_gazebo_data(raw_msg)
                         self.received_data = True
                     except Exception as e:
                         self.get_logger().error(f"Error in Gazebo callback: {e}")
+                        import traceback
+                        self.get_logger().error(f"Full traceback: {traceback.format_exc()}")
                 
-                # Subscribe with intentionally empty message type to receive raw data
-                # This avoids protobuf descriptor pool conflicts
+                # First try to subscribe with proper message type
                 self.get_logger().info(f"Subscribing to Gazebo topic: {self.mmwave_gazebo_topic}")
-                success = self.gz_node.subscribe(self.mmwave_gazebo_topic, callback, '')
+                
+                # First check if the topic exists
+                try:
+                    topics = self.gz_node.topic_list()
+                    self.get_logger().info(f"Available Gazebo topics at startup: {topics}")
+                    
+                    if self.mmwave_gazebo_topic in topics:
+                        self.get_logger().info(f"Found {self.mmwave_gazebo_topic} in available topics!")
+                    else:
+                        # Check for similar topics
+                        mmwave_related = [t for t in topics if 'mmwave' in t.lower()]
+                        if mmwave_related:
+                            self.get_logger().info(f"Found mmWave-related topics: {mmwave_related}")
+                            # If we find a better topic name, use it instead
+                            if len(mmwave_related) == 1:
+                                self.mmwave_gazebo_topic = mmwave_related[0]
+                                self.get_logger().info(f"Switching to use found topic: {self.mmwave_gazebo_topic}")
+                        
+                        # Check for point cloud topics
+                        point_topics = [t for t in topics if 'point' in t.lower() or 'cloud' in t.lower()]
+                        if point_topics:
+                            self.get_logger().info(f"Found point cloud topics: {point_topics}")
+                            
+                        self.get_logger().warning(f"Warning: Topic {self.mmwave_gazebo_topic} not found in available topics")
+                        self.get_logger().warning("Will subscribe anyway in case topic appears later")
+                except Exception as e:
+                    self.get_logger().warning(f"Failed to list topics: {e}")
+                
+                # We need to use a real message type object, not a string
+                # First try with empty string message type (most compatible)
+                try:
+                    self.get_logger().info("Subscribing with empty message type string")
+                    success = self.gz_node.subscribe(self.mmwave_gazebo_topic, callback, '')
+                except Exception as e:
+                    self.get_logger().error(f"Failed to subscribe with empty message type: {e}")
+                    success = False
+                    
+                # If that didn't work, try alternative methods
+                if not success:
+                    try:
+                        # Try to import the actual message type if possible
+                        from gz.msgs11 import pointcloud_packed_pb2
+                        self.get_logger().info("Using actual Protobuf message class for subscription")
+                        pc_msg_class = pointcloud_pb2.PointCloudPacked
+                        success = self.gz_node.subscribe(self.mmwave_gazebo_topic, callback, pc_msg_class)
+                    except Exception as e:
+                        self.get_logger().error(f"Failed to subscribe with message class: {e}")
+                        try:
+                            self.get_logger().info("Falling back to raw subscription method")
+                            # Some versions support subscribe_raw
+                            if hasattr(self.gz_node, 'subscribe_raw'):
+                                success = self.gz_node.subscribe_raw(self.mmwave_gazebo_topic, callback)
+                            else:
+                                self.get_logger().error("subscribe_raw method not available")
+                                success = False
+                        except Exception as e:
+                            self.get_logger().error(f"Failed to subscribe with raw method: {e}")
+                            success = False
                 
                 if not success:
                     self.get_logger().error(f"Failed to subscribe to {self.mmwave_gazebo_topic}")
@@ -183,48 +269,94 @@ class MmWaveGazeboROS2Bridge(Node):
                 
             # Try to determine data type
             data_type = type(data).__name__
-            self.get_logger().debug(f"Processing data of type {data_type}")
+            self.get_logger().info(f"Processing data of type {data_type}")
             
-            # If it's bytes or a string, treat as raw data
-            if isinstance(data, (bytes, bytearray, str)):
+            # Handle different message types
+            if hasattr(data, 'data') and hasattr(data, 'point_step') and hasattr(data, 'width'):
+                # It's a proper PointCloudPacked message
+                self.get_logger().info(f"Received proper PointCloudPacked with {data.width} points")
+                ros_msg = self.convert_gz_pointcloud_to_ros2(data)
+            elif isinstance(data, (bytes, bytearray, str)):
+                # If it's bytes or a string, treat as raw data
                 data_len = len(data)
-                self.get_logger().debug(f"Processing raw binary data: {data_len} bytes")
-            
-            # Attempt to manually parse the raw Protobuf binary data
-            # We'll extract XYZ points from the binary data without using Protobuf API
-            try:
-                # Create a ROS2 PointCloud2 message directly from raw bytes
-                # This is a simplified parsing approach that works with basic point cloud data
+                self.get_logger().info(f"Processing raw binary data: {data_len} bytes")
                 ros_msg = self.create_pointcloud2_from_raw_data(data)
-                
-                # Only publish if we successfully parsed points
-                if ros_msg.width > 0:
-                    # Publish to ROS2
-                    self.pointcloud_publisher.publish(ros_msg)
-                    self.get_logger().info(f"Published point cloud with {ros_msg.width} points")
-                    
-                    # Verify topic exists after publishing
-                    try:
-                        topic_list = self.get_topic_names_and_types()
-                        topics_str = '\n - '.join([f"{t[0]}: {t[1]}" for t in topic_list])
-                        self.get_logger().info(f"Available ROS2 topics after publishing:\n - {topics_str}")
-                        
-                        if f"{self.mmwave_ros2_topic}" in [t[0] for t in topic_list]:
-                            self.get_logger().info(f"SUCCESS: Topic {self.mmwave_ros2_topic} is available in ROS2!")
-                        else:
-                            self.get_logger().warning(f"Topic {self.mmwave_ros2_topic} not found in ROS2 topic list after publishing")
-                    except Exception as e:
-                        self.get_logger().error(f"Error checking topic list: {str(e)}")
+            else:
+                # Try to access common attributes for debugging
+                self.get_logger().warning(f"Received unknown message format of type {data_type}")
+                # Try to extract any fields/methods that might help us understand the format
+                for attr in dir(data):
+                    if not attr.startswith('_'):
+                        try:
+                            value = getattr(data, attr)
+                            if not callable(value):
+                                self.get_logger().info(f"Attribute {attr}: {value}")
+                        except Exception:
+                            pass
+                # Fall back to raw data conversion
+                if hasattr(data, 'SerializeToString'):
+                    self.get_logger().info("Converting protobuf message to bytes")
+                    bin_data = data.SerializeToString()
+                    ros_msg = self.create_pointcloud2_from_raw_data(bin_data)
                 else:
-                    self.get_logger().warn("Failed to extract points from raw data")
-            except Exception as e:
-                self.get_logger().error(f"Error parsing/converting raw data: {e}")
-                import traceback
-                self.get_logger().error(traceback.format_exc())
+                    self.get_logger().error("Cannot process this message format")
+                    return
+            
+            # Only publish if we successfully parsed points
+            if ros_msg and ros_msg.width > 0:
+                # Publish to ROS2
+                self.pointcloud_publisher.publish(ros_msg)
+                self.get_logger().info(f"Published point cloud with {ros_msg.width} points from Gazebo data")
+                return True
+            else:
+                self.get_logger().warn("Failed to extract points from data")
+                return False
+                
         except Exception as e:
-            self.get_logger().error(f"Unhandled error in on_raw_gazebo_data: {e}")
+            self.get_logger().error(f"Unhandled error in on_gazebo_data: {e}")
             import traceback
             self.get_logger().error(traceback.format_exc())
+            return False
+            
+    def convert_gz_pointcloud_to_ros2(self, gz_pc):
+        """Convert a Gazebo PointCloudPacked message to ROS2 PointCloud2"""
+        from sensor_msgs.msg import PointField
+        
+        # Create a new ROS2 PointCloud2 message
+        ros_msg = sensor_msgs.msg.PointCloud2()
+        
+        # Set header
+        ros_msg.header.stamp = self.get_clock().now().to_msg()
+        ros_msg.header.frame_id = 'world'  # Use world frame to match RViz config
+        
+        # Copy fields from Gazebo message to ROS2 message
+        ros_msg.height = gz_pc.height
+        ros_msg.width = gz_pc.width
+        ros_msg.point_step = gz_pc.point_step
+        ros_msg.row_step = gz_pc.row_step
+        ros_msg.is_dense = gz_pc.is_dense
+        
+        # Set up field definitions for x, y, z
+        ros_msg.fields = []
+        
+        # Copy fields from Gazebo message
+        for gz_field in gz_pc.field:
+            ros_field = PointField()
+            ros_field.name = gz_field.name
+            ros_field.offset = gz_field.offset
+            ros_field.datatype = gz_field.datatype  # May need mapping between Gazebo and ROS2 types
+            ros_field.count = gz_field.count
+            ros_msg.fields.append(ros_field)
+            
+        # Copy the actual point data
+        if isinstance(gz_pc.data, bytes) or isinstance(gz_pc.data, bytearray):
+            ros_msg.data = gz_pc.data
+        else:
+            # Handle case where data might be in a different format
+            self.get_logger().warning(f"Data is not bytes but {type(gz_pc.data)}")
+            ros_msg.data = bytes(gz_pc.data)  # Try to convert to bytes
+            
+        return ros_msg
     
     def create_pointcloud2_from_raw_data(self, raw_data):
         """Create a ROS2 PointCloud2 message from raw Gazebo PointCloudPacked binary data.
@@ -379,13 +511,15 @@ class MmWaveGazeboROS2Bridge(Node):
         """Spin the Gazebo transport node in a separate thread."""
         try:
             self.get_logger().info("Starting Gazebo transport spin thread")
+            # The Python bindings for Gazebo transport don't need explicit spinning
+            # The subscription callback will be called automatically when messages arrive
+            # We just need to keep this thread alive to prevent the Python process from exiting
             while rclpy.ok():
                 try:
-                    # Process Gazebo transport messages (non-blocking)
-                    self.gz_node.run_once(timeout_ms=100)
-                    time.sleep(0.001)  # Small sleep to prevent CPU hogging
+                    # Just sleep periodically - callbacks are handled automatically by the Gazebo transport library
+                    time.sleep(0.1)  # Sleep to prevent CPU hogging while keeping thread responsive
                 except Exception as e:
-                    self.get_logger().error(f"Error processing Gazebo messages: {e}")
+                    self.get_logger().error(f"Error in Gazebo transport thread: {e}")
                     time.sleep(1.0)  # Longer sleep on error
         except Exception as e:
             self.get_logger().error(f"Fatal error in Gazebo spin thread: {e}")
@@ -394,13 +528,127 @@ class MmWaveGazeboROS2Bridge(Node):
             
     def check_data_reception(self):
         """Periodic callback to check if we're receiving data from Gazebo."""
+        # Check if we've received data from Gazebo topic
         if not self.received_data:
-            self.get_logger().warn("No mmWave data received from Gazebo yet. Publishing test data.")
-            # Publish some test data to ensure the topic is active
-            self.publish_test_data()
-        else:
-            self.get_logger().info("mmWave data is being received from Gazebo.")
+            # Debug: check available Gazebo topics again
+            if GAZEBO_AVAILABLE:
+                try:
+                    # Check what topics are being published in Gazebo
+                    topics = self.gz_node.topic_list()
+                    topic_str = "\n   - ".join(topics) if topics else "None"
+                    self.get_logger().info(f"Available Gazebo topics (check_data_reception): \n   - {topic_str}")
+                    
+                    # Check specifically for mmWave topic
+                    if self.mmwave_gazebo_topic in topics:
+                        self.get_logger().info(f"FOUND: {self.mmwave_gazebo_topic} exists but no data received")
+                        
+                        # Try to diagnose why data isn't being received
+                        try:
+                            # Try to get topic info
+                            if hasattr(self.gz_node, 'topic_info'):
+                                topic_info = self.gz_node.topic_info(self.mmwave_gazebo_topic)
+                                self.get_logger().info(f"Topic info: {topic_info}")
+                                
+                            # Try to resubscribe with different approach
+                            self.get_logger().info(f"Attempting direct data echo from topic {self.mmwave_gazebo_topic}...")
+                            import subprocess
+                            echo_cmd = ["gz", "topic", "-e", "-n", "1", self.mmwave_gazebo_topic]
+                            result = subprocess.run(echo_cmd, capture_output=True, text=True, timeout=1)
+                            if result.stdout.strip():
+                                self.get_logger().info(f"Echo result: {result.stdout[:100]}...")
+                            else:
+                                self.get_logger().warning(f"No data from echo: {result.stderr}")
+                        except Exception as e:
+                            self.get_logger().warning(f"Diagnostic error: {e}")
+                        
+                        # Get topic info if possible
+                        try:
+                            if hasattr(self.gz_node, 'topic_info'):
+                                info = self.gz_node.topic_info(self.mmwave_gazebo_topic)
+                                self.get_logger().info(f"Topic info: {info}")
+                        except Exception as e:
+                            self.get_logger().warning(f"Couldn't get topic info: {e}")
+                        
+                        # Attempt to resubscribe with explicit Protobuf message class
+                        try:
+                            def callback(raw_msg):
+                                try:
+                                    self.get_logger().info(f"Data received on {self.mmwave_gazebo_topic} (resubscribe)")
+                                    self.on_gazebo_data(raw_msg)
+                                    self.received_data = True
+                                except Exception as e:
+                                    self.get_logger().error(f"Error in resubscribe callback: {e}")
+                                    import traceback
+                                    self.get_logger().error(f"Callback traceback: {traceback.format_exc()}")
+                            
+                            # Try different subscription approaches in sequence
+                            self.get_logger().info("Resubscribing to topic with empty message type")
+                            success = self.gz_node.subscribe(self.mmwave_gazebo_topic, callback, '')
+                            
+                            if not success:
+                                self.get_logger().warning("Resubscription with empty type failed, trying with explicit module")
+                                try:
+                                    from gz.msgs11 import pointcloud_packed_pb2
+                                    pc_class = pointcloud_packed_pb2.PointCloudPacked
+                                    success = self.gz_node.subscribe(self.mmwave_gazebo_topic, callback, pc_class)
+                                except Exception as e:
+                                    self.get_logger().error(f"Failed with explicit message class: {e}")
+                                    success = False
+                        except Exception as e:
+                            self.get_logger().error(f"Error during resubscription: {e}")
+                            success = False
+                    else:
+                        # Check for similar topics if exact name not found
+                        mmwave_topics = [t for t in topics if 'mmwave' in t.lower()]
+                        if mmwave_topics:
+                            self.get_logger().warning(f"Exact topic not found, but found mmWave-related topics: {mmwave_topics}")
+                            
+                        # Look for any pointcloud topics as alternatives
+                        pointcloud_topics = [t for t in topics if 'point' in t.lower() or 'cloud' in t.lower()]
+                        if pointcloud_topics:
+                            self.get_logger().warning(f"Found these potential point cloud topics: {pointcloud_topics}")
+                        
+                        self.get_logger().warning(f"{self.mmwave_gazebo_topic} not found in available topics")
+                except Exception as e:
+                    self.get_logger().error(f"Error checking Gazebo topics: {e}")
+                    import traceback
+                    self.get_logger().error(f"Topic check traceback: {traceback.format_exc()}")
             
+            # Check if system is running the necessary Gazebo processes
+            try:
+                import subprocess
+                result = subprocess.run(['pgrep', '-f', 'gz sim'], capture_output=True, text=True)
+                if result.stdout.strip():
+                    self.get_logger().info(f"Gazebo processes running: {result.stdout.strip()}")
+                else:
+                    self.get_logger().warning("No Gazebo processes detected running")
+            except Exception as e:
+                self.get_logger().error(f"Failed to check for Gazebo processes: {e}")
+            
+            # Check which Gazebo processes are running
+            try:
+                import subprocess
+                result = subprocess.run(['pgrep', '-fa', 'gz'], capture_output=True, text=True)
+                if result.stdout.strip():
+                    self.get_logger().info(f"Gazebo processes: {result.stdout.strip()[:200]}...")
+                else:
+                    self.get_logger().warning("No Gazebo processes detected")
+            except Exception as e:
+                self.get_logger().warning(f"Process check error: {e}")
+                
+            self.get_logger().warn("No mmWave data received from Gazebo yet. Publishing test data.")
+            # Publish test data as a fallback
+            try:
+                self.publish_test_data()
+                self.get_logger().info("Published test pointcloud data successfully")
+            except Exception as e:
+                self.get_logger().error(f"Error publishing test data: {e}")
+                import traceback
+                self.get_logger().error(f"Test data error: {traceback.format_exc()}")
+                
+        # Reset flag to track continuous reception
+        self.received_data = False
+        
     def publish_test_data(self):
         """Publish test point cloud data when no Gazebo data is available."""
         try:
