@@ -27,17 +27,12 @@ echo "Plugin path: $GZ_SIM_SYSTEM_PLUGIN_PATH"
 echo "Checking if plugin file exists:"
 ls -la "$SCRIPT_DIR/sim/gazebo/plugins/build/libMmWaveSensorPlugin.so"
 
-# Ensure the world file exists and copy it if needed
+# Ensure the world file exists
 WORLD_FILE="$SCRIPT_DIR/sim/gazebo/worlds/mmwave_test.sdf"
 if [ ! -f "$WORLD_FILE" ]; then
     echo "ERROR: World file not found at $WORLD_FILE"
     exit 1
 fi
-
-# Create a ROS2 compatible world file by copying mmwave_test.sdf to olympus.world
-# This ensures the ROS2 launch file can find it
-cp "$WORLD_FILE" "$SCRIPT_DIR/sim/gazebo/worlds/olympus.world"
-echo "Copied mmWave test world to olympus.world for ROS2 compatibility"
 
 # Check if ROS2 is sourced
 if [ -z "$ROS_DISTRO" ]; then

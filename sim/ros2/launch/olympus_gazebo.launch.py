@@ -17,78 +17,62 @@ from launch.conditions import IfCondition
 
 def generate_launch_description():
     """Generate launch description for Olympus Gazebo simulation."""
-    
+
     # Get the path to the Olympus simulation directory
     olympus_sim_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    # Get the path to the Olympus simulation directory
-    olympus_sim_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    
+
     # Paths for models and world files
     gazebo_models_path = os.path.join(olympus_sim_dir, 'sim', 'gazebo', 'models')
     gazebo_worlds_path = os.path.join(olympus_sim_dir, 'sim', 'gazebo', 'worlds')
-    
-    # Set environment variable for Gazebo models (include both standard and custom models)
-    # Also try to include standard Gazebo model paths
-    standard_paths = ["/usr/share/gz/gz-sim8/models", "/usr/share/gz/gz-sim8/worlds"]
-    
-    # Make sure our custom models path is first in the list
-    model_path_value = gazebo_models_path
-    
-    # Add standard paths if they exist
-    for path in standard_paths:
-        if os.path.exists(path):
-            model_path_value += ":{}".format(path)
-    
-    # Set the environment variable for models
-    os.environ["GZ_SIM_RESOURCE_PATH"] = model_path_value
-    
-    # Plugin paths for custom plugins
+
+    # Construct Gazebo paths, prepending custom paths to existing ones
     gazebo_plugin_path = os.path.join(olympus_sim_dir, 'sim', 'gazebo', 'plugins', 'build')
-    standard_plugin_paths = ["/usr/lib/x86_64-linux-gnu/gz-sim-8/plugins", "/gz-sim-8/plugins"]
     
-    # Create the plugin path value
-    plugin_path_value = gazebo_plugin_path
-    
-    # Add standard plugin paths if they exist
-    for path in standard_plugin_paths:
-        if os.path.exists(path):
-            plugin_path_value += ":{}".format(path)
-    
-    # Set the environment variable for plugins
-    os.environ["GZ_SIM_SYSTEM_PLUGIN_PATH"] = plugin_path_value
-    print(f"[OlympusLaunch] Setting GZ_SIM_SYSTEM_PLUGIN_PATH to: {plugin_path_value}")
-    
-    # Default world file
-    world_file = os.path.join(gazebo_worlds_path, 'olympus.world')
-    print(f"[OlympusLaunch] Checking for world file at: {world_file}") # Added for debugging
-    if not os.path.exists(world_file):
-        print(f"[OlympusLaunch] World file NOT FOUND at: {world_file}. Gazebo will use an empty world.") # Added for debugging
-        # If the world file doesn't exist, use an empty world
-        world_file = ''
-    else:
-        print(f"[OlympusLaunch] World file FOUND at: {world_file}") # Added for debugging
-    
-    
-    # Launch arguments
+    # Get existing environment variables
+    existing_resource_path = os.environ.get('GZ_SIM_RESOURCE_PATH', '')
+    existing_plugin_path = os.environ.get('GZ_SIM_SYSTEM_PLUGIN_PATH', '')
+
+    # Prepend our custom paths
+    new_resource_path = f"{gazebo_models_path}:{existing_resource_path}"
+    new_plugin_path = f"{gazebo_plugin_path}:{existing_plugin_path}"
+
+    print(f"[OlympusLaunch] GZ_SIM_RESOURCE_PATH: {new_resource_path}")
+    print(f"[OlympusLaunch] GZ_SIM_SYSTEM_PLUGIN_PATH: {new_plugin_path}")
+
+    # --- Launch Arguments ---
+    world_arg = DeclareLaunchArgument(
+        'world',
+        default_value='mmwave_test.sdf',
+        description='Name of the world file in sim/gazebo/worlds to launch.'
+    )
     use_sensor_visualizer = DeclareLaunchArgument(
         'use_sensor_visualizer',
         default_value='false',
         description='Whether to launch the sensor visualizer'
     )
-    
     use_mmwave_bridge = DeclareLaunchArgument(
         'use_mmwave_bridge',
         default_value='true',
         description='Whether to launch the mmWave sensor ROS2 bridge'
     )
-    
-    # Launch Gazebo Harmonic with our world
+
+    # Construct the full path to the world file
+    world_file_path = PathJoinSubstitution([
+        gazebo_worlds_path,
+        LaunchConfiguration('world')
+    ])
+
+    # --- Gazebo Process ---
     gazebo = ExecuteProcess(
-        cmd=['gz', 'sim', '-r', world_file],
-        output='screen'
+        cmd=['gz', 'sim', '-r', world_file_path],
+        output='screen',
+        additional_env={
+            'GZ_SIM_RESOURCE_PATH': new_resource_path,
+            'GZ_SIM_SYSTEM_PLUGIN_PATH': new_plugin_path
+        }
     )
-    
-    # Bridge between ROS 2 and Gazebo
+
+    # --- ROS2 Nodes ---
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -99,47 +83,48 @@ def generate_launch_description():
             'qos_overrides./tf_static.publisher.durability': 'transient_local',
         }],
         arguments=[
-            # Clock (Gazebo -> ROS2)
-            '/clock@rosgraph_msgs/msg/Clock]gz.msgs.Clock',
-            # TF (Gazebo -> ROS2)
-            '/tf@tf2_msgs/msg/TFMessage]gz.msgs.Pose_V',
-            # TF Static (Gazebo -> ROS2)
-            '/tf_static@tf2_msgs/msg/TFMessage]gz.msgs.Pose_V'
+            # Bridge Gazebo clock to ROS clock
+            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
+            # Bridge Gazebo poses to ROS TF
+            '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'
         ]
     )
-    
-    # Launch ROS2 nodes for Gazebo integration
-    sensor_visualizer = Node(
-        package='olympus_gazebo',
-        executable='sensor_visualizer',
-        name='sensor_visualizer',
-        output='screen',
-        parameters=[{
-            'update_rate': 10.0,
-        }],
-        condition=IfCondition(LaunchConfiguration('use_sensor_visualizer'))
-    )
-    
-    # Launch mmWave sensor ROS2 bridge
+
     mmwave_bridge_script = os.path.join(olympus_sim_dir, 'sim', 'ros2', 'mmwave_ros2_bridge.py')
     mmwave_bridge = Node(
         executable=mmwave_bridge_script,
         name='mmwave_ros2_bridge',
         output='screen',
-        parameters=[{
-            'mmwave_gazebo_topic': '/mmwave/points',
-            'mmwave_ros2_topic': '/mmwave/pointcloud',
-            'frame_id': 'mmwave_sensor'
-        }],
         condition=IfCondition(LaunchConfiguration('use_mmwave_bridge'))
     )
-    
-    # Return the launch description
+
+    # Static transform publisher for the mmWave sensor
+    static_tf_publisher = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_transform_publisher_mmwave',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'world', 'mmwave_sensor_link']
+    )
+
+    # --- Launch Description ---
     return LaunchDescription([
+        # Launch Arguments
+        world_arg,
+        use_sensor_visualizer,
+        use_mmwave_bridge,
+
+        # Processes and Nodes
+        gazebo,
+        bridge,
+        mmwave_bridge,
+        static_tf_publisher,
+    ])
+    return LaunchDescription([
+        world_arg,
         use_sensor_visualizer,
         use_mmwave_bridge,
         gazebo,
         bridge,
-        sensor_visualizer,
         mmwave_bridge
     ])
