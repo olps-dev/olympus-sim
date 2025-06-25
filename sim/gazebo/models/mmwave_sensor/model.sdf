@@ -61,8 +61,8 @@
           
           <!-- Resolution parameters -->
           <range_resolution>0.1</range_resolution>
-          <horizontal_resolution>0.4</horizontal_resolution>
-          <vertical_resolution>0.8</vertical_resolution>
+          <horizontal_resolution>0.2</horizontal_resolution>
+          <vertical_resolution>0.4</vertical_resolution>
           
           <!-- Noise parameters -->
           <range_noise_mean>0.0</range_noise_mean>
@@ -79,6 +79,7 @@
           
           <!-- Visualization -->
           <visualize>true</visualize>
+          <use_point_clouds_only>false</use_point_clouds_only>
         </plugin>
       </sensor>
     </link>

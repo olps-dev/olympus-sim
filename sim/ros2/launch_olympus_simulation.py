@@ -23,7 +23,7 @@ def generate_launch_description():
     # Determine the path to the world file
     # This assumes the world file is in the sim/gazebo/worlds directory
     olympus_sim_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    world_file = os.path.join(olympus_sim_dir, 'sim', 'gazebo', 'worlds', 'olympus.world')
+    world_file = os.path.join(olympus_sim_dir, 'sim', 'gazebo', 'worlds', 'olympus_fixed.world')
     
     # Launch arguments
     declare_use_sim_time = DeclareLaunchArgument(
@@ -44,7 +44,17 @@ def generate_launch_description():
         description='MQTT broker port'
     )
     
-    # Launch Gazebo
+    # Set up environment variables for Gazebo
+    plugin_path = os.path.join(olympus_sim_dir, 'sim', 'gazebo', 'plugins', 'build')
+    resource_path = os.path.join(olympus_sim_dir, 'sim', 'gazebo', 'models')
+    
+    # Create environment variable dict with existing env plus our additions
+    env = dict(os.environ)
+    env['GZ_SIM_SYSTEM_PLUGIN_PATH'] = f"{plugin_path}:{env.get('GZ_SIM_SYSTEM_PLUGIN_PATH', '')}"
+    env['GZ_SIM_RESOURCE_PATH'] = f"{resource_path}:/usr/share/gz/gz-sim8/models:{env.get('GZ_SIM_RESOURCE_PATH', '')}"
+    env['LIBGL_ALWAYS_SOFTWARE'] = '1'  # Force software rendering for WSL
+    
+    # Launch Gazebo with environment variables
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             os.path.join(gazebo_ros_pkg_prefix, 'launch', 'gazebo.launch.py')
@@ -52,7 +62,8 @@ def generate_launch_description():
         launch_arguments={
             'world': world_file,
             'verbose': 'true'
-        }.items()
+        }.items(),
+        environment=env
     )
     
     # Launch MQTT-ROS2 Bridge

@@ -120,11 +120,3 @@ def generate_launch_description():
         mmwave_bridge,
         static_tf_publisher,
     ])
-    return LaunchDescription([
-        world_arg,
-        use_sensor_visualizer,
-        use_mmwave_bridge,
-        gazebo,
-        bridge,
-        mmwave_bridge
-    ])

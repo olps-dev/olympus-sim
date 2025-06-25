@@ -187,101 +187,317 @@ OlympusMQTTPlugin/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/OlympusMQTTPlugin.dir/build.make CMakeFiles/OlympusMQTTPlugin.dir/build
 .PHONY : OlympusMQTTPlugin/fast
 
-MmWavePointCloudLoader.o: MmWavePointCloudLoader.cc.o
-.PHONY : MmWavePointCloudLoader.o
+core/MmWaveSensorPlugin.o: core/MmWaveSensorPlugin.cc.o
+.PHONY : core/MmWaveSensorPlugin.o
 
 # target to build an object file
-MmWavePointCloudLoader.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWavePointCloudLoader.cc.o
-.PHONY : MmWavePointCloudLoader.cc.o
+core/MmWaveSensorPlugin.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorPlugin.cc.o
+.PHONY : core/MmWaveSensorPlugin.cc.o
 
-MmWavePointCloudLoader.i: MmWavePointCloudLoader.cc.i
-.PHONY : MmWavePointCloudLoader.i
+core/MmWaveSensorPlugin.i: core/MmWaveSensorPlugin.cc.i
+.PHONY : core/MmWaveSensorPlugin.i
 
 # target to preprocess a source file
-MmWavePointCloudLoader.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWavePointCloudLoader.cc.i
-.PHONY : MmWavePointCloudLoader.cc.i
+core/MmWaveSensorPlugin.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorPlugin.cc.i
+.PHONY : core/MmWaveSensorPlugin.cc.i
 
-MmWavePointCloudLoader.s: MmWavePointCloudLoader.cc.s
-.PHONY : MmWavePointCloudLoader.s
+core/MmWaveSensorPlugin.s: core/MmWaveSensorPlugin.cc.s
+.PHONY : core/MmWaveSensorPlugin.s
 
 # target to generate assembly for a file
-MmWavePointCloudLoader.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWavePointCloudLoader.cc.s
-.PHONY : MmWavePointCloudLoader.cc.s
+core/MmWaveSensorPlugin.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorPlugin.cc.s
+.PHONY : core/MmWaveSensorPlugin.cc.s
 
-MmWaveSensorPlugin.o: MmWaveSensorPlugin.cc.o
-.PHONY : MmWaveSensorPlugin.o
+core/MmWaveSensorWslCompat.o: core/MmWaveSensorWslCompat.cc.o
+.PHONY : core/MmWaveSensorWslCompat.o
 
 # target to build an object file
-MmWaveSensorPlugin.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorPlugin.cc.o
-.PHONY : MmWaveSensorPlugin.cc.o
+core/MmWaveSensorWslCompat.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorWslCompat.cc.o
+.PHONY : core/MmWaveSensorWslCompat.cc.o
 
-MmWaveSensorPlugin.i: MmWaveSensorPlugin.cc.i
-.PHONY : MmWaveSensorPlugin.i
+core/MmWaveSensorWslCompat.i: core/MmWaveSensorWslCompat.cc.i
+.PHONY : core/MmWaveSensorWslCompat.i
 
 # target to preprocess a source file
-MmWaveSensorPlugin.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorPlugin.cc.i
-.PHONY : MmWaveSensorPlugin.cc.i
+core/MmWaveSensorWslCompat.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorWslCompat.cc.i
+.PHONY : core/MmWaveSensorWslCompat.cc.i
 
-MmWaveSensorPlugin.s: MmWaveSensorPlugin.cc.s
-.PHONY : MmWaveSensorPlugin.s
+core/MmWaveSensorWslCompat.s: core/MmWaveSensorWslCompat.cc.s
+.PHONY : core/MmWaveSensorWslCompat.s
 
 # target to generate assembly for a file
-MmWaveSensorPlugin.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorPlugin.cc.s
-.PHONY : MmWaveSensorPlugin.cc.s
+core/MmWaveSensorWslCompat.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorWslCompat.cc.s
+.PHONY : core/MmWaveSensorWslCompat.cc.s
 
-MmWaveSensorWslCompat.o: MmWaveSensorWslCompat.cc.o
-.PHONY : MmWaveSensorWslCompat.o
+messaging/MmWaveMessageHandler.o: messaging/MmWaveMessageHandler.cc.o
+.PHONY : messaging/MmWaveMessageHandler.o
 
 # target to build an object file
-MmWaveSensorWslCompat.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorWslCompat.cc.o
-.PHONY : MmWaveSensorWslCompat.cc.o
+messaging/MmWaveMessageHandler.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/messaging/MmWaveMessageHandler.cc.o
+.PHONY : messaging/MmWaveMessageHandler.cc.o
 
-MmWaveSensorWslCompat.i: MmWaveSensorWslCompat.cc.i
-.PHONY : MmWaveSensorWslCompat.i
+messaging/MmWaveMessageHandler.i: messaging/MmWaveMessageHandler.cc.i
+.PHONY : messaging/MmWaveMessageHandler.i
 
 # target to preprocess a source file
-MmWaveSensorWslCompat.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorWslCompat.cc.i
-.PHONY : MmWaveSensorWslCompat.cc.i
+messaging/MmWaveMessageHandler.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/messaging/MmWaveMessageHandler.cc.i
+.PHONY : messaging/MmWaveMessageHandler.cc.i
 
-MmWaveSensorWslCompat.s: MmWaveSensorWslCompat.cc.s
-.PHONY : MmWaveSensorWslCompat.s
+messaging/MmWaveMessageHandler.s: messaging/MmWaveMessageHandler.cc.s
+.PHONY : messaging/MmWaveMessageHandler.s
 
 # target to generate assembly for a file
-MmWaveSensorWslCompat.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/MmWaveSensorWslCompat.cc.s
-.PHONY : MmWaveSensorWslCompat.cc.s
+messaging/MmWaveMessageHandler.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/messaging/MmWaveMessageHandler.cc.s
+.PHONY : messaging/MmWaveMessageHandler.cc.s
 
-OlympusMQTTPlugin.o: OlympusMQTTPlugin.cc.o
-.PHONY : OlympusMQTTPlugin.o
+messaging/OlympusMQTTPlugin.o: messaging/OlympusMQTTPlugin.cc.o
+.PHONY : messaging/OlympusMQTTPlugin.o
 
 # target to build an object file
-OlympusMQTTPlugin.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/OlympusMQTTPlugin.dir/build.make CMakeFiles/OlympusMQTTPlugin.dir/OlympusMQTTPlugin.cc.o
-.PHONY : OlympusMQTTPlugin.cc.o
+messaging/OlympusMQTTPlugin.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/OlympusMQTTPlugin.dir/build.make CMakeFiles/OlympusMQTTPlugin.dir/messaging/OlympusMQTTPlugin.cc.o
+.PHONY : messaging/OlympusMQTTPlugin.cc.o
 
-OlympusMQTTPlugin.i: OlympusMQTTPlugin.cc.i
-.PHONY : OlympusMQTTPlugin.i
+messaging/OlympusMQTTPlugin.i: messaging/OlympusMQTTPlugin.cc.i
+.PHONY : messaging/OlympusMQTTPlugin.i
 
 # target to preprocess a source file
-OlympusMQTTPlugin.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/OlympusMQTTPlugin.dir/build.make CMakeFiles/OlympusMQTTPlugin.dir/OlympusMQTTPlugin.cc.i
-.PHONY : OlympusMQTTPlugin.cc.i
+messaging/OlympusMQTTPlugin.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/OlympusMQTTPlugin.dir/build.make CMakeFiles/OlympusMQTTPlugin.dir/messaging/OlympusMQTTPlugin.cc.i
+.PHONY : messaging/OlympusMQTTPlugin.cc.i
 
-OlympusMQTTPlugin.s: OlympusMQTTPlugin.cc.s
-.PHONY : OlympusMQTTPlugin.s
+messaging/OlympusMQTTPlugin.s: messaging/OlympusMQTTPlugin.cc.s
+.PHONY : messaging/OlympusMQTTPlugin.s
 
 # target to generate assembly for a file
-OlympusMQTTPlugin.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/OlympusMQTTPlugin.dir/build.make CMakeFiles/OlympusMQTTPlugin.dir/OlympusMQTTPlugin.cc.s
-.PHONY : OlympusMQTTPlugin.cc.s
+messaging/OlympusMQTTPlugin.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/OlympusMQTTPlugin.dir/build.make CMakeFiles/OlympusMQTTPlugin.dir/messaging/OlympusMQTTPlugin.cc.s
+.PHONY : messaging/OlympusMQTTPlugin.cc.s
+
+pointcloud/MmWaveBedroomScenarioGenerator.o: pointcloud/MmWaveBedroomScenarioGenerator.cc.o
+.PHONY : pointcloud/MmWaveBedroomScenarioGenerator.o
+
+# target to build an object file
+pointcloud/MmWaveBedroomScenarioGenerator.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.o
+.PHONY : pointcloud/MmWaveBedroomScenarioGenerator.cc.o
+
+pointcloud/MmWaveBedroomScenarioGenerator.i: pointcloud/MmWaveBedroomScenarioGenerator.cc.i
+.PHONY : pointcloud/MmWaveBedroomScenarioGenerator.i
+
+# target to preprocess a source file
+pointcloud/MmWaveBedroomScenarioGenerator.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.i
+.PHONY : pointcloud/MmWaveBedroomScenarioGenerator.cc.i
+
+pointcloud/MmWaveBedroomScenarioGenerator.s: pointcloud/MmWaveBedroomScenarioGenerator.cc.s
+.PHONY : pointcloud/MmWaveBedroomScenarioGenerator.s
+
+# target to generate assembly for a file
+pointcloud/MmWaveBedroomScenarioGenerator.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.s
+.PHONY : pointcloud/MmWaveBedroomScenarioGenerator.cc.s
+
+pointcloud/MmWaveDefaultScenarioGenerator.o: pointcloud/MmWaveDefaultScenarioGenerator.cc.o
+.PHONY : pointcloud/MmWaveDefaultScenarioGenerator.o
+
+# target to build an object file
+pointcloud/MmWaveDefaultScenarioGenerator.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.o
+.PHONY : pointcloud/MmWaveDefaultScenarioGenerator.cc.o
+
+pointcloud/MmWaveDefaultScenarioGenerator.i: pointcloud/MmWaveDefaultScenarioGenerator.cc.i
+.PHONY : pointcloud/MmWaveDefaultScenarioGenerator.i
+
+# target to preprocess a source file
+pointcloud/MmWaveDefaultScenarioGenerator.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.i
+.PHONY : pointcloud/MmWaveDefaultScenarioGenerator.cc.i
+
+pointcloud/MmWaveDefaultScenarioGenerator.s: pointcloud/MmWaveDefaultScenarioGenerator.cc.s
+.PHONY : pointcloud/MmWaveDefaultScenarioGenerator.s
+
+# target to generate assembly for a file
+pointcloud/MmWaveDefaultScenarioGenerator.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.s
+.PHONY : pointcloud/MmWaveDefaultScenarioGenerator.cc.s
+
+pointcloud/MmWavePointCloudGenerator.o: pointcloud/MmWavePointCloudGenerator.cc.o
+.PHONY : pointcloud/MmWavePointCloudGenerator.o
+
+# target to build an object file
+pointcloud/MmWavePointCloudGenerator.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.o
+.PHONY : pointcloud/MmWavePointCloudGenerator.cc.o
+
+pointcloud/MmWavePointCloudGenerator.i: pointcloud/MmWavePointCloudGenerator.cc.i
+.PHONY : pointcloud/MmWavePointCloudGenerator.i
+
+# target to preprocess a source file
+pointcloud/MmWavePointCloudGenerator.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.i
+.PHONY : pointcloud/MmWavePointCloudGenerator.cc.i
+
+pointcloud/MmWavePointCloudGenerator.s: pointcloud/MmWavePointCloudGenerator.cc.s
+.PHONY : pointcloud/MmWavePointCloudGenerator.s
+
+# target to generate assembly for a file
+pointcloud/MmWavePointCloudGenerator.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.s
+.PHONY : pointcloud/MmWavePointCloudGenerator.cc.s
+
+pointcloud/MmWavePointCloudLoader.o: pointcloud/MmWavePointCloudLoader.cc.o
+.PHONY : pointcloud/MmWavePointCloudLoader.o
+
+# target to build an object file
+pointcloud/MmWavePointCloudLoader.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudLoader.cc.o
+.PHONY : pointcloud/MmWavePointCloudLoader.cc.o
+
+pointcloud/MmWavePointCloudLoader.i: pointcloud/MmWavePointCloudLoader.cc.i
+.PHONY : pointcloud/MmWavePointCloudLoader.i
+
+# target to preprocess a source file
+pointcloud/MmWavePointCloudLoader.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudLoader.cc.i
+.PHONY : pointcloud/MmWavePointCloudLoader.cc.i
+
+pointcloud/MmWavePointCloudLoader.s: pointcloud/MmWavePointCloudLoader.cc.s
+.PHONY : pointcloud/MmWavePointCloudLoader.s
+
+# target to generate assembly for a file
+pointcloud/MmWavePointCloudLoader.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudLoader.cc.s
+.PHONY : pointcloud/MmWavePointCloudLoader.cc.s
+
+pointcloud/MmWavePointCloudScenarioGenerators.o: pointcloud/MmWavePointCloudScenarioGenerators.cc.o
+.PHONY : pointcloud/MmWavePointCloudScenarioGenerators.o
+
+# target to build an object file
+pointcloud/MmWavePointCloudScenarioGenerators.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.o
+.PHONY : pointcloud/MmWavePointCloudScenarioGenerators.cc.o
+
+pointcloud/MmWavePointCloudScenarioGenerators.i: pointcloud/MmWavePointCloudScenarioGenerators.cc.i
+.PHONY : pointcloud/MmWavePointCloudScenarioGenerators.i
+
+# target to preprocess a source file
+pointcloud/MmWavePointCloudScenarioGenerators.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.i
+.PHONY : pointcloud/MmWavePointCloudScenarioGenerators.cc.i
+
+pointcloud/MmWavePointCloudScenarioGenerators.s: pointcloud/MmWavePointCloudScenarioGenerators.cc.s
+.PHONY : pointcloud/MmWavePointCloudScenarioGenerators.s
+
+# target to generate assembly for a file
+pointcloud/MmWavePointCloudScenarioGenerators.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.s
+.PHONY : pointcloud/MmWavePointCloudScenarioGenerators.cc.s
+
+pointcloud/MmWaveRoomScenarioGenerator.o: pointcloud/MmWaveRoomScenarioGenerator.cc.o
+.PHONY : pointcloud/MmWaveRoomScenarioGenerator.o
+
+# target to build an object file
+pointcloud/MmWaveRoomScenarioGenerator.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.o
+.PHONY : pointcloud/MmWaveRoomScenarioGenerator.cc.o
+
+pointcloud/MmWaveRoomScenarioGenerator.i: pointcloud/MmWaveRoomScenarioGenerator.cc.i
+.PHONY : pointcloud/MmWaveRoomScenarioGenerator.i
+
+# target to preprocess a source file
+pointcloud/MmWaveRoomScenarioGenerator.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.i
+.PHONY : pointcloud/MmWaveRoomScenarioGenerator.cc.i
+
+pointcloud/MmWaveRoomScenarioGenerator.s: pointcloud/MmWaveRoomScenarioGenerator.cc.s
+.PHONY : pointcloud/MmWaveRoomScenarioGenerator.s
+
+# target to generate assembly for a file
+pointcloud/MmWaveRoomScenarioGenerator.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.s
+.PHONY : pointcloud/MmWaveRoomScenarioGenerator.cc.s
+
+raycast/MmWaveSensorRay.o: raycast/MmWaveSensorRay.cc.o
+.PHONY : raycast/MmWaveSensorRay.o
+
+# target to build an object file
+raycast/MmWaveSensorRay.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/raycast/MmWaveSensorRay.cc.o
+.PHONY : raycast/MmWaveSensorRay.cc.o
+
+raycast/MmWaveSensorRay.i: raycast/MmWaveSensorRay.cc.i
+.PHONY : raycast/MmWaveSensorRay.i
+
+# target to preprocess a source file
+raycast/MmWaveSensorRay.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/raycast/MmWaveSensorRay.cc.i
+.PHONY : raycast/MmWaveSensorRay.cc.i
+
+raycast/MmWaveSensorRay.s: raycast/MmWaveSensorRay.cc.s
+.PHONY : raycast/MmWaveSensorRay.s
+
+# target to generate assembly for a file
+raycast/MmWaveSensorRay.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/raycast/MmWaveSensorRay.cc.s
+.PHONY : raycast/MmWaveSensorRay.cc.s
+
+raycast/MmWaveSensorScene.o: raycast/MmWaveSensorScene.cc.o
+.PHONY : raycast/MmWaveSensorScene.o
+
+# target to build an object file
+raycast/MmWaveSensorScene.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/raycast/MmWaveSensorScene.cc.o
+.PHONY : raycast/MmWaveSensorScene.cc.o
+
+raycast/MmWaveSensorScene.i: raycast/MmWaveSensorScene.cc.i
+.PHONY : raycast/MmWaveSensorScene.i
+
+# target to preprocess a source file
+raycast/MmWaveSensorScene.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/raycast/MmWaveSensorScene.cc.i
+.PHONY : raycast/MmWaveSensorScene.cc.i
+
+raycast/MmWaveSensorScene.s: raycast/MmWaveSensorScene.cc.s
+.PHONY : raycast/MmWaveSensorScene.s
+
+# target to generate assembly for a file
+raycast/MmWaveSensorScene.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/raycast/MmWaveSensorScene.cc.s
+.PHONY : raycast/MmWaveSensorScene.cc.s
+
+sensor_config/MmWaveSensorConfig.o: sensor_config/MmWaveSensorConfig.cc.o
+.PHONY : sensor_config/MmWaveSensorConfig.o
+
+# target to build an object file
+sensor_config/MmWaveSensorConfig.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/sensor_config/MmWaveSensorConfig.cc.o
+.PHONY : sensor_config/MmWaveSensorConfig.cc.o
+
+sensor_config/MmWaveSensorConfig.i: sensor_config/MmWaveSensorConfig.cc.i
+.PHONY : sensor_config/MmWaveSensorConfig.i
+
+# target to preprocess a source file
+sensor_config/MmWaveSensorConfig.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/sensor_config/MmWaveSensorConfig.cc.i
+.PHONY : sensor_config/MmWaveSensorConfig.cc.i
+
+sensor_config/MmWaveSensorConfig.s: sensor_config/MmWaveSensorConfig.cc.s
+.PHONY : sensor_config/MmWaveSensorConfig.s
+
+# target to generate assembly for a file
+sensor_config/MmWaveSensorConfig.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/sensor_config/MmWaveSensorConfig.cc.s
+.PHONY : sensor_config/MmWaveSensorConfig.cc.s
 
 # Help Target
 help:
@@ -297,18 +513,45 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... MmWaveSensorPlugin"
 	@echo "... OlympusMQTTPlugin"
-	@echo "... MmWavePointCloudLoader.o"
-	@echo "... MmWavePointCloudLoader.i"
-	@echo "... MmWavePointCloudLoader.s"
-	@echo "... MmWaveSensorPlugin.o"
-	@echo "... MmWaveSensorPlugin.i"
-	@echo "... MmWaveSensorPlugin.s"
-	@echo "... MmWaveSensorWslCompat.o"
-	@echo "... MmWaveSensorWslCompat.i"
-	@echo "... MmWaveSensorWslCompat.s"
-	@echo "... OlympusMQTTPlugin.o"
-	@echo "... OlympusMQTTPlugin.i"
-	@echo "... OlympusMQTTPlugin.s"
+	@echo "... core/MmWaveSensorPlugin.o"
+	@echo "... core/MmWaveSensorPlugin.i"
+	@echo "... core/MmWaveSensorPlugin.s"
+	@echo "... core/MmWaveSensorWslCompat.o"
+	@echo "... core/MmWaveSensorWslCompat.i"
+	@echo "... core/MmWaveSensorWslCompat.s"
+	@echo "... messaging/MmWaveMessageHandler.o"
+	@echo "... messaging/MmWaveMessageHandler.i"
+	@echo "... messaging/MmWaveMessageHandler.s"
+	@echo "... messaging/OlympusMQTTPlugin.o"
+	@echo "... messaging/OlympusMQTTPlugin.i"
+	@echo "... messaging/OlympusMQTTPlugin.s"
+	@echo "... pointcloud/MmWaveBedroomScenarioGenerator.o"
+	@echo "... pointcloud/MmWaveBedroomScenarioGenerator.i"
+	@echo "... pointcloud/MmWaveBedroomScenarioGenerator.s"
+	@echo "... pointcloud/MmWaveDefaultScenarioGenerator.o"
+	@echo "... pointcloud/MmWaveDefaultScenarioGenerator.i"
+	@echo "... pointcloud/MmWaveDefaultScenarioGenerator.s"
+	@echo "... pointcloud/MmWavePointCloudGenerator.o"
+	@echo "... pointcloud/MmWavePointCloudGenerator.i"
+	@echo "... pointcloud/MmWavePointCloudGenerator.s"
+	@echo "... pointcloud/MmWavePointCloudLoader.o"
+	@echo "... pointcloud/MmWavePointCloudLoader.i"
+	@echo "... pointcloud/MmWavePointCloudLoader.s"
+	@echo "... pointcloud/MmWavePointCloudScenarioGenerators.o"
+	@echo "... pointcloud/MmWavePointCloudScenarioGenerators.i"
+	@echo "... pointcloud/MmWavePointCloudScenarioGenerators.s"
+	@echo "... pointcloud/MmWaveRoomScenarioGenerator.o"
+	@echo "... pointcloud/MmWaveRoomScenarioGenerator.i"
+	@echo "... pointcloud/MmWaveRoomScenarioGenerator.s"
+	@echo "... raycast/MmWaveSensorRay.o"
+	@echo "... raycast/MmWaveSensorRay.i"
+	@echo "... raycast/MmWaveSensorRay.s"
+	@echo "... raycast/MmWaveSensorScene.o"
+	@echo "... raycast/MmWaveSensorScene.i"
+	@echo "... raycast/MmWaveSensorScene.s"
+	@echo "... sensor_config/MmWaveSensorConfig.o"
+	@echo "... sensor_config/MmWaveSensorConfig.i"
+	@echo "... sensor_config/MmWaveSensorConfig.s"
 .PHONY : help
 
 

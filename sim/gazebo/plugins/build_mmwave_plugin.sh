@@ -67,8 +67,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Remove previous build artifacts 
-rm -rf build
+# Clean previous build artifacts to ensure a fresh build
+echo "Cleaning previous build artifacts..."
+rm -rf build install
+
+# Create build directory
 mkdir build
 cd build
 
@@ -78,9 +81,10 @@ echo "Building MmWaveSensorPlugin..."
 # Set up CMake flags if needed
 CMAKE_FLAGS=""
 
-# Run CMake and make
+# Run CMake and make with verbose output
 cmake .. $CMAKE_FLAGS
-make -j$(nproc)
+echo "Building with verbose output..."
+make VERBOSE=1 -j$(nproc) MmWaveSensorPlugin
 
 # Check if build succeeded
 if [ $? -ne 0 ]; then

@@ -16,6 +16,12 @@ find_package(gz-math7 REQUIRED)
 # Include directories
 include_directories(
   include
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/pointcloud
+  ${CMAKE_CURRENT_SOURCE_DIR}/raycast
+  ${CMAKE_CURRENT_SOURCE_DIR}/core
+  ${CMAKE_CURRENT_SOURCE_DIR}/messaging
+  ${CMAKE_CURRENT_SOURCE_DIR}/sensor_config
   ${gz-sim8_INCLUDE_DIRS}
   ${gz-plugin2_INCLUDE_DIRS}
   ${gz-transport13_INCLUDE_DIRS}
@@ -31,9 +37,52 @@ else()
   message(STATUS "Found libmosquitto: ${MOSQUITTO_LIBRARY}")
 endif()
 
+# Point cloud related files
+set(POINTCLOUD_SOURCES
+  pointcloud/MmWavePointCloudGenerator.cc
+  pointcloud/MmWavePointCloudLoader.cc
+  pointcloud/MmWavePointCloudScenarioGenerators.cc
+  pointcloud/MmWaveBedroomScenarioGenerator.cc
+  pointcloud/MmWaveDefaultScenarioGenerator.cc
+  pointcloud/MmWaveRoomScenarioGenerator.cc
+)
+
+# Raycast related files
+set(RAYCAST_SOURCES
+  raycast/MmWaveSensorRay.cc
+  raycast/MmWaveSensorScene.cc
+)
+
+# Core plugin files
+set(CORE_SOURCES
+  core/MmWaveSensorPlugin.cc
+  core/MmWaveSensorWslCompat.cc
+)
+
+# Messaging related files
+set(MESSAGING_SOURCES
+  messaging/MmWaveMessageHandler.cc
+  messaging/OlympusMQTTPlugin.cc
+)
+
+# Sensor configuration files
+set(SENSOR_CONFIG_SOURCES
+  sensor_config/MmWaveSensorConfig.cc
+)
+
 # Create shared libraries for the plugins
-add_library(MmWaveSensorPlugin SHARED MmWaveSensorPlugin.cc MmWaveSensorWslCompat.cc MmWavePointCloudLoader.cc)
-add_library(OlympusMQTTPlugin SHARED OlympusMQTTPlugin.cc)
+add_library(MmWaveSensorPlugin SHARED 
+  ${CORE_SOURCES}
+  ${POINTCLOUD_SOURCES}
+  ${RAYCAST_SOURCES}
+  ${SENSOR_CONFIG_SOURCES}
+  messaging/MmWaveMessageHandler.cc
+)
+
+# Create MQTT plugin library
+add_library(OlympusMQTTPlugin SHARED 
+  messaging/OlympusMQTTPlugin.cc
+)
 
 # Target specific include directories (if your .hh files are in an 'include' subdirectory)
 # target_include_directories(MmWaveSensorPlugin PUBLIC
