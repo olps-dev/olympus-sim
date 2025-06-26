@@ -28,46 +28,32 @@ fi
 # Set Gazebo plugin path for custom plugins.
 export GZ_SIM_SYSTEM_PLUGIN_PATH="$OLYMPUS_SIM_ROOT/sim/gazebo/plugins/build"
 
-# Configure for WSL GUI operation
-export LIBGL_ALWAYS_SOFTWARE=1
-export MESA_GL_VERSION_OVERRIDE=3.3
-export MESA_GLSL_VERSION_OVERRIDE=330
-
-# WSL GUI setup - check for different display options
-echo "--- Configuring WSL Display ---"
-if [ -n "$DISPLAY" ]; then
-    echo "DISPLAY already set to: $DISPLAY"
-elif [ -n "$WAYLAND_DISPLAY" ]; then
-    echo "Using Wayland display: $WAYLAND_DISPLAY"
-    export QT_QPA_PLATFORM=wayland
-else
-    echo "Setting up X11 display for WSL"
-    export DISPLAY=:0
-fi
-
-# Additional WSL GUI environment variables
-export QT_X11_NO_MITSHM=1
-export QT_QUICK_BACKEND=software
-
-# For debugging, let's print the variables.
-echo "DISPLAY is set to: $DISPLAY"
-echo "GZ_SIM_RESOURCE_PATH is: $GZ_SIM_RESOURCE_PATH"
-echo "GZ_SIM_SYSTEM_PLUGIN_PATH is: $GZ_SIM_SYSTEM_PLUGIN_PATH"
-
-echo "--- Launching Olympus Simulation with GUI ---"
+echo "--- Launching Olympus Simulation ---"
 echo "World contains: Red box (2,2), Green box (-2,3), Blue cylinder (3,-2)"
 echo "mmWave sensor at origin should detect these obstacles"
-echo "Note: Running Gazebo headless due to WSL OpenGL issues, but RViz2 will show the scene"
 
-# Run Gazebo headless (which works) but with RViz2 for visualization
-if command -v wslg &> /dev/null || [ -n "$WAYLAND_DISPLAY" ]; then
-    echo "Using WSLg for RViz2 visualization"
-    ros2 launch "$OLYMPUS_SIM_ROOT/sim/ros2/launch/olympus_gazebo.launch.py" gui:=false rviz:=true
-elif command -v xvfb-run &> /dev/null; then
-    echo "Using Xvfb virtual display for RViz2"
-    xvfb-run -a -s "-screen 0 1920x1080x24 -ac +extension GLX +render -noreset" \
-        ros2 launch "$OLYMPUS_SIM_ROOT/sim/ros2/launch/olympus_gazebo.launch.py" gui:=false rviz:=true
+# Check for GUI flag
+GUI_MODE=false
+if [[ "$1" == "--gui" ]]; then
+    GUI_MODE=true
+    echo "GUI mode requested - attempting Gazebo GUI"
+    # Set up GUI environment
+    export LIBGL_ALWAYS_SOFTWARE=1
+    export QT_X11_NO_MITSHM=1
+    export QT_QUICK_BACKEND=software
+    export MESA_GL_VERSION_OVERRIDE=3.3
+    export MESA_GLSL_VERSION_OVERRIDE=330
 else
-    echo "Running headless Gazebo with RViz2 visualization"
+    echo "Running in headless mode (use --gui flag for GUI mode)"
+fi
+
+# Launch simulation
+if [ "$GUI_MODE" = true ]; then
+    ros2 launch "$OLYMPUS_SIM_ROOT/sim/ros2/launch/olympus_gazebo.launch.py" gui:=true rviz:=true
+else
     ros2 launch "$OLYMPUS_SIM_ROOT/sim/ros2/launch/olympus_gazebo.launch.py" gui:=false rviz:=true
 fi
+
+# For debugging, let's print the variables.
+echo "GZ_SIM_RESOURCE_PATH is: $GZ_SIM_RESOURCE_PATH"
+echo "GZ_SIM_SYSTEM_PLUGIN_PATH is: $GZ_SIM_SYSTEM_PLUGIN_PATH"
