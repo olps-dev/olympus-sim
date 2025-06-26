@@ -43,10 +43,18 @@ def generate_launch_description():
         cmd=[
             'gz', 'sim',
             '-r',  # Run simulation
+            '-v', '4',  # Verbose output for debugging
             world_file
         ],
         output='screen',
-        condition=IfCondition(LaunchConfiguration('gui'))
+        condition=IfCondition(LaunchConfiguration('gui')),
+        additional_env={
+            'LIBGL_ALWAYS_SOFTWARE': '1',
+            'QT_X11_NO_MITSHM': '1',
+            'QT_QUICK_BACKEND': 'software',
+            'MESA_GL_VERSION_OVERRIDE': '3.3',
+            'MESA_GLSL_VERSION_OVERRIDE': '330'
+        }
     )
     
     # Headless Gazebo for when GUI is disabled
