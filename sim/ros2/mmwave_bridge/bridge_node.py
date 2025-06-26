@@ -113,12 +113,42 @@ class MmWaveRos2Bridge(Node):
     def check_data_reception(self):
         """Periodic callback to check if we're receiving data from Gazebo."""
         if not self.received_data:
-            self.get_logger().warning("No mmWave data received from Gazebo yet. Publishing test data.")
-            self.publish_test_data()
+            self.get_logger().warning("No mmWave data received from Gazebo yet. NOT publishing test data.")
+            # Disabled test data publishing to ensure we only see real data
+            # self.publish_test_data()
             
-            # Check available Gazebo topics
+            # Check available Gazebo topics and log them
             if self.gazebo_transport:
-                self.gazebo_transport.check_topics()
+                topics = self.gazebo_transport.check_topics()
+                self.get_logger().info(f"Available Gazebo topics: {topics}")
+                self.get_logger().info(f"Looking for topic: {self.mmwave_gazebo_topic}")
+                
+                # Check if our topic exists or if there are any mmwave-related topics
+                mmwave_topics = [t for t in topics if 'mmwave' in t.lower()]
+                if mmwave_topics:
+                    self.get_logger().info(f"Found mmWave-related topics: {mmwave_topics}")
+                else:
+                    self.get_logger().warning("No mmWave-related topics found in Gazebo")
+                    
+                # Log environment variables that might affect plugin loading
+                import os
+                self.get_logger().info(f"GZ_SIM_SYSTEM_PLUGIN_PATH={os.environ.get('GZ_SIM_SYSTEM_PLUGIN_PATH', 'not set')}")
+                self.get_logger().info(f"GZ_SIM_RESOURCE_PATH={os.environ.get('GZ_SIM_RESOURCE_PATH', 'not set')}")
+                self.get_logger().info(f"LIBGL_ALWAYS_SOFTWARE={os.environ.get('LIBGL_ALWAYS_SOFTWARE', 'not set')}")
+                self.get_logger().info(f"WSL_DISTRO_NAME={os.environ.get('WSL_DISTRO_NAME', 'not set')}")
+                
+                # Log a hint about the issue
+                self.get_logger().warning("If the mmWave plugin is not publishing data, check that:\n"
+                                        "1. The plugin is properly loaded in Gazebo\n"
+                                        "2. The plugin is configured to use ray casting mode\n"
+                                        "3. The plugin has objects in its field of view\n"
+                                        "4. The plugin is publishing to the expected topic")
+                
+                # Try to subscribe to any mmwave topic found
+                if mmwave_topics and self.mmwave_gazebo_topic not in mmwave_topics:
+                    new_topic = mmwave_topics[0]
+                    self.get_logger().info(f"Attempting to subscribe to alternative topic: {new_topic}")
+                    self.gazebo_transport.topic = new_topic
     
     def publish_test_data(self):
         """Publish test point cloud data when no Gazebo data is available."""

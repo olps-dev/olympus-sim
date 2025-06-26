@@ -140,8 +140,8 @@
                   filename="libMmWaveSensorPlugin.so">
             <horizontal_fov>1.5708</horizontal_fov>
             <vertical_fov>0.5236</vertical_fov>
-            <horizontal_resolution>32</horizontal_resolution>
-            <vertical_resolution>16</vertical_resolution>
+            <horizontal_resolution>64</horizontal_resolution>
+            <vertical_resolution>32</vertical_resolution>
             <min_range>0.05</min_range>
             <max_range>50</max_range>
             <noise_mean>0</noise_mean>
@@ -149,6 +149,10 @@
             <default_rcs>1.0</default_rcs>
             <min_rcs>0.1</min_rcs>
             <max_radial_velocity>30.0</max_radial_velocity>
+            <use_point_clouds_only>false</use_point_clouds_only>
+            <wsl_compat_mode>false</wsl_compat_mode>
+            <force_raycast>true</force_raycast>
+            <visualize>true</visualize>
           </plugin>
         </sensor>
       </link>

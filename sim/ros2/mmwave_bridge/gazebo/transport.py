@@ -131,15 +131,46 @@ class GazeboTransport:
                 # This is more robust and avoids potential bugs in the transport's type inference.
                 self.log_info(f"Subscribing to Gazebo topic: {self.topic} with explicit message type.")
                 msg_type = pointcloud_packed_pb2.PointCloudPacked
-                success = self.gz_node.subscribe(msg_type, self.topic, callback_wrapper)
+                
+                # Try multiple subscription methods for robustness
+                success = False
+                
+                # Method 1: Using explicit message type
+                try:
+                    self.log_info("Trying subscription with explicit message type...")
+                    success = self.gz_node.subscribe(msg_type, self.topic, callback_wrapper)
+                    if success:
+                        self.log_info("Subscription with explicit message type succeeded")
+                except Exception as e:
+                    self.log_warning(f"Explicit message type subscription failed: {e}")
+                
+                # Method 2: Using string-based subscription if method 1 fails
+                if not success:
+                    try:
+                        self.log_info("Trying string-based subscription...")
+                        success = self.gz_node.subscribe(self.topic, callback_wrapper)
+                        if success:
+                            self.log_info("String-based subscription succeeded")
+                    except Exception as e:
+                        self.log_warning(f"String-based subscription failed: {e}")
                 
                 if success:
                     self.log_info(f"Successfully subscribed to {self.topic}")
                     self.initialized = True
-                    
-
                 else:
-                    self.log_error(f"Failed to subscribe to {self.topic}")
+                    self.log_error(f"Failed to subscribe to {self.topic} using all methods")
+                    
+                    # Try to list available topics and suggest alternatives
+                    try:
+                        topics = self.gz_node.topic_list()
+                        self.log_info(f"Available topics: {topics}")
+                        mmwave_topics = [t for t in topics if 'mmwave' in t.lower()]
+                        if mmwave_topics:
+                            self.log_info(f"Found mmWave-related topics: {mmwave_topics}")
+                            if mmwave_topics[0] != self.topic:
+                                self.log_info(f"Consider using topic: {mmwave_topics[0]} instead")
+                    except Exception as e:
+                        self.log_warning(f"Failed to list topics for suggestions: {e}")
             except Exception as e:
                 self.log_error(f"Error subscribing to Gazebo topic: {e}")
                 import traceback

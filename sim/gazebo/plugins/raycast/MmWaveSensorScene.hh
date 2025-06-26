@@ -64,6 +64,12 @@ public:
    * @return Maximum number of acquisition attempts
    */
   int GetMaxAcquisitionAttempts() const;
+  
+  /**
+   * @brief More aggressive attempt to acquire the scene for WSL environments
+   * @return True if scene forcefully acquired, false otherwise
+   */
+  bool ForceAcquireScene();
 
 private:
   // Rendering scene
@@ -74,7 +80,7 @@ private:
 
   // Count the number of attempts to acquire the scene
   int sceneAcquisitionAttempts{0};
-  const int maxSceneAcquisitionAttempts{5};
+  int maxSceneAcquisitionAttempts{30}; // Increased for WSL environments
 };
 
 }  // namespace olympus_sim

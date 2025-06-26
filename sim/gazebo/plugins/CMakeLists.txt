@@ -1,63 +1,54 @@
 cmake_minimum_required(VERSION 3.10.2)
 project(olympus_gazebo_plugins)
 
-# Find Gazebo Sim (Harmonic is version 8) and its components
+# Set C++ standard to C++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Find all necessary Gazebo packages
 find_package(gz-cmake3 REQUIRED)
-find_package(gz-plugin2 REQUIRED COMPONENTS register)
-find_package(gz-common5 REQUIRED COMPONENTS profiler)
 find_package(gz-sim8 REQUIRED)
 find_package(gz-rendering8 REQUIRED)
 find_package(gz-transport13 REQUIRED)
 find_package(gz-msgs10 REQUIRED)
 find_package(gz-math7 REQUIRED)
-
-# Add more find_package for gz-rendering if direct raycasting API is used from there
+find_package(gz-plugin2 REQUIRED COMPONENTS register)
 
 # Include directories
 include_directories(
-  include
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/pointcloud
-  ${CMAKE_CURRENT_SOURCE_DIR}/raycast
-  ${CMAKE_CURRENT_SOURCE_DIR}/core
-  ${CMAKE_CURRENT_SOURCE_DIR}/messaging
-  ${CMAKE_CURRENT_SOURCE_DIR}/sensor_config
-  ${gz-sim8_INCLUDE_DIRS}
-  ${gz-plugin2_INCLUDE_DIRS}
-  ${gz-transport13_INCLUDE_DIRS}
-  ${gz-msgs10_INCLUDE_DIRS}
-  ${gz-math7_INCLUDE_DIRS}
 )
 
-# Find mosquitto
-find_library(MOSQUITTO_LIBRARY NAMES mosquitto)
-if(NOT MOSQUITTO_LIBRARY)
-  message(FATAL_ERROR "Could not find libmosquitto")
-else()
-  message(STATUS "Found libmosquitto: ${MOSQUITTO_LIBRARY}")
-endif()
-
-# Point cloud related files
-set(POINTCLOUD_SOURCES
-  pointcloud/MmWavePointCloudGenerator.cc
-  pointcloud/MmWavePointCloudLoader.cc
-  pointcloud/MmWavePointCloudScenarioGenerators.cc
-  pointcloud/MmWaveBedroomScenarioGenerator.cc
-  pointcloud/MmWaveDefaultScenarioGenerator.cc
-  pointcloud/MmWaveRoomScenarioGenerator.cc
-)
-
-# Raycast related files
-set(RAYCAST_SOURCES
+# Define the source files for the MmWaveSensorPlugin
+set(MMWAVE_PLUGIN_SOURCES
+  core/MmWaveSensorPlugin.cc
+  messaging/MmWaveMessageHandler.cc
   raycast/MmWaveSensorRay.cc
   raycast/MmWaveSensorScene.cc
+  utils/PointCloudLoader.cc
+  wsl_compat/wsl_compat.cc
 )
 
-# Core plugin files
-set(CORE_SOURCES
-  core/MmWaveSensorPlugin.cc
-  core/MmWaveSensorWslCompat.cc
+# Create the shared library for the plugin
+add_library(MmWaveSensorPlugin SHARED ${MMWAVE_PLUGIN_SOURCES})
+
+# Link the plugin against the required Gazebo libraries
+target_link_libraries(MmWaveSensorPlugin
+  PRIVATE
+    gz-sim8::gz-sim8
+    gz-rendering8::gz-rendering8
+    gz-transport13::gz-transport13
+    gz-msgs10::gz-msgs10
+    gz-math7::gz-math7
+    gz-plugin2::gz-plugin2
 )
+
+# Register the plugin with Gazebo so it can be found
+gz_plugin_register(
+  NAME MmWaveSensorPlugin
+  LIBRARY MmWaveSensorPlugin
+)
+
 
 # Messaging related files
 set(MESSAGING_SOURCES

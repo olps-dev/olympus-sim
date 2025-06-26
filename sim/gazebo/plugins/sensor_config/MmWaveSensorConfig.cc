@@ -72,6 +72,10 @@ bool MmWaveSensorConfig::Load(const std::shared_ptr<const sdf::Element> &_sdf, c
   {
     this->usePointCloudsOnly = _sdf->Get<bool>("use_point_clouds_only");
   }
+  if (_sdf->HasElement("force_raycast"))
+  {
+    this->forceRaycast = _sdf->Get<bool>("force_raycast");
+  }
 
   // Log the loaded parameters
   gzmsg << "[" << _pluginName << "] Parameters loaded: \n"
@@ -89,7 +93,8 @@ bool MmWaveSensorConfig::Load(const std::shared_ptr<const sdf::Element> &_sdf, c
         << "  Min RCS: " << this->minRCS << " m^2\n"
         << "  Max Radial Velocity: " << this->maxRadialVelocity << " m/s\n"
         << "  Visualize: " << (this->visualize ? "true" : "false") << "\n"
-        << "  Use Point Clouds Only: " << (this->usePointCloudsOnly ? "true" : "false") << "\n";
+        << "  Use Point Clouds Only: " << (this->usePointCloudsOnly ? "true" : "false") << "\n"
+        << "  Force Raycast: " << (this->forceRaycast ? "true" : "false") << "\n";
 
   return true;
 }

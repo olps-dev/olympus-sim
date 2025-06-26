@@ -51,6 +51,7 @@ public:
   // Mode configuration
   bool visualize = false;
   bool usePointCloudsOnly = true;
+  bool forceRaycast = false;
   
   // WSL compatibility parameters
   std::chrono::milliseconds worldModelUpdatePeriod{500};  // Update simplified world model every 500ms

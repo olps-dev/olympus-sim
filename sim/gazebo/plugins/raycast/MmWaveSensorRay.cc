@@ -34,12 +34,100 @@ void MmWaveSensorRay::CastRays(
 {
   if (!this->rayQuery)
   {
-    gzwarn << "[MmWaveSensorRay] Ray query not available, cannot cast rays" << std::endl;
+    gzerr << "[MmWaveSensorRay] Ray query not available, cannot cast rays" << std::endl;
     return;
   }
+  
+  // Record ray casting attempts for diagnostics
+  static int raycastAttempts = 0;
+  raycastAttempts++;
+  
+  gzmsg << "[MmWaveSensorRay] Ray casting attempt #" << raycastAttempts 
+        << ", query valid: " << (this->rayQuery ? "yes" : "no") << std::endl;
 
-  gzdbg << "[MmWaveSensorRay] Starting ray casting with sensor pose: pos="
+  static int raycastCounter = 0;
+  raycastCounter++;
+  
+  // Only print detailed logs every 10 frames to avoid spam
+  bool detailedLogging = (raycastCounter % 10 == 0);
+  
+  gzmsg << "[MmWaveSensorRay] Starting ray casting #" << raycastCounter << " with sensor pose: pos="
         << _sensorPose.Pos() << ", rot=" << _sensorPose.Rot().Euler() << std::endl;
+        
+  if (!this->rayQuery->Scene()) {
+    gzerr << "[MmWaveSensorRay] Ray query has null scene! Cannot cast rays." << std::endl;
+    return;
+  }
+  
+  // Try to print scene info to verify it's valid
+  auto scene = this->rayQuery->Scene();
+  gzmsg << "[MmWaveSensorRay] Scene name: '" << scene->Name() 
+        << "', node count: " << scene->NodeCount() 
+        << ", initialized: " << (scene->IsInitialized() ? "yes" : "no")
+        << ", has engine: " << (scene->Engine() != nullptr) << std::endl;
+        
+  // Log available nodes in the scene for diagnostics
+  if (scene->NodeCount() > 0) {
+    gzmsg << "[MmWaveSensorRay] Scene contains nodes:" << std::endl;
+    for (unsigned int i = 0; i < std::min(5u, scene->NodeCount()); i++) {
+      auto node = scene->NodeByIndex(i);
+      if (node) {
+        gzmsg << "  - Node " << i << ": '" << node->Name() << "'" << std::endl;
+      }
+    }
+    if (scene->NodeCount() > 5) {
+      gzmsg << "  - ... and " << (scene->NodeCount() - 5) << " more nodes" << std::endl;
+    }
+  } else {
+    gzwarn << "[MmWaveSensorRay] Scene contains no nodes, ray casting may not detect anything" << std::endl;
+  }
+        
+  // Test if ray query is working properly with a simple ray
+  try {
+    // Test in multiple directions for more thorough diagnostics
+    std::vector<gz::math::Vector3d> testDirs = {
+      {1, 0, 0}, {0, 1, 0}, {0, 0, 1},
+      {-1, 0, 0}, {0, -1, 0}, {0, 0, -1}
+    };
+    
+    int validRays = 0;
+    
+    // Start from the world origin and also from the sensor position
+    std::vector<gz::math::Vector3d> origins = {
+      {0, 0, 0},  // World origin
+      _sensorPose.Pos()  // Sensor position
+    };
+    
+    // Try different ray origins and directions
+    for (const auto& origin : origins) {
+      for (const auto& dir : testDirs) {
+        this->rayQuery->SetOrigin(origin);
+        this->rayQuery->SetDirection(dir);
+        
+        // Note: No SetMaxDistance in this version of RayQuery
+        // We'll work with default max distance
+        
+        auto testResult = this->rayQuery->ClosestPoint();
+        
+        gzmsg << "[MmWaveSensorRay] Test ray from " << origin << " along " << dir
+              << ": valid=" << (testResult ? "true" : "false")
+              << ", distance=" << testResult.distance << std::endl;
+              
+        if (testResult) {
+          validRays++;
+        }
+      }
+    }
+    
+    if (validRays == 0) {
+      gzerr << "[MmWaveSensorRay] ALL test rays failed, ray casting likely won't work" << std::endl;
+    } else {
+      gzmsg << "[MmWaveSensorRay] " << validRays << " out of " << (origins.size() * testDirs.size()) 
+            << " test rays succeeded" << std::endl;
+    }
+  } catch (const std::exception& e) {
+    gzerr << "[MmWaveSensorRay] Exception during ray casting tests: " << e.what() << std::endl;
+  }
 
   // Calculate horizontal and vertical step sizes
   const double horizontalStepSize = horizontalFov / horizontalResolution;
@@ -77,6 +165,15 @@ void MmWaveSensorRay::CastRays(
       
       // Cast the ray
       gz::rendering::RayQueryResult rayResult = this->rayQuery->ClosestPoint();
+      
+      // If detailed logging is enabled and this is one of the central rays, print debug info
+      if (detailedLogging && h == horizontalSteps/2 && v == verticalSteps/2) {
+        gzmsg << "[MmWaveSensorRay] Central ray: origin=" << rayOrigin << ", dir=" << rayDirWorld << std::endl;
+        // Check if ray is valid using the boolean operator
+        gzmsg << "[MmWaveSensorRay] Ray result: valid=" << (rayResult ? "true" : "false") 
+              << ", distance=" << rayResult.distance
+              << ", point=" << rayResult.point << std::endl;
+      }
       
       // Check if the ray hit something
       if (rayResult && rayResult.distance > minRange && rayResult.distance < maxRange)
@@ -171,23 +268,151 @@ void MmWaveSensorRay::CastRays(
         pointData.push_back(static_cast<float>(intensity));
         
         pointCount++;
+        
+        // Debug individual points periodically
+        if (detailedLogging && pointCount <= 3) {
+          gzmsg << "[MmWaveSensorRay] Added point " << pointCount << ": (" 
+                << localPoint.X() << ", " << localPoint.Y() << ", " << localPoint.Z() 
+                << "), world pos: (" << noisyPoint.X() << ", " << noisyPoint.Y() << ", " << noisyPoint.Z() 
+                << "), distance: " << rayResult.distance << std::endl;
+        }
       }
     }
   }
   
-  // Set point cloud message data
-  _pointCloudMsg.set_width(pointCount);
-  _pointCloudMsg.set_height(1);
-  _pointCloudMsg.set_row_step(_pointCloudMsg.point_step() * pointCount);
+  // Populate the point cloud message
+  // We have 6 values per point: x, y, z, velocity, rcs, intensity
+  const int fieldsPerPoint = 6;
+  // Update the existing pointCount with actual points
+  pointCount = pointData.size() / fieldsPerPoint;
   
-  // Convert point data to binary format
-  if (pointCount > 0)
-  {
-    const size_t dataSize = pointCount * _pointCloudMsg.point_step();
-    _pointCloudMsg.mutable_data()->resize(dataSize);
-    memcpy(_pointCloudMsg.mutable_data()->data(), pointData.data(), dataSize);
+  // Debug check for data consistency
+  if (pointData.size() % fieldsPerPoint != 0) {
+    gzwarn << "[MmWaveSensorRay] Inconsistent point data size: " << pointData.size() 
+           << " is not divisible by " << fieldsPerPoint << std::endl;
   }
   
-  gzdbg << "[MmWaveSensorRay] Ray casting complete, generated " 
+  // Set point cloud dimensions
+  _pointCloudMsg.set_width(pointCount);
+  _pointCloudMsg.set_height(1);
+  
+  // Each point has 6 fields, each is a float (4 bytes)
+  const int bytesPerPoint = fieldsPerPoint * sizeof(float);
+  _pointCloudMsg.set_point_step(bytesPerPoint);
+  _pointCloudMsg.set_row_step(_pointCloudMsg.point_step() * _pointCloudMsg.width());
+  _pointCloudMsg.set_is_dense(true);
+  _pointCloudMsg.set_is_bigendian(false);
+  
+  // Define the fields in the point cloud
+  auto addField = [&](const std::string& name, uint32_t offset, gz::msgs::PointCloudPacked_Field_DataType datatype, uint32_t count) {
+    auto field = _pointCloudMsg.add_field();
+    field->set_name(name);
+    field->set_offset(offset);
+    field->set_datatype(datatype);
+    field->set_count(count);
+  };
+  
+  // Add xyz fields (each is a float)
+  addField("x", 0, gz::msgs::PointCloudPacked::Field::FLOAT32, 1);
+  addField("y", 4, gz::msgs::PointCloudPacked::Field::FLOAT32, 1);
+  addField("z", 8, gz::msgs::PointCloudPacked::Field::FLOAT32, 1);
+  addField("velocity", 12, gz::msgs::PointCloudPacked::Field::FLOAT32, 1);
+  addField("rcs", 16, gz::msgs::PointCloudPacked::Field::FLOAT32, 1);
+  addField("intensity", 20, gz::msgs::PointCloudPacked::Field::FLOAT32, 1);
+  
+  // Resize data buffer and copy points
+  size_t dataSize = pointCount * bytesPerPoint;
+  _pointCloudMsg.mutable_data()->resize(dataSize);
+  
+  if (pointCount > 0) {
+    // Use memcpy for more efficient data copy
+    memcpy(_pointCloudMsg.mutable_data()->data(), pointData.data(), dataSize);
+  }
+
+  // Set up the header with current simulation time
+  gz::msgs::Header *header = _pointCloudMsg.mutable_header();
+  
+  // Use current time 
+  auto currentTime = gz::msgs::Time();
+  auto now = std::chrono::system_clock::now().time_since_epoch();
+  auto seconds = std::chrono::duration_cast<std::chrono::seconds>(now);
+  auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(now - seconds);
+  
+  currentTime.set_sec(seconds.count());
+  currentTime.set_nsec(nanoseconds.count());
+  
+  header->mutable_stamp()->CopyFrom(currentTime);
+  
+  // Set frame ID
+  auto frame = header->add_data();
+  frame->set_key("frame_id");
+  frame->add_value("mmwave_sensor_link");
+  
+  // Add debug information
+  auto debug = header->add_data();
+  debug->set_key("debug");
+  debug->add_value("raycast_counter=" + std::to_string(raycastCounter));
+  debug->add_value("point_count=" + std::to_string(pointCount));
+  
+  // Every 10 frames, report the first few points for debugging
+  if (pointCount > 0) {
+    gzmsg << "[MmWaveSensorRay] Generated point cloud with " << pointCount << " points" << std::endl;
+    
+    if (detailedLogging) {
+      gzmsg << "[MmWaveSensorRay] First 5 points (or fewer if less available):" << std::endl;
+      int pointsToPrint = std::min(5, pointCount);
+      for (int i = 0; i < pointsToPrint; ++i) {
+        int idx = i * fieldsPerPoint;
+        if (idx + fieldsPerPoint - 1 < static_cast<int>(pointData.size())) {
+          gzmsg << "  Point " << i << ": (" 
+                << pointData[idx] << ", " 
+                << pointData[idx+1] << ", " 
+                << pointData[idx+2] << "), velocity=" 
+                << pointData[idx+3] << ", rcs=" 
+                << pointData[idx+4] << ", intensity=" 
+                << pointData[idx+5] << std::endl;
+        }
+      }
+    }
+  } else {
+    gzwarn << "[MmWaveSensorRay] NO POINTS generated in ray casting attempt #" << raycastCounter << "!" << std::endl;
+    
+    // Debug information about the scene when no points are found
+    auto scene = this->rayQuery->Scene();
+    if (scene) {
+      gzmsg << "[MmWaveSensorRay] Scene status: name='" << scene->Name()
+            << "', initialized=" << (scene->IsInitialized() ? "true" : "false")
+            << ", node count=" << scene->NodeCount() << std::endl;
+    }
+  }
+
+  gzmsg << "[MmWaveSensorRay] Ray casting complete, generated " 
         << pointCount << " points" << std::endl;
+        
+  // Log detailed statistics about the ray casting
+  if (pointCount > 0) {
+    gzmsg << "[MmWaveSensorRay] Point cloud statistics:" << std::endl;
+    gzmsg << "  - Horizontal steps: " << horizontalSteps << std::endl;
+    gzmsg << "  - Vertical steps: " << verticalSteps << std::endl;
+    gzmsg << "  - Total rays cast: " << horizontalSteps * verticalSteps << std::endl;
+    gzmsg << "  - Hit percentage: " << (pointCount * 100.0) / (horizontalSteps * verticalSteps) << "%" << std::endl;
+    
+    // Log some sample points (first 3 points)
+    int sampleCount = std::min(3, pointCount);
+    for (int i = 0; i < sampleCount; ++i) {
+      int offset = i * 6; // 6 values per point
+      gzmsg << "  - Sample point " << i << ": (" 
+            << pointData[offset] << ", " 
+            << pointData[offset+1] << ", " 
+            << pointData[offset+2] << "), velocity=" 
+            << pointData[offset+3] << ", rcs=" 
+            << pointData[offset+4] << ", intensity=" 
+            << pointData[offset+5] << std::endl;
+    }
+  } else {
+    gzmsg << "[MmWaveSensorRay] No points generated. Check if there are objects in the sensor's field of view." << std::endl;
+    gzmsg << "  - Horizontal FOV: " << horizontalFov << " rad, steps: " << horizontalSteps << std::endl;
+    gzmsg << "  - Vertical FOV: " << verticalFov << " rad, steps: " << verticalSteps << std::endl;
+    gzmsg << "  - Range: " << minRange << " to " << maxRange << " meters" << std::endl;
+  }
 }
