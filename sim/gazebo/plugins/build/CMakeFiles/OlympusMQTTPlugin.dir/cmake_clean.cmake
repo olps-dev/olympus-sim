@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/OlympusMQTTPlugin.dir/OlympusMQTTPlugin.cc.o"
-  "CMakeFiles/OlympusMQTTPlugin.dir/OlympusMQTTPlugin.cc.o.d"
+  "CMakeFiles/OlympusMQTTPlugin.dir/messaging/OlympusMQTTPlugin.cc.o"
+  "CMakeFiles/OlympusMQTTPlugin.dir/messaging/OlympusMQTTPlugin.cc.o.d"
   "libOlympusMQTTPlugin.pdb"
   "libOlympusMQTTPlugin.so"
 )

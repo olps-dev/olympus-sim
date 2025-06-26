@@ -16,7 +16,6 @@
     <plugin
       filename="gz-sim-sensors-system"
       name="gz::sim::systems::Sensors">
-      <render_engine>ogre2</render_engine>
     </plugin>
 
     <light type="directional" name="sun">
@@ -60,68 +59,126 @@
       </link>
     </model>
 
-    <!-- Furniture models - confirmed working -->
-    <include>
-      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/table</uri>
-      <name>table_1</name>
-      <pose>0 0 0 0 0 0</pose>
-    </include>
-    
-    <include>
-      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/sofa</uri>
-      <name>sofa_1</name>
-      <pose>-2 -2 0 0 0 0.7</pose>
-    </include>
-    
-    <include>
-      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/bookshelf</uri>
-      <name>bookshelf_1</name>
-      <pose>-3 2 0 0 0 -1.57</pose>
-    </include>
-    
-    <include>
-      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/chair</uri>
-      <name>chair_1</name>
-      <pose>0.5 -1.5 0 0 0 3.14</pose>
-    </include>
-    
-    <include>
-      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/chair</uri>
-      <name>chair_2</name>
-      <pose>-0.5 -1.5 0 0 0 3.14</pose>
-    </include>
-    
-    <!-- Additional furniture to create a more complete room -->
-    <include>
-      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/bookshelf</uri>
-      <name>bookshelf_2</name>
-      <pose>-3 -2 0 0 0 -1.57</pose>
-    </include>
-    
-    <include>
-      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/table</uri>
-      <name>table_2</name>
-      <pose>-2 0 0 0 0 0</pose>
-    </include>
-    
-    <!-- Vehicle model - confirmed working -->
-    <include>
-      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/hatchback</uri>
-      <name>car_1</name>
-      <pose>5 5 0 0 0 0</pose>
+    <!-- Simple box obstacles for mmWave testing - with visuals -->
+    <model name="box_obstacle_1">
       <static>true</static>
-    </include>
+      <pose>2 2 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>1 1 1</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>1 1 1</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.8 0.2 0.2 1</ambient>
+            <diffuse>0.8 0.2 0.2 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <model name="box_obstacle_2">
+      <static>true</static>
+      <pose>-2 3 0.75 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>0.5 2 1.5</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.5 2 1.5</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.2 0.8 0.2 1</ambient>
+            <diffuse>0.2 0.8 0.2 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <model name="cylinder_obstacle">
+      <static>true</static>
+      <pose>3 -2 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <cylinder>
+              <radius>0.5</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>0.5</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.2 0.2 0.8 1</ambient>
+            <diffuse>0.2 0.2 0.8 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
 
     <model name="mmwave_sensor">
+      <static>true</static>
       <pose>0 0 1 0 0 0</pose>
+      <plugin
+        filename="gz-sim-pose-publisher-system"
+        name="gz::sim::systems::PosePublisher">
+        <static_publisher>true</static_publisher>
+        <update_frequency>10</update_frequency>
+      </plugin>
       <link name="link">
-        <sensor name="mmwave" type="custom">
+        <pose>0 0 0 0 0 0</pose>
+        <sensor name="mmwave" type="ray">
           <always_on>1</always_on>
           <visualize>true</visualize>
           <update_rate>10</update_rate>
           <topic>/mmwave/points</topic>
+          <ray>
+            <scan>
+              <horizontal>
+                <samples>32</samples>
+                <resolution>1</resolution>
+                <min_angle>-0.7854</min_angle>
+                <max_angle>0.7854</max_angle>
+              </horizontal>
+              <vertical>
+                <samples>16</samples>
+                <resolution>1</resolution>
+                <min_angle>-0.2618</min_angle>
+                <max_angle>0.2618</max_angle>
+              </vertical>
+            </scan>
+            <range>
+              <min>0.05</min>
+              <max>50</max>
+              <resolution>0.01</resolution>
+            </range>
+          </ray>
           <plugin
-            filename="MmWaveSensorPlugin"
+            filename="libMmWaveSensorPlugin.so"
             name="olympus_sim::MmWaveSensorPlugin">
             <horizontal_fov>1.5708</horizontal_fov>
             <vertical_fov>0.5236</vertical_fov>
@@ -134,6 +191,11 @@
             <default_rcs>1.0</default_rcs>
             <min_rcs>0.1</min_rcs>
             <max_radial_velocity>30.0</max_radial_velocity>
+            <force_raycast>true</force_raycast>
+            <visualize>true</visualize>
+            <wsl_compat_mode>true</wsl_compat_mode>
+            <use_point_clouds_only>false</use_point_clouds_only>
+            <debug>true</debug>
           </plugin>
         </sensor>
       </link>

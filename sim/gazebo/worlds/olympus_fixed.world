@@ -120,5 +120,42 @@
         <update_frequency>10</update_frequency>
       </plugin>
     </model>
+    
+    <!-- MmWave Sensor Model -->
+    <model name="mmwave_sensor">
+      <static>true</static>
+      <pose>0 0 1 0 0 0</pose>
+      <plugin name="gz::sim::systems::PosePublisher"
+              filename="gz-sim8-pose-publisher-system">
+        <static_publisher>true</static_publisher>
+        <update_frequency>10</update_frequency>
+      </plugin>
+      <link name="link">
+        <sensor name="mmwave" type="custom">
+          <always_on>1</always_on>
+          <visualize>true</visualize>
+          <update_rate>10</update_rate>
+          <topic>/mmwave/points</topic>
+          <plugin name="olympus_sim::MmWaveSensorPlugin"
+                  filename="libMmWaveSensorPlugin.so">
+            <horizontal_fov>1.5708</horizontal_fov>
+            <vertical_fov>0.5236</vertical_fov>
+            <horizontal_resolution>64</horizontal_resolution>
+            <vertical_resolution>32</vertical_resolution>
+            <min_range>0.05</min_range>
+            <max_range>50</max_range>
+            <noise_mean>0</noise_mean>
+            <noise_stddev>0.01</noise_stddev>
+            <default_rcs>1.0</default_rcs>
+            <min_rcs>0.1</min_rcs>
+            <max_radial_velocity>30.0</max_radial_velocity>
+            <use_point_clouds_only>false</use_point_clouds_only>
+            <wsl_compat_mode>false</wsl_compat_mode>
+            <force_raycast>true</force_raycast>
+            <visualize>true</visualize>
+          </plugin>
+        </sensor>
+      </link>
+    </model>
   </world>
 </sdf>

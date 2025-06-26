@@ -61,8 +61,8 @@
           
           <!-- Resolution parameters -->
           <range_resolution>0.1</range_resolution>
-          <horizontal_resolution>1.0</horizontal_resolution>
-          <vertical_resolution>2.0</vertical_resolution>
+          <horizontal_resolution>0.2</horizontal_resolution>
+          <vertical_resolution>0.4</vertical_resolution>
           
           <!-- Noise parameters -->
           <range_noise_mean>0.0</range_noise_mean>
@@ -79,6 +79,10 @@
           
           <!-- Visualization -->
           <visualize>true</visualize>
+          <use_point_clouds_only>false</use_point_clouds_only>
+          
+          <!-- Force ray casting even in WSL -->
+          <force_raycast>true</force_raycast>
         </plugin>
       </sensor>
     </link>

@@ -83,12 +83,12 @@ clean: CMakeFiles/OlympusMQTTPlugin.dir/clean
 CMakeFiles/MmWaveSensorPlugin.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MmWaveSensorPlugin.dir/build.make CMakeFiles/MmWaveSensorPlugin.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles --progress-num=1,2,3,4 "Built target MmWaveSensorPlugin"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8 "Built target MmWaveSensorPlugin"
 .PHONY : CMakeFiles/MmWaveSensorPlugin.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/MmWaveSensorPlugin.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles 4
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles 8
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/MmWaveSensorPlugin.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles 0
 .PHONY : CMakeFiles/MmWaveSensorPlugin.dir/rule
@@ -109,7 +109,7 @@ CMakeFiles/MmWaveSensorPlugin.dir/clean:
 CMakeFiles/OlympusMQTTPlugin.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/OlympusMQTTPlugin.dir/build.make CMakeFiles/OlympusMQTTPlugin.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/OlympusMQTTPlugin.dir/build.make CMakeFiles/OlympusMQTTPlugin.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles --progress-num=5,6 "Built target OlympusMQTTPlugin"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles --progress-num=9,10 "Built target OlympusMQTTPlugin"
 .PHONY : CMakeFiles/OlympusMQTTPlugin.dir/all
 
 # Build rule for subdir invocation for target.
