@@ -171,6 +171,8 @@ The ROS2-Gazebo bridge automatically handles:
 
 ## Visualization
 
+![alt text](readme_imgs/image.png)
+
 ### RViz2 Configuration
 Pre-configured visualization includes:
 - **PointCloud2 Display**: mmWave radar points with intensity coloring
