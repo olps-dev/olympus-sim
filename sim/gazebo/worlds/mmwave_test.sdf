@@ -59,7 +59,7 @@
       </link>
     </model>
 
-    <!-- Simple box obstacles for mmWave testing - collision only -->
+    <!-- Simple box obstacles for mmWave testing - with visuals -->
     <model name="box_obstacle_1">
       <static>true</static>
       <pose>2 2 0.5 0 0 0</pose>
@@ -71,6 +71,18 @@
             </box>
           </geometry>
         </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>1 1 1</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.8 0.2 0.2 1</ambient>
+            <diffuse>0.8 0.2 0.2 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
       </link>
     </model>
     
@@ -85,6 +97,18 @@
             </box>
           </geometry>
         </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.5 2 1.5</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.2 0.8 0.2 1</ambient>
+            <diffuse>0.2 0.8 0.2 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
       </link>
     </model>
     
@@ -100,6 +124,19 @@
             </cylinder>
           </geometry>
         </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>0.5</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.2 0.2 0.8 1</ambient>
+            <diffuse>0.2 0.2 0.8 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
       </link>
     </model>
 

@@ -76,6 +76,15 @@ bool MmWaveSensorConfig::Load(const std::shared_ptr<const sdf::Element> &_sdf, c
   {
     this->forceRaycast = _sdf->Get<bool>("force_raycast");
   }
+  if (_sdf->HasElement("wsl_compat_mode"))
+  {
+    this->wslCompatMode = _sdf->Get<bool>("wsl_compat_mode");
+    gzmsg << "[" << _pluginName << "] Found wsl_compat_mode parameter: " << (this->wslCompatMode ? "true" : "false") << std::endl;
+  }
+  else
+  {
+    gzmsg << "[" << _pluginName << "] wsl_compat_mode parameter not found in SDF, using default: " << (this->wslCompatMode ? "true" : "false") << std::endl;
+  }
 
   // Log the loaded parameters
   gzmsg << "[" << _pluginName << "] Parameters loaded: \n"
@@ -94,7 +103,8 @@ bool MmWaveSensorConfig::Load(const std::shared_ptr<const sdf::Element> &_sdf, c
         << "  Max Radial Velocity: " << this->maxRadialVelocity << " m/s\n"
         << "  Visualize: " << (this->visualize ? "true" : "false") << "\n"
         << "  Use Point Clouds Only: " << (this->usePointCloudsOnly ? "true" : "false") << "\n"
-        << "  Force Raycast: " << (this->forceRaycast ? "true" : "false") << "\n";
+        << "  Force Raycast: " << (this->forceRaycast ? "true" : "false") << "\n"
+        << "  WSL Compat Mode: " << (this->wslCompatMode ? "true" : "false") << "\n";
 
   return true;
 }

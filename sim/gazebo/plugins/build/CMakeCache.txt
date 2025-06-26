@@ -263,11 +263,8 @@ IGN_SANITIZER:STRING=
 //Path to a library.
 JSONCPP_LIBRARY_jsoncpp:FILEPATH=/usr/lib/x86_64-linux-gnu/libjsoncpp.so
 
-//Path to a library.
-MOSQUITTO_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libmosquitto.so
-
 //Dependencies for the target
-MmWaveSensorPlugin_LIB_DEPENDS:STATIC=general;gz-sim8::gz-sim8;general;gz-rendering8::gz-rendering8;general;gz-transport13::gz-transport13;general;gz-msgs10::gz-msgs10;general;gz-math7::gz-math7;
+MmWaveSensorPlugin_LIB_DEPENDS:STATIC=general;gz-sim8::gz-sim8;general;gz-rendering8::gz-rendering8;general;gz-transport13::gz-transport13;general;gz-msgs10::gz-msgs10;general;gz-math7::gz-math7;general;gz-plugin2::gz-plugin2;
 
 //Path to a file.
 OPENGL_EGL_INCLUDE_DIR:PATH=/usr/include
@@ -306,7 +303,7 @@ OPENGL_opengl_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libOpenGL.so
 OPENGL_xmesa_INCLUDE_DIR:PATH=OPENGL_xmesa_INCLUDE_DIR-NOTFOUND
 
 //Dependencies for the target
-OlympusMQTTPlugin_LIB_DEPENDS:STATIC=general;gz-sim8::gz-sim8;general;gz-transport13::gz-transport13;general;gz-msgs10::gz-msgs10;general;gz-math7::gz-math7;general;/usr/lib/x86_64-linux-gnu/libmosquitto.so;
+OlympusMQTTPlugin_LIB_DEPENDS:STATIC=general;gz-sim8::gz-sim8;general;gz-transport13::gz-transport13;general;gz-msgs10::gz-msgs10;
 
 //Arguments to supply to pkg-config
 PKG_CONFIG_ARGN:STRING=

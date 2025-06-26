@@ -12,7 +12,6 @@ else
   exit 1
 fi
 
-
 echo "--- Setting Gazebo environment variables ---"
 
 # Define the project root directory using the script's location
@@ -29,38 +28,46 @@ fi
 # Set Gazebo plugin path for custom plugins.
 export GZ_SIM_SYSTEM_PLUGIN_PATH="$OLYMPUS_SIM_ROOT/sim/gazebo/plugins/build"
 
-# Force software rendering for WSL compatibility
+# Configure for WSL GUI operation
 export LIBGL_ALWAYS_SOFTWARE=1
-
-# Additional headless rendering configuration
-export GZ_SIM_RENDER_ENGINE=ogre
-export OGRE_RTT_MODE=Copy
 export MESA_GL_VERSION_OVERRIDE=3.3
 export MESA_GLSL_VERSION_OVERRIDE=330
 
-# Force Mesa software driver and disable hardware acceleration
-export MESA_LOADER_DRIVER_OVERRIDE=swrast
-export GALLIUM_DRIVER=llvmpipe
-export LIBGL_ALWAYS_INDIRECT=1
-export __GLX_VENDOR_LIBRARY_NAME=mesa
+# WSL GUI setup - check for different display options
+echo "--- Configuring WSL Display ---"
+if [ -n "$DISPLAY" ]; then
+    echo "DISPLAY already set to: $DISPLAY"
+elif [ -n "$WAYLAND_DISPLAY" ]; then
+    echo "Using Wayland display: $WAYLAND_DISPLAY"
+    export QT_QPA_PLATFORM=wayland
+else
+    echo "Setting up X11 display for WSL"
+    export DISPLAY=:0
+fi
 
-# Completely disable graphics and X11 for true headless operation
-export LIBGL_ALWAYS_SOFTWARE=1
-export GALLIUM_DRIVER=softpipe
-export MESA_LOADER_DRIVER_OVERRIDE=swrast
-export GZ_SIM_RENDER_ENGINE_TYPE=NONE
-export OGRE_SKIP_DLL_PLUGINS=1
-export QT_QPA_PLATFORM=offscreen
+# Additional WSL GUI environment variables
+export QT_X11_NO_MITSHM=1
+export QT_QUICK_BACKEND=software
 
 # For debugging, let's print the variables.
 echo "DISPLAY is set to: $DISPLAY"
 echo "GZ_SIM_RESOURCE_PATH is: $GZ_SIM_RESOURCE_PATH"
 echo "GZ_SIM_SYSTEM_PLUGIN_PATH is: $GZ_SIM_SYSTEM_PLUGIN_PATH"
 
+echo "--- Launching Olympus Simulation with GUI ---"
+echo "World contains: Red box (2,2), Green box (-2,3), Blue cylinder (3,-2)"
+echo "mmWave sensor at origin should detect these obstacles"
+echo "Note: Running Gazebo headless due to WSL OpenGL issues, but RViz2 will show the scene"
 
-echo "--- Launching Olympus Gazebo simulation with virtual display ---"
-
-# Use xvfb-run to provide a virtual display for Gazebo
-# This resolves OpenGL/GLX context issues in WSL environments
-xvfb-run -a -s "-screen 0 1024x768x24 -ac +extension GLX +render -noreset" \
-    ros2 launch "$OLYMPUS_SIM_ROOT/sim/ros2/launch/olympus_gazebo.launch.py"
+# Run Gazebo headless (which works) but with RViz2 for visualization
+if command -v wslg &> /dev/null || [ -n "$WAYLAND_DISPLAY" ]; then
+    echo "Using WSLg for RViz2 visualization"
+    ros2 launch "$OLYMPUS_SIM_ROOT/sim/ros2/launch/olympus_gazebo.launch.py" gui:=false rviz:=true
+elif command -v xvfb-run &> /dev/null; then
+    echo "Using Xvfb virtual display for RViz2"
+    xvfb-run -a -s "-screen 0 1920x1080x24 -ac +extension GLX +render -noreset" \
+        ros2 launch "$OLYMPUS_SIM_ROOT/sim/ros2/launch/olympus_gazebo.launch.py" gui:=false rviz:=true
+else
+    echo "Running headless Gazebo with RViz2 visualization"
+    ros2 launch "$OLYMPUS_SIM_ROOT/sim/ros2/launch/olympus_gazebo.launch.py" gui:=false rviz:=true
+fi

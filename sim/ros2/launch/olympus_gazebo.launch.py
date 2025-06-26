@@ -3,7 +3,7 @@
 Olympus Simulation Gazebo Launch File
 This launch file starts Gazebo Harmonic and loads the Olympus simulation world and models
 Using ros_gz integration for ROS 2 Jazzy
-Includes mmWave sensor ROS2 bridge
+Includes mmWave sensor ROS2 bridge and optional RViz2 visualization
 """
 
 import os
@@ -12,8 +12,8 @@ from launch import LaunchDescription
 from launch.actions import ExecuteProcess, DeclareLaunchArgument
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition, UnlessCondition
 
 def generate_launch_description():
     """Generate launch description for Olympus Gazebo simulation."""
@@ -23,77 +23,108 @@ def generate_launch_description():
 
     # Paths for models and world files
     gazebo_worlds_path = os.path.join(olympus_sim_dir, 'sim', 'gazebo', 'worlds')
+    world_file = os.path.join(gazebo_worlds_path, 'mmwave_test.sdf')
 
     # --- Launch Arguments ---
-    world_arg = DeclareLaunchArgument(
-        'world',
-        default_value='mmwave_test.sdf',
-        description='Name of the world file in sim/gazebo/worlds to launch.'
+    gui_arg = DeclareLaunchArgument(
+        'gui',
+        default_value='false',
+        description='Whether to launch Gazebo with GUI'
     )
-    use_mmwave_bridge_arg = DeclareLaunchArgument(
-        'use_mmwave_bridge',
-        default_value='true',
-        description='Whether to launch the mmWave sensor ROS2 bridge'
+    
+    rviz_arg = DeclareLaunchArgument(
+        'rviz',
+        default_value='false',
+        description='Whether to launch RViz2 for visualization'
     )
-
-    # Construct the full path to the world file
-    world_file_path = PathJoinSubstitution([
-        gazebo_worlds_path,
-        LaunchConfiguration('world')
-    ])
 
     # --- Gazebo Process ---
-    # Environment variables should be set by the calling script (run_simulation.sh)
     gazebo = ExecuteProcess(
-        # Launch Gazebo Sim in server-only mode with completely headless configuration
+        cmd=[
+            'gz', 'sim',
+            '-r',  # Run simulation
+            world_file
+        ],
+        output='screen',
+        condition=IfCondition(LaunchConfiguration('gui'))
+    )
+    
+    # Headless Gazebo for when GUI is disabled
+    gazebo_headless = ExecuteProcess(
         cmd=[
             'gz', 'sim', 
             '-s',  # Server only mode
             '-r',  # Run simulation
             '--headless-rendering',  # Force headless rendering
-            world_file_path
+            '-v', '4',  # Verbose output for debugging
+            world_file
         ],
         output='screen',
+        condition=UnlessCondition(LaunchConfiguration('gui')),
+        additional_env={
+            'GZ_SIM_SERVER_CONFIG_PATH': '',
+            'LIBGL_ALWAYS_SOFTWARE': '1'
+        }
     )
 
     # --- ROS2 Nodes ---
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        name='ros_gz_bridge',
-        output='screen',
         arguments=[
-            # Bridge Gazebo clock to ROS clock
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-            # Bridge Gazebo poses to ROS TF
-            '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'
-        ]
+            '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+            '/tf_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'
+        ],
+        output='screen'
     )
 
-    mmwave_bridge_script = os.path.join(olympus_sim_dir, 'sim', 'ros2', 'mmwave_ros2_bridge.py')
+    # mmWave sensor ROS2 bridge
     mmwave_bridge = Node(
-        executable=mmwave_bridge_script,
-        name='mmwave_ros2_bridge',
-        output='screen',
-        condition=IfCondition(LaunchConfiguration('use_mmwave_bridge'))
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=[
+            '/mmwave/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked'
+        ],
+        remappings=[
+            ('/mmwave/points', '/mmwave/pointcloud')
+        ],
+        output='screen'
     )
 
-    # Static transform for the sensor, to place it in the world
+    # Static transform publisher for mmWave sensor
     static_transform_publisher = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
-        name='static_transform_publisher_mmwave',
+        arguments=['0', '0', '1', '0', '0', '0', 'world', 'mmwave']
+    )
+
+    # RViz2 node for visualization (optional)
+    rviz_config_path = os.path.join(olympus_sim_dir, 'sim', 'ros2', 'config', 'olympus_rviz.rviz')
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        arguments=['-d', rviz_config_path],
         output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'world', 'mmwave_sensor_link']
+        condition=IfCondition(LaunchConfiguration('rviz')),
+        parameters=[{
+            'use_sim_time': True
+        }],
+        additional_env={
+            'QT_X11_NO_MITSHM': '1',
+            'QT_QUICK_BACKEND': 'software'
+        }
     )
 
     # --- Launch Description ---
-    # Collect all the defined actions and return them to be executed.
     return LaunchDescription([
-        world_arg,
-        use_mmwave_bridge_arg,
+        gui_arg,
+        rviz_arg,
         gazebo,
+        gazebo_headless,
         bridge,
         mmwave_bridge,
-        static_transform_publisher
+        static_transform_publisher,
+        rviz_node
     ])

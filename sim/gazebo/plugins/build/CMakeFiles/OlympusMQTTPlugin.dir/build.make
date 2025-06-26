@@ -93,7 +93,6 @@ OlympusMQTTPlugin_EXTERNAL_OBJECTS =
 libOlympusMQTTPlugin.so: CMakeFiles/OlympusMQTTPlugin.dir/messaging/OlympusMQTTPlugin.cc.o
 libOlympusMQTTPlugin.so: CMakeFiles/OlympusMQTTPlugin.dir/build.make
 libOlympusMQTTPlugin.so: /usr/lib/x86_64-linux-gnu/libgz-sim8.so.8.9.0
-libOlympusMQTTPlugin.so: /usr/lib/x86_64-linux-gnu/libmosquitto.so
 libOlympusMQTTPlugin.so: /usr/lib/x86_64-linux-gnu/libgz-fuel_tools9.so.9.1.1
 libOlympusMQTTPlugin.so: /usr/lib/x86_64-linux-gnu/libgz-gui8.so.8.4.0
 libOlympusMQTTPlugin.so: /usr/lib/x86_64-linux-gnu/libgz-plugin2-loader.so.2.0.4

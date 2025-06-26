@@ -80,24 +80,75 @@ void UpdateSimplifiedWorldModel(
 {
   simplifiedWorldModel.clear();
   size_t entitiesAdded = 0;
+  size_t entitiesIterated = 0;
 
-  // Iterate over all models in the world that have a pose
-  _ecm.Each<gz::sim::components::Model, gz::sim::components::Name, gz::sim::components::WorldPose>(
+  gzmsg << "[MmWaveSensorPlugin::UpdateSimplifiedWorldModel] Starting world model update, sensor entity: " << _sensorEntity << std::endl;
+
+  // First, let's see what models exist at all
+  size_t totalModels = 0;
+  _ecm.Each<gz::sim::components::Model, gz::sim::components::Name>(
     [&](const gz::sim::Entity &_entity,
         const gz::sim::components::Model * /*_model*/,
-        const gz::sim::components::Name *_name,
-        const gz::sim::components::WorldPose *_worldPose) -> bool
+        const gz::sim::components::Name *_name) -> bool
     {
+      totalModels++;
+      gzmsg << "[MmWaveSensorPlugin::UpdateSimplifiedWorldModel] Found model entity " << _entity << " name: " << _name->Data() << std::endl;
+      
+      // Check if it has WorldPose
+      auto worldPoseComp = _ecm.Component<gz::sim::components::WorldPose>(_entity);
+      if (worldPoseComp) {
+        gzmsg << "[MmWaveSensorPlugin::UpdateSimplifiedWorldModel] Model " << _name->Data() << " has WorldPose" << std::endl;
+      } else {
+        gzmsg << "[MmWaveSensorPlugin::UpdateSimplifiedWorldModel] Model " << _name->Data() << " does NOT have WorldPose" << std::endl;
+        
+        // Try to get Pose component instead
+        auto poseComp = _ecm.Component<gz::sim::components::Pose>(_entity);
+        if (poseComp) {
+          gzmsg << "[MmWaveSensorPlugin::UpdateSimplifiedWorldModel] Model " << _name->Data() << " has Pose component" << std::endl;
+        }
+      }
+      
+      return true;
+    });
+
+  gzmsg << "[MmWaveSensorPlugin::UpdateSimplifiedWorldModel] Total models found: " << totalModels << std::endl;
+
+  // Now iterate over models that have both Name and either WorldPose or Pose
+  _ecm.Each<gz::sim::components::Model, gz::sim::components::Name>(
+    [&](const gz::sim::Entity &_entity,
+        const gz::sim::components::Model * /*_model*/,
+        const gz::sim::components::Name *_name) -> bool
+    {
+      entitiesIterated++;
+      gzmsg << "[MmWaveSensorPlugin::UpdateSimplifiedWorldModel] Processing entity " << _entity << " name: " << _name->Data() << std::endl;
+      
       // Skip the sensor's own parent model entity
       auto parent = _ecm.ParentEntity(_sensorEntity);
       if (_entity == _sensorEntity || (parent != gz::sim::kNullEntity && _entity == parent))
       {
+        gzmsg << "[MmWaveSensorPlugin::UpdateSimplifiedWorldModel] Skipping entity " << _entity << " (sensor=" << _sensorEntity << ", parent=" << parent << ")" << std::endl;
         return true; // continue iteration
       }
 
-      gzmsg << "[MmWaveSensorPlugin::UpdateSimplifiedWorldModel] Found model: " << _name->Data() << std::endl;
+      // Try to get WorldPose first, then fall back to Pose
+      gz::math::Pose3d pose;
+      auto worldPoseComp = _ecm.Component<gz::sim::components::WorldPose>(_entity);
+      if (worldPoseComp) {
+        pose = worldPoseComp->Data();
+        gzmsg << "[MmWaveSensorPlugin::UpdateSimplifiedWorldModel] Using WorldPose for " << _name->Data() << std::endl;
+      } else {
+        auto poseComp = _ecm.Component<gz::sim::components::Pose>(_entity);
+        if (poseComp) {
+          pose = poseComp->Data();
+          gzmsg << "[MmWaveSensorPlugin::UpdateSimplifiedWorldModel] Using Pose for " << _name->Data() << std::endl;
+        } else {
+          gzmsg << "[MmWaveSensorPlugin::UpdateSimplifiedWorldModel] No pose component found for " << _name->Data() << ", skipping" << std::endl;
+          return true; // continue iteration
+        }
+      }
 
-      gz::math::Pose3d pose = _worldPose->Data();
+      gzmsg << "[MmWaveSensorPlugin::UpdateSimplifiedWorldModel] Found model: " << _name->Data() << " at pose: " << pose << std::endl;
+
       gz::math::Vector3d velocity = gz::math::Vector3d::Zero;
       auto linVelComp = _ecm.Component<gz::sim::components::WorldLinearVelocity>(_entity);
       if (linVelComp)
@@ -108,6 +159,8 @@ void UpdateSimplifiedWorldModel(
       entitiesAdded++;
       return true; // continue iteration
     });
+
+  gzmsg << "[MmWaveSensorPlugin::UpdateSimplifiedWorldModel] Iterated " << entitiesIterated << " entities, added " << entitiesAdded << " to world model" << std::endl;
 
   if (entitiesAdded == 0 && !wslWarningShown)
   {

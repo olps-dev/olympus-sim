@@ -25,8 +25,9 @@ set(MMWAVE_PLUGIN_SOURCES
   messaging/MmWaveMessageHandler.cc
   raycast/MmWaveSensorRay.cc
   raycast/MmWaveSensorScene.cc
-  utils/PointCloudLoader.cc
-  wsl_compat/wsl_compat.cc
+  pointcloud/MmWavePointCloudLoader.cc
+  core/MmWaveSensorWslCompat.cc
+  sensor_config/MmWaveSensorConfig.cc
 )
 
 # Create the shared library for the plugin
@@ -43,53 +44,9 @@ target_link_libraries(MmWaveSensorPlugin
     gz-plugin2::gz-plugin2
 )
 
-# Register the plugin with Gazebo so it can be found
-gz_plugin_register(
-  NAME MmWaveSensorPlugin
-  LIBRARY MmWaveSensorPlugin
-)
-
-
-# Messaging related files
-set(MESSAGING_SOURCES
-  messaging/MmWaveMessageHandler.cc
-  messaging/OlympusMQTTPlugin.cc
-)
-
-# Sensor configuration files
-set(SENSOR_CONFIG_SOURCES
-  sensor_config/MmWaveSensorConfig.cc
-)
-
-# Create shared libraries for the plugins
-add_library(MmWaveSensorPlugin SHARED 
-  ${CORE_SOURCES}
-  ${POINTCLOUD_SOURCES}
-  ${RAYCAST_SOURCES}
-  ${SENSOR_CONFIG_SOURCES}
-  messaging/MmWaveMessageHandler.cc
-)
-
 # Create MQTT plugin library
 add_library(OlympusMQTTPlugin SHARED 
   messaging/OlympusMQTTPlugin.cc
-)
-
-# Target specific include directories (if your .hh files are in an 'include' subdirectory)
-# target_include_directories(MmWaveSensorPlugin PUBLIC
-#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#   $<INSTALL_INTERFACE:include>)
-
-# Link against Gazebo libraries
-target_link_libraries(MmWaveSensorPlugin
-  PRIVATE
-    gz-sim8::gz-sim8
-    gz-rendering8::gz-rendering8
-    gz-transport13::gz-transport13
-    gz-msgs10::gz-msgs10
-    gz-common5::profiler
-    gz-plugin2::register
-    gz-math7::gz-math7
 )
 
 target_link_libraries(OlympusMQTTPlugin
@@ -99,22 +56,15 @@ target_link_libraries(OlympusMQTTPlugin
     gz-msgs10::gz-msgs10
     gz-common5::profiler
     gz-plugin2::register
-    gz-math7::gz-math7
-    ${MOSQUITTO_LIBRARY}
 )
 
-# Installation
-# Installs the plugin libraries to a standard location
+# Set the install directory for the plugins
+set(CMAKE_INSTALL_PREFIX "/usr/local/")
+message(STATUS "Plugin will be installed to: ${CMAKE_INSTALL_PREFIX}/gz-sim-8/plugins")
+
+# Install the plugin library
 install(TARGETS MmWaveSensorPlugin OlympusMQTTPlugin
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/gz-sim-8/plugins
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION gz-sim-8/plugins
+  ARCHIVE DESTINATION gz-sim-8/plugins
+  RUNTIME DESTINATION gz-sim-8/plugins
 )
-
-# This ensures that Gazebo can find the plugin.
-# You might need to set GZ_SIM_SYSTEM_PLUGIN_PATH environment variable
-# to include the build or install directory if it's not a standard path.
-# Example: export GZ_SIM_SYSTEM_PLUGIN_PATH=$GZ_SIM_SYSTEM_PLUGIN_PATH:$HOME/olympus-sim/build/sim/gazebo/plugins
-# Or after install: export GZ_SIM_SYSTEM_PLUGIN_PATH=$GZ_SIM_SYSTEM_PLUGIN_PATH:/usr/local/lib/gz-sim-8/plugins (if installed to /usr/local)
-
-# Print install path for convenience
-message(STATUS "Plugin will be installed to: ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/gz-sim-8/plugins")
