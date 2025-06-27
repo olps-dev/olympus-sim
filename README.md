@@ -56,37 +56,25 @@ sudo apt install x11-apps mesa-utils
 
 ## Quick Start
 
-### 1. Clone and Setup
-```bash
-git clone <repository-url> olympus-sim
-cd olympus-sim
-chmod +x run_simulation.sh
-chmod +x manipulate_scene.py
-```
+**New Unified Launcher** - Single command for all simulation modes:
 
-### 2. Build mmWave Plugin
 ```bash
+# 1. Build the mmWave plugin (first time only)
 cd sim/gazebo/plugins
 ./build_mmwave_plugin.sh --build-only
-cd ../../..
+
+# 2. Run complete simulation with automation
+./olympus full --automation
+
+# 3. Or run with GUI and visualization
+./olympus full --gui --rviz --automation
 ```
 
-### 3. Run Simulation
+**Available modes**: `full`, `gazebo`, `sensor`, `automation`  
+**Options**: `--gui`, `--rviz`, `--automation`  
+**Help**: `./olympus --list-modes`
 
-**Headless Mode (Recommended for WSL):**
-```bash
-./run_simulation.sh
-```
-
-**GUI Mode (Native Linux):**
-```bash
-./run_simulation.sh --gui
-```
-
-### 4. Verify Operation
-- **RViz2**: Should open showing mmWave point cloud visualization
-- **Terminal Output**: Should show "Generated 190 points" messages
-- **Topics**: Check with `ros2 topic list` - should see `/mmwave/points`
+See [LAUNCHER_README.md](LAUNCHER_README.md) for detailed usage.
 
 ## Interactive Scene Manipulation
 
@@ -94,7 +82,7 @@ The system includes a powerful scene manipulation tool for testing sensor respon
 
 ```bash
 # In a new terminal (while simulation is running)
-python3 manipulate_scene.py
+python3 tools/manipulate_scene.py
 ```
 
 ### Available Commands:
@@ -294,6 +282,12 @@ ros2 topic echo /tf_static
 
 ### Real-Time Monitoring
 ```bash
+# Terminal 1: Run simulation
+./run_simulation.sh
+
+# Terminal 2: Launch RViz2 with config
+rviz2 -d sim/ros2/config/olympus_rviz.rviz
+
 # Monitor point cloud data rate
 ros2 topic hz /mmwave/points
 

@@ -514,3 +514,7 @@ GZ_ADD_PLUGIN(olympus_sim::MmWaveSensorPlugin,
               gz::sim::System,
               olympus_sim::MmWaveSensorPlugin::ISystemConfigure,
               olympus_sim::MmWaveSensorPlugin::ISystemPostUpdate)
+
+// Add plugin alias for easier discovery
+GZ_ADD_PLUGIN_ALIAS(olympus_sim::MmWaveSensorPlugin,
+                    "olympus_sim::MmWaveSensorPlugin")

@@ -33,7 +33,7 @@
               <resolution>0.01</resolution>
             </range>
           </ray>
-          <plugin filename="libMmWaveSensorPlugin.so" name="olympus_sim::MmWaveSensorPlugin">
+          <plugin filename="/home/aliza/olympus-sim/sim/gazebo/plugins/build/libMmWaveSensorPlugin.so" name="olympus_sim::MmWaveSensorPlugin">
             <topic>/mmwave/points</topic>
             <frame_id>mmwave_sensor_link</frame_id>
             <update_rate>10</update_rate>

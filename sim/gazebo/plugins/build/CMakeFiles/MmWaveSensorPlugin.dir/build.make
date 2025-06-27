@@ -139,10 +139,80 @@ CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudLoader.cc.s: cmake_
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudLoader.cc.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWavePointCloudLoader.cc -o CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudLoader.cc.s
 
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.o: CMakeFiles/MmWaveSensorPlugin.dir/flags.make
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.o: /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWavePointCloudScenarioGenerators.cc
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.o: CMakeFiles/MmWaveSensorPlugin.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.o -MF CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.o.d -o CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.o -c /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWavePointCloudScenarioGenerators.cc
+
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWavePointCloudScenarioGenerators.cc > CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.i
+
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWavePointCloudScenarioGenerators.cc -o CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.s
+
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.o: CMakeFiles/MmWaveSensorPlugin.dir/flags.make
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.o: /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWaveRoomScenarioGenerator.cc
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.o: CMakeFiles/MmWaveSensorPlugin.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.o -MF CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.o.d -o CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.o -c /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWaveRoomScenarioGenerator.cc
+
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWaveRoomScenarioGenerator.cc > CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.i
+
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWaveRoomScenarioGenerator.cc -o CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.s
+
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.o: CMakeFiles/MmWaveSensorPlugin.dir/flags.make
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.o: /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWaveBedroomScenarioGenerator.cc
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.o: CMakeFiles/MmWaveSensorPlugin.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.o -MF CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.o.d -o CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.o -c /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWaveBedroomScenarioGenerator.cc
+
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWaveBedroomScenarioGenerator.cc > CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.i
+
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWaveBedroomScenarioGenerator.cc -o CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.s
+
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.o: CMakeFiles/MmWaveSensorPlugin.dir/flags.make
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.o: /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWaveDefaultScenarioGenerator.cc
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.o: CMakeFiles/MmWaveSensorPlugin.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.o -MF CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.o.d -o CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.o -c /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWaveDefaultScenarioGenerator.cc
+
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWaveDefaultScenarioGenerator.cc > CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.i
+
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWaveDefaultScenarioGenerator.cc -o CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.s
+
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.o: CMakeFiles/MmWaveSensorPlugin.dir/flags.make
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.o: /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWavePointCloudGenerator.cc
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.o: CMakeFiles/MmWaveSensorPlugin.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.o -MF CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.o.d -o CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.o -c /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWavePointCloudGenerator.cc
+
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWavePointCloudGenerator.cc > CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.i
+
+CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/aliza/olympus-sim/sim/gazebo/plugins/pointcloud/MmWavePointCloudGenerator.cc -o CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.s
+
 CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorWslCompat.cc.o: CMakeFiles/MmWaveSensorPlugin.dir/flags.make
 CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorWslCompat.cc.o: /home/aliza/olympus-sim/sim/gazebo/plugins/core/MmWaveSensorWslCompat.cc
 CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorWslCompat.cc.o: CMakeFiles/MmWaveSensorPlugin.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorWslCompat.cc.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorWslCompat.cc.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorWslCompat.cc.o -MF CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorWslCompat.cc.o.d -o CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorWslCompat.cc.o -c /home/aliza/olympus-sim/sim/gazebo/plugins/core/MmWaveSensorWslCompat.cc
 
 CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorWslCompat.cc.i: cmake_force
@@ -156,7 +226,7 @@ CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorWslCompat.cc.s: cmake_force
 CMakeFiles/MmWaveSensorPlugin.dir/sensor_config/MmWaveSensorConfig.cc.o: CMakeFiles/MmWaveSensorPlugin.dir/flags.make
 CMakeFiles/MmWaveSensorPlugin.dir/sensor_config/MmWaveSensorConfig.cc.o: /home/aliza/olympus-sim/sim/gazebo/plugins/sensor_config/MmWaveSensorConfig.cc
 CMakeFiles/MmWaveSensorPlugin.dir/sensor_config/MmWaveSensorConfig.cc.o: CMakeFiles/MmWaveSensorPlugin.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/MmWaveSensorPlugin.dir/sensor_config/MmWaveSensorConfig.cc.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/MmWaveSensorPlugin.dir/sensor_config/MmWaveSensorConfig.cc.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MmWaveSensorPlugin.dir/sensor_config/MmWaveSensorConfig.cc.o -MF CMakeFiles/MmWaveSensorPlugin.dir/sensor_config/MmWaveSensorConfig.cc.o.d -o CMakeFiles/MmWaveSensorPlugin.dir/sensor_config/MmWaveSensorConfig.cc.o -c /home/aliza/olympus-sim/sim/gazebo/plugins/sensor_config/MmWaveSensorConfig.cc
 
 CMakeFiles/MmWaveSensorPlugin.dir/sensor_config/MmWaveSensorConfig.cc.i: cmake_force
@@ -174,6 +244,11 @@ MmWaveSensorPlugin_OBJECTS = \
 "CMakeFiles/MmWaveSensorPlugin.dir/raycast/MmWaveSensorRay.cc.o" \
 "CMakeFiles/MmWaveSensorPlugin.dir/raycast/MmWaveSensorScene.cc.o" \
 "CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudLoader.cc.o" \
+"CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.o" \
+"CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.o" \
+"CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.o" \
+"CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.o" \
+"CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.o" \
 "CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorWslCompat.cc.o" \
 "CMakeFiles/MmWaveSensorPlugin.dir/sensor_config/MmWaveSensorConfig.cc.o"
 
@@ -185,6 +260,11 @@ libMmWaveSensorPlugin.so: CMakeFiles/MmWaveSensorPlugin.dir/messaging/MmWaveMess
 libMmWaveSensorPlugin.so: CMakeFiles/MmWaveSensorPlugin.dir/raycast/MmWaveSensorRay.cc.o
 libMmWaveSensorPlugin.so: CMakeFiles/MmWaveSensorPlugin.dir/raycast/MmWaveSensorScene.cc.o
 libMmWaveSensorPlugin.so: CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudLoader.cc.o
+libMmWaveSensorPlugin.so: CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudScenarioGenerators.cc.o
+libMmWaveSensorPlugin.so: CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveRoomScenarioGenerator.cc.o
+libMmWaveSensorPlugin.so: CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveBedroomScenarioGenerator.cc.o
+libMmWaveSensorPlugin.so: CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWaveDefaultScenarioGenerator.cc.o
+libMmWaveSensorPlugin.so: CMakeFiles/MmWaveSensorPlugin.dir/pointcloud/MmWavePointCloudGenerator.cc.o
 libMmWaveSensorPlugin.so: CMakeFiles/MmWaveSensorPlugin.dir/core/MmWaveSensorWslCompat.cc.o
 libMmWaveSensorPlugin.so: CMakeFiles/MmWaveSensorPlugin.dir/sensor_config/MmWaveSensorConfig.cc.o
 libMmWaveSensorPlugin.so: CMakeFiles/MmWaveSensorPlugin.dir/build.make
@@ -233,7 +313,7 @@ libMmWaveSensorPlugin.so: /usr/lib/x86_64-linux-gnu/libgz-math7.so.7.5.1
 libMmWaveSensorPlugin.so: /usr/lib/x86_64-linux-gnu/libgz-utils2.so.2.2.1
 libMmWaveSensorPlugin.so: /usr/lib/x86_64-linux-gnu/libprotobuf.so
 libMmWaveSensorPlugin.so: CMakeFiles/MmWaveSensorPlugin.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX shared library libMmWaveSensorPlugin.so"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/aliza/olympus-sim/sim/gazebo/plugins/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Linking CXX shared library libMmWaveSensorPlugin.so"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/MmWaveSensorPlugin.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

@@ -125,6 +125,23 @@ def generate_launch_description():
         }
     )
 
+    # mmWave MQTT Bridge - converts ROS2 pointcloud to MQTT presence detection
+    mmwave_mqtt_bridge = Node(
+        package='olympus_sim',
+        executable='mmwave_mqtt_bridge.py',
+        name='mmwave_mqtt_bridge',
+        output='screen',
+        parameters=[{
+            'mqtt_broker': 'localhost',
+            'mqtt_port': 1883,
+            'sensor_id': 'mmwave1',
+            'detection_threshold': 0.1,
+            'max_detection_range': 10.0,
+            'min_points_for_detection': 5,
+            'use_sim_time': True
+        }]
+    )
+
     # --- Launch Description ---
     return LaunchDescription([
         gui_arg,
@@ -134,5 +151,6 @@ def generate_launch_description():
         bridge,
         mmwave_bridge,
         static_transform_publisher,
-        rviz_node
+        rviz_node,
+        mmwave_mqtt_bridge
     ])
