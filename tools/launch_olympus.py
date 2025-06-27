@@ -51,9 +51,15 @@ class OlympusLauncher:
         if ros2_lib_path not in current_ld_path:
             env['LD_LIBRARY_PATH'] = f"{ros2_lib_path}:{current_ld_path}"
         
+        # Add Gazebo plugin path for mmWave sensor
+        plugin_build_path = str(self.project_root / "sim" / "gazebo" / "plugins" / "build")
+        current_plugin_path = env.get('GZ_SIM_SYSTEM_PLUGIN_PATH', '')
+        if plugin_build_path not in current_plugin_path:
+            env['GZ_SIM_SYSTEM_PLUGIN_PATH'] = f"{plugin_build_path}:{current_plugin_path}"
+        
         return env
 
-    def launch_gazebo_simulation(self, gui=False, world="mmwave_minimal.sdf"):
+    def launch_gazebo_simulation(self, gui=False, world="mmwave_test.sdf"):
         """Launch Gazebo with the specified world"""
         world_file = self.gazebo_worlds / world
         
@@ -66,7 +72,7 @@ class OlympusLauncher:
             cmd.append('-s')  # Server mode (headless)
         
         print(f"🚀 Starting Gazebo {'with GUI' if gui else 'headless'}...")
-        return subprocess.Popen(cmd)
+        return subprocess.Popen(cmd, env=self.get_ros2_env())
     
     def launch_ros2_bridge(self):
         """Launch ROS2-Gazebo bridge"""
@@ -78,7 +84,17 @@ class OlympusLauncher:
         ]
         
         print("🌉 Starting ROS2-Gazebo bridge...")
-        return subprocess.Popen(cmd, env=self.get_ros2_env())
+        bridge_process = subprocess.Popen(cmd, env=self.get_ros2_env())
+        
+        # Also start a static transform publisher for the mmwave sensor frame
+        tf_cmd = [
+            'ros2', 'run', 'tf2_ros', 'static_transform_publisher',
+            '0', '0', '1', '0', '0', '0', 'world', 'mmwave'
+        ]
+        print("🔗 Starting static transform publisher for mmwave frame...")
+        tf_process = subprocess.Popen(tf_cmd, env=self.get_ros2_env())
+        
+        return [bridge_process, tf_process]
     
     def launch_mmwave_mqtt_bridge(self):
         """Launch mmWave MQTT bridge"""
@@ -96,12 +112,40 @@ class OlympusLauncher:
         """Launch RViz2 with mmWave configuration"""
         config_file = self.project_root / "sim" / "ros2" / "config" / "olympus_rviz.rviz"
         
+        # Set up environment for ROS2
+        env = self.get_ros2_env()
+        
+        # For WSL, ensure proper display setup
+        env['DISPLAY'] = ':0'
+        env['LIBGL_ALWAYS_SOFTWARE'] = '1'
+        env['MESA_GL_VERSION_OVERRIDE'] = '3.3'
+        
         cmd = ['ros2', 'run', 'rviz2', 'rviz2']
         if config_file.exists():
             cmd.extend(['-d', str(config_file)])
         
         print("👁️ Starting RViz2...")
-        return subprocess.Popen(cmd, env=self.get_ros2_env())
+        print(f"   Config: {config_file}")
+        print(f"   Display: {env.get('DISPLAY')}")
+        
+        try:
+            # Start RViz2 with proper environment
+            process = subprocess.Popen(cmd, env=env)
+            
+            # Give it time to initialize
+            import time
+            time.sleep(3)
+            
+            # Check if still running
+            if process.poll() is None:
+                print("✅ RViz2 started successfully")
+                return process
+            else:
+                print("❌ RViz2 failed to start")
+                return None
+        except Exception as e:
+            print(f"❌ Failed to start RViz2: {e}")
+            return None
     
     def launch_automation_demo(self):
         """Launch the automation demo controller"""
@@ -139,9 +183,9 @@ class OlympusLauncher:
                     time.sleep(3)  # Wait for Gazebo to start
                 
                 # Launch ROS2 bridge
-                bridge_proc = self.launch_ros2_bridge()
-                if bridge_proc:
-                    processes.append(("ROS2 Bridge", bridge_proc))
+                bridge_procs = self.launch_ros2_bridge()
+                if bridge_procs:
+                    processes.extend([("ROS2 Bridge", bridge_procs[0]), ("Static Transform Publisher", bridge_procs[1])])
                     time.sleep(2)
                 
                 # Launch mmWave MQTT bridge
@@ -213,7 +257,7 @@ def main():
                        help='Launch Gazebo with GUI (default: headless)')
     
     parser.add_argument('--rviz', action='store_true',
-                       help='Launch RViz2 for visualization')
+                       help='Launch RViz2')
     
     parser.add_argument('--automation', action='store_true',
                        help='Launch automation controller')

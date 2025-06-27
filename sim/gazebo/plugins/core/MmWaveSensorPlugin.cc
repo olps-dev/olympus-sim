@@ -101,16 +101,17 @@ void MmWaveSensorPlugin::Configure(const Entity &_entity,
   if (isWSL) {
     gzmsg << "[MmWaveSensorPlugin] WSL detected: Setting up WSL rendering environment" << std::endl;
     
-    // Force enable WSL compatibility mode in WSL environment
+    // Only force WSL compatibility mode if raycast is not explicitly requested
     gzmsg << "[MmWaveSensorPlugin] Before: wslCompatMode=" << (this->config.wslCompatMode ? "true" : "false") << std::endl;
-    this->config.wslCompatMode = true;
-    gzmsg << "[MmWaveSensorPlugin] After: wslCompatMode=" << (this->config.wslCompatMode ? "true" : "false") << std::endl;
-    gzmsg << "[MmWaveSensorPlugin] Forcing WSL compatibility mode in WSL environment" << std::endl;
     
-    // If force_raycast is enabled in WSL, warn about potential issues
     if (this->config.forceRaycast) {
-      gzmsg << "[MmWaveSensorPlugin] Force raycast is enabled in WSL - will attempt ray casting" << std::endl;
+      gzmsg << "[MmWaveSensorPlugin] Force raycast is enabled - keeping WSL compatibility mode as configured" << std::endl;
+    } else {
+      this->config.wslCompatMode = true;
+      gzmsg << "[MmWaveSensorPlugin] Forcing WSL compatibility mode in WSL environment (no force_raycast)" << std::endl;
     }
+    
+    gzmsg << "[MmWaveSensorPlugin] After: wslCompatMode=" << (this->config.wslCompatMode ? "true" : "false") << std::endl;
   } else {
     gzmsg << "[MmWaveSensorPlugin] Non-WSL environment: Using standard configuration" << std::endl;
   }
