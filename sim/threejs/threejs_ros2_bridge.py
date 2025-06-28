@@ -394,7 +394,7 @@ class ThreeJSROS2Bridge(Node):
             const sensorMesh = new THREE.Mesh(sensorGeometry, sensorMaterial);
             sensorGroup.add(sensorMesh);
             
-            // FOV visualization - subtle wireframe 
+            // FOV visualization - corrected direction (wide end away from sensor)
             const fovAngle = 22.5; // Half FOV in degrees (45° total)
             const range = 10;
             const fovGeometry = new THREE.ConeGeometry(
@@ -409,8 +409,9 @@ class ThreeJSROS2Bridge(Node):
                 wireframe: true
             });
             const fovCone = new THREE.Mesh(fovGeometry, fovMaterial);
+            // Position cone so wide end is away from sensor
             fovCone.position.z = range / 2;
-            fovCone.rotation.x = Math.PI / 2;
+            fovCone.rotation.x = -Math.PI / 2; // Flip direction
             sensorGroup.add(fovCone);
             
             // Sensor label
@@ -628,6 +629,313 @@ class ThreeJSROS2Bridge(Node):
             return baseReflection * angleReflection * (0.8 + 0.4 * Math.random());
         }
         
+        // REALISTIC mmWave POINT GENERATION FUNCTIONS
+        
+        function generateRealisticPoints(object, bounds, sensorPos, directionToObject) {
+            const detectionPoints = [];
+            
+            // Get all raycastable meshes from the object (avoid sprites/labels)
+            const raycastTargets = [];
+            
+            function collectMeshes(obj) {
+                if (obj.type === 'Mesh' && obj.geometry && obj.material && obj.matrixWorld) {
+                    raycastTargets.push(obj);
+                }
+                if (obj.children) {
+                    obj.children.forEach(child => {
+                        if (child.type === 'Mesh' && child.geometry && child.material && child.matrixWorld) {
+                            raycastTargets.push(child);
+                        }
+                    });
+                }
+            }
+            
+            collectMeshes(object);
+            
+            if (raycastTargets.length === 0) {
+                console.log(`[POINTS] No raycastable meshes found for ${object.userData.name || 'object'}`);
+                return detectionPoints;
+            }
+            
+            // Use actual ray casting to find real intersection points
+            const raycaster = new THREE.Raycaster();
+            const rayCount = 25; // Number of rays to cast at object
+            
+            console.log(`[POINTS] Ray-casting ${rayCount} rays at ${raycastTargets.length} meshes for ${object.userData.name || 'object'}`);
+            
+            // Cast rays in a small cone around the direction to object
+            for (let i = 0; i < rayCount; i++) {
+                // Generate ray directions in a small cone (±5 degrees)
+                const coneAngle = 0.087; // 5 degrees in radians
+                const phi = Math.random() * 2 * Math.PI;
+                const theta = Math.random() * coneAngle;
+                
+                // Create slightly offset ray direction
+                const rayDir = directionToObject.clone();
+                rayDir.x += Math.sin(theta) * Math.cos(phi);
+                rayDir.y += Math.sin(theta) * Math.sin(phi) * 0.5; // Less vertical spread
+                rayDir.z += Math.cos(theta) - 1;
+                rayDir.normalize();
+                
+                // Set up raycaster from sensor position
+                raycaster.set(sensorPos, rayDir);
+                
+                // Check intersection with raycastable meshes only
+                let intersects = [];
+                try {
+                    intersects = raycaster.intersectObjects(raycastTargets, false); // false = don't recurse into children
+                } catch (error) {
+                    console.warn('Raycast error:', error);
+                    continue; // Skip this ray
+                }
+                
+                if (intersects.length > 0) {
+                    const intersection = intersects[0];
+                    const hitPoint = intersection.point;
+                    const hitNormal = intersection.face ? intersection.face.normal.clone() : directionToObject.clone();
+                    
+                    // Transform normal to world space (intersection object is guaranteed to have matrixWorld)
+                    hitNormal.transformDirection(intersection.object.matrixWorld);
+                    hitNormal.normalize();
+                    
+                    // Add some realistic noise to hit point
+                    const noiseLevel = 0.02;
+                    hitPoint.x += (Math.random() - 0.5) * noiseLevel;
+                    hitPoint.y += (Math.random() - 0.5) * noiseLevel;
+                    hitPoint.z += (Math.random() - 0.5) * noiseLevel;
+                    
+                    // Calculate reflection strength based on surface angle and material
+                    const incidentAngle = Math.abs(hitNormal.dot(rayDir.clone().negate()));
+                    let reflectionMultiplier = 0.5 + incidentAngle * 0.8;
+                    
+                    // Adjust reflection based on object type
+                    switch (object.userData.type) {
+                        case 'human':
+                            reflectionMultiplier *= 1.2; // Higher water content
+                            break;
+                        case 'furniture':
+                            reflectionMultiplier *= 0.8; // Wood/fabric absorbs more
+                            break;
+                        case 'object':
+                            reflectionMultiplier *= 1.1; // Metal objects reflect well
+                            break;
+                    }
+                    
+                    detectionPoints.push({
+                        position: hitPoint,
+                        normal: hitNormal,
+                        incidentDirection: rayDir.clone().negate(),
+                        reflectionMultiplier: reflectionMultiplier,
+                        type: 'surface_hit'
+                    });
+                }
+            }
+            
+            console.log(`[POINTS] Generated ${detectionPoints.length} realistic intersection points`);
+            return detectionPoints;
+        }
+        
+        function generateTablePoints(object, box, size, sensorPos, directionToObject) {
+            const points = [];
+            
+            // TABLE EDGE DETECTION: mmWave excels at detecting table edges
+            // Front edge (facing sensor)
+            const frontEdge = object.position.clone();
+            frontEdge.add(directionToObject.clone().multiplyScalar(-size.z / 2));
+            frontEdge.y = object.position.y + size.y / 2; // Table top
+            
+            // Generate points along front edge
+            for (let i = 0; i < 8; i++) {
+                const edgePoint = frontEdge.clone();
+                edgePoint.x += (i - 3.5) * (size.x / 8) + (Math.random() - 0.5) * 0.05;
+                edgePoint.y += (Math.random() - 0.5) * 0.02; // Small height variation
+                
+                points.push({
+                    position: edgePoint,
+                    normal: directionToObject,
+                    incidentDirection: directionToObject.clone().negate(),
+                    reflectionMultiplier: 1.8, // Strong edge reflection
+                    type: 'table_edge'
+                });
+            }
+            
+            // TABLE LEGS: mmWave detects vertical leg structures
+            const legPositions = [
+                { x: -size.x/2 + 0.1, z: -size.z/2 + 0.1 }, // Corner legs
+                { x: size.x/2 - 0.1, z: -size.z/2 + 0.1 },
+                { x: -size.x/2 + 0.1, z: size.z/2 - 0.1 },
+                { x: size.x/2 - 0.1, z: size.z/2 - 0.1 }
+            ];
+            
+            legPositions.forEach(legOffset => {
+                const legPos = object.position.clone();
+                legPos.x += legOffset.x;
+                legPos.z += legOffset.z;
+                legPos.y = object.position.y - size.y/4; // Mid-leg height
+                
+                // Only include legs within sensor view angle
+                const toSensor = sensorPos.clone().sub(legPos).normalize();
+                if (toSensor.dot(directionToObject) > 0.4) {
+                    points.push({
+                        position: legPos,
+                        normal: toSensor,
+                        incidentDirection: toSensor.clone().negate(),
+                        reflectionMultiplier: 1.2, // Moderate leg reflection
+                        type: 'table_leg'
+                    });
+                }
+            });
+            
+            // TABLE SURFACE: Weak surface reflections from table top
+            for (let i = 0; i < 4; i++) {
+                const surfacePoint = object.position.clone();
+                surfacePoint.x += (Math.random() - 0.5) * size.x * 0.8;
+                surfacePoint.z += (Math.random() - 0.5) * size.z * 0.8;
+                surfacePoint.y = object.position.y + size.y / 2 + 0.01; // Slightly above table
+                
+                points.push({
+                    position: surfacePoint,
+                    normal: new THREE.Vector3(0, 1, 0), // Surface normal pointing up
+                    incidentDirection: directionToObject.clone().negate(),
+                    reflectionMultiplier: 0.4, // Weak surface reflection
+                    type: 'table_surface'
+                });
+            }
+            
+            return points;
+        }
+        
+        function generateHumanPoints(object, box, size, sensorPos, directionToObject) {
+            const points = [];
+            
+            // HUMAN TORSO: Main reflection from center mass
+            const torsoHeight = object.position.y;
+            for (let i = 0; i < 6; i++) {
+                const torsoPoint = object.position.clone();
+                torsoPoint.x += (Math.random() - 0.5) * size.x * 0.6;
+                torsoPoint.y = torsoHeight + (Math.random() - 0.3) * size.y * 0.4;
+                torsoPoint.z += (Math.random() - 0.5) * size.z * 0.4;
+                
+                points.push({
+                    position: torsoPoint,
+                    normal: directionToObject,
+                    incidentDirection: directionToObject.clone().negate(),
+                    reflectionMultiplier: 1.3, // Strong human body reflection (water content)
+                    type: 'human_torso'
+                });
+            }
+            
+            // HUMAN LIMBS: Arms and legs create smaller reflections
+            for (let i = 0; i < 4; i++) {
+                const limbPoint = object.position.clone();
+                limbPoint.x += (Math.random() - 0.5) * size.x;
+                limbPoint.y += (Math.random() - 0.5) * size.y;
+                limbPoint.z += (Math.random() - 0.5) * size.z * 0.3;
+                
+                points.push({
+                    position: limbPoint,
+                    normal: directionToObject,
+                    incidentDirection: directionToObject.clone().negate(),
+                    reflectionMultiplier: 0.9, // Moderate limb reflection
+                    type: 'human_limb'
+                });
+            }
+            
+            return points;
+        }
+        
+        function generateSmallObjectPoints(object, box, size, sensorPos, directionToObject) {
+            const points = [];
+            
+            // OBJECT CORNERS: Strong corner reflections
+            const corners = [
+                { x: -size.x/2, y: size.y/2, z: -size.z/2 },
+                { x: size.x/2, y: size.y/2, z: -size.z/2 },
+                { x: -size.x/2, y: -size.y/2, z: -size.z/2 },
+                { x: size.x/2, y: -size.y/2, z: -size.z/2 }
+            ];
+            
+            corners.forEach(corner => {
+                const cornerPos = object.position.clone();
+                cornerPos.add(new THREE.Vector3(corner.x, corner.y, corner.z));
+                
+                points.push({
+                    position: cornerPos,
+                    normal: directionToObject,
+                    incidentDirection: directionToObject.clone().negate(),
+                    reflectionMultiplier: 1.6, // Strong corner reflection
+                    type: 'object_corner'
+                });
+            });
+            
+            // OBJECT FACE: Front face reflection
+            const faceCenter = object.position.clone();
+            faceCenter.add(directionToObject.clone().multiplyScalar(-size.z / 2));
+            
+            points.push({
+                position: faceCenter,
+                normal: directionToObject,
+                incidentDirection: directionToObject.clone().negate(),
+                reflectionMultiplier: 1.0, // Moderate face reflection
+                type: 'object_face'
+            });
+            
+            return points;
+        }
+        
+        function generateGenericPoints(object, box, size, sensorPos, directionToObject) {
+            const points = [];
+            
+            // Generic edge detection for unknown objects
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * 2 * Math.PI;
+                const radius = Math.max(size.x, size.z) / 2;
+                
+                const edgePos = object.position.clone();
+                edgePos.x += Math.cos(angle) * radius * 0.9;
+                edgePos.z += Math.sin(angle) * radius * 0.9;
+                edgePos.y += (Math.random() - 0.5) * size.y * 0.8;
+                
+                points.push({
+                    position: edgePos,
+                    normal: directionToObject,
+                    incidentDirection: directionToObject.clone().negate(),
+                    reflectionMultiplier: 1.0,
+                    type: 'generic_edge'
+                });
+            }
+            
+            return points;
+        }
+        
+        function generateSpecularReflections(object, sensorPos, primaryDirection) {
+            const specularPoints = [];
+            const specularCount = 3; // Bright reflection spots
+            
+            // Generate a few very bright specular reflection points
+            for (let i = 0; i < specularCount; i++) {
+                // Specular points are closer to direct line-of-sight
+                const deviation = (Math.random() - 0.5) * 0.3;
+                const specularPos = new THREE.Vector3(
+                    object.position.x + deviation,
+                    object.position.y + deviation,
+                    object.position.z + deviation
+                );
+                
+                const toSensor = sensorPos.clone().sub(specularPos).normalize();
+                
+                specularPoints.push({
+                    position: specularPos,
+                    normal: toSensor,
+                    incidentDirection: toSensor.clone().negate(),
+                    reflectionMultiplier: 2.0, // Very bright specular reflections
+                    type: 'specular'
+                });
+            }
+            
+            return specularPoints;
+        }
+        
         function simulatePointCloud(sensor) {
             if (!isRunning) {
                 console.log(`[${sensor.id}] Simulation not running, returning empty points`);
@@ -666,68 +974,45 @@ class ThreeJSROS2Bridge(Node):
                         console.log(`[${sensor.id}] Object ${object.userData.name}: angle=${(angle*180/Math.PI).toFixed(1)}°, FOV_half=${(fovHalf*180/Math.PI).toFixed(1)}°, inFOV=${angle <= fovHalf}`);
                         
                         if (angle <= sensor.config.horizontalFov / 2) {
-                            // Realistic mmWave ray casting simulation
-                            console.log(`[${sensor.id}] DETECTED ${object.userData.name}! Starting ray casting...`);
+                            // Realistic mmWave detection - object-specific geometry-based points
+                            console.log(`[${sensor.id}] DETECTED ${object.userData.name}! Generating realistic object-specific point cloud...`);
                             
-                            // Cast multiple rays in a pattern around the object
-                            const raysPerObject = 64; // Higher resolution
                             const objectBounds = getObjectBounds(object);
                             
-                            for (let i = 0; i < raysPerObject; i++) {
-                                // Create ray pattern around object surface
-                                const phi = (i / raysPerObject) * 2 * Math.PI;
-                                const theta = Math.random() * Math.PI / 6; // Small vertical spread
+                            // Generate realistic points using ray casting
+                            const detectionPoints = generateRealisticPoints(object, objectBounds, sensorPos, directionToObject);
+                            
+                            // Process all detection points
+                            detectionPoints.forEach(detectionPoint => {
+                                const hitDistance = detectionPoint.position.distanceTo(sensorPos);
                                 
-                                // Ray target on object surface
-                                const targetOffset = new THREE.Vector3(
-                                    Math.cos(phi) * Math.sin(theta) * objectBounds.radius,
-                                    Math.cos(theta) * objectBounds.radius * 0.5,
-                                    Math.sin(phi) * Math.sin(theta) * objectBounds.radius
-                                );
+                                // Apply realistic mmWave reflection physics
+                                const reflectionStrength = calculateReflection(
+                                    object.userData.type, 
+                                    detectionPoint.normal, 
+                                    detectionPoint.incidentDirection
+                                ) * detectionPoint.reflectionMultiplier;
                                 
-                                const rayTarget = object.position.clone().add(targetOffset);
-                                const rayDirection = rayTarget.clone().sub(sensorPos).normalize();
-                                
-                                // Simulate ray casting with realistic physics
-                                const raycaster = new THREE.Raycaster(sensorPos, rayDirection);
-                                // Filter out sprites/labels and only raycast against mesh objects
-                                const meshChildren = [];
-                                object.traverse((child) => {
-                                    if (child.isMesh && child.geometry && child.material) {
-                                        meshChildren.push(child);
-                                    }
-                                });
-                                const intersects = raycaster.intersectObjects(meshChildren, false);
-                                
-                                if (intersects.length > 0) {
-                                    const hit = intersects[0];
-                                    const hitDistance = hit.distance;
+                                if (reflectionStrength > 0.15) { // mmWave detection threshold
+                                    // Add realistic measurement noise
+                                    const noiseLevel = 0.03 + (hitDistance * 0.008);
+                                    const noisyPoint = detectionPoint.position.clone();
+                                    noisyPoint.x += (Math.random() - 0.5) * noiseLevel;
+                                    noisyPoint.y += (Math.random() - 0.5) * noiseLevel;
+                                    noisyPoint.z += (Math.random() - 0.5) * noiseLevel;
                                     
-                                    // mmWave reflection properties
-                                    const reflectionStrength = calculateReflection(object.userData.type, hit.face.normal, rayDirection);
-                                    
-                                    if (reflectionStrength > 0.1) { // Minimum reflection threshold
-                                        // Use world coordinates for point cloud viewer correlation
-                                        const worldPoint = hit.point.clone();
-                                        
-                                        // Add realistic noise based on distance and material
-                                        const noiseLevel = 0.02 + (hitDistance * 0.005);
-                                        worldPoint.x += (Math.random() - 0.5) * noiseLevel;
-                                        worldPoint.y += (Math.random() - 0.5) * noiseLevel;
-                                        worldPoint.z += (Math.random() - 0.5) * noiseLevel;
-                                        
-                                        points.push({
-                                            x: worldPoint.x,
-                                            y: worldPoint.y,
-                                            z: worldPoint.z,
-                                            intensity: reflectionStrength,
-                                            range: distance,
-                                            velocity: 0,
-                                            rcs: object.userData.rcs
-                                        });
-                                    }
+                                    points.push({
+                                        x: noisyPoint.x,
+                                        y: noisyPoint.y,
+                                        z: noisyPoint.z,
+                                        intensity: reflectionStrength,
+                                        range: hitDistance,
+                                        velocity: 0,
+                                        rcs: object.userData.rcs,
+                                        type: detectionPoint.type // 'edge', 'surface', 'specular'
+                                    });
                                 }
-                            }
+                            });
                         }
                     }
                 }
