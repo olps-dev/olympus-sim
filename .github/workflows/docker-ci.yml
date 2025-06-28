@@ -1,0 +1,72 @@
+name: Docker CI Test
+
+on:
+  push:
+    branches: [ main, multiple_sensors ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  docker-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Build Docker image
+      run: |
+        echo "Building Olympus CI Docker image..."
+        docker build -f Dockerfile.ci -t olympus-ci:test .
+        echo "Docker image built successfully"
+
+    - name: Run simulation test in Docker
+      id: docker_test
+      run: |
+        echo "Running simulation test in Docker container..."
+        
+        # Run with resource limits and timeout
+        docker run \
+          --rm \
+          --name olympus-ci-test \
+          --memory=1g \
+          --cpus=2 \
+          -e TEST_DURATION_SEC=30 \
+          -e TEST_SCENARIO_NAME=docker \
+          -e TEST_NETWORK_CONDITION=good \
+          -e MAX_LATENCY_P95_MS=300 \
+          olympus-ci:test
+
+    - name: Test Docker health check
+      run: |
+        echo "Testing Docker health check..."
+        
+        # Start container in background
+        docker run -d \
+          --name olympus-health-test \
+          --memory=512m \
+          olympus-ci:test sleep 60
+        
+        # Wait for health check
+        sleep 10
+        
+        # Check health status
+        health_status=$(docker inspect --format='{{.State.Health.Status}}' olympus-health-test 2>/dev/null || echo "no-health-check")
+        echo "Health status: $health_status"
+        
+        # Clean up
+        docker stop olympus-health-test || true
+        docker rm olympus-health-test || true
+
+    - name: Cleanup Docker resources
+      if: always()
+      run: |
+        # Remove test containers
+        docker stop olympus-ci-test || true
+        docker rm olympus-ci-test || true
+        
+        # Remove test image
+        docker rmi olympus-ci:test || true
+        
+        echo "Docker cleanup completed"

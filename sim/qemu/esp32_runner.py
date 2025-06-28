@@ -170,7 +170,7 @@ class ESP32QEMURunner:
     
     def run(self) -> bool:
         """Run the complete ESP32 simulation."""
-        log.info("🚀 Starting Project Olympus ESP32 Node Simulation")
+        log.info("Starting Project Olympus ESP32 Node Simulation")
         
         # Setup networking
         if not self.setup_tap_interface():

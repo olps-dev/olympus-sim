@@ -1,32 +1,25 @@
 #!/usr/bin/env python3
 """
-Automation Demo for Olympus Simulation
-Demonstrates Step 2: Close the automation loop
-- Subscribes to sensor/+/presence topics
-- When human_present is true, publishes actuators/lamp_hall/on
-- Simulates basic home automation logic
+Working automation controller for Olympus simulation
 """
-
 import paho.mqtt.client as mqtt
 import json
 import time
 import logging
-from datetime import datetime
+import sys
+import os
+
+# Add metrics path for imports
+sys.path.append('/app/metrics')
+from latency_battery_tracker import LatencyBatteryTracker
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger('automation_demo')
+logger = logging.getLogger('simple_automation')
 
-class AutomationController:
+class SimpleAutomationController:
     def __init__(self):
-        # Create MQTT client - compatible with older paho-mqtt versions
-        try:
-            # Try new API first (paho-mqtt >= 2.0)
-            self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-        except AttributeError:
-            # Fall back to old API (paho-mqtt < 2.0)
-            self.client = mqtt.Client()
-        
+        self.client = mqtt.Client(protocol=mqtt.MQTTv311)
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
         
@@ -34,185 +27,164 @@ class AutomationController:
         self.sensor_states = {}
         self.lamp_state = False
         self.last_action_time = 0
-        self.action_cooldown = 2.0  # Seconds between actions
+        self.action_cooldown = 2.0
         
-        # Automation rules
-        self.automation_rules = {
-            'lamp_hall': {
-                'trigger_sensors': ['mmwave1'],  # Sensors that can trigger this actuator
-                'action_on': 'on',
-                'action_off': 'off',
-                'auto_off_delay': 30.0  # Auto turn off after 30 seconds
-            }
+        # Initialize metrics tracker
+        self.metrics_tracker = LatencyBatteryTracker()
+        
+        # Statistics
+        self.stats = {
+            'messages_received': 0,
+            'lamp_commands_sent': 0,
+            'human_detections': 0,
+            'start_time': time.time()
         }
         
-    def on_connect(self, client, userdata, flags, reason_code, properties=None):
-        """MQTT connection callback - compatible with both old and new paho-mqtt versions"""
-        if reason_code == 0:
-            logger.info("✅ Connected to MQTT broker")
-            # Subscribe to all sensor presence topics
+    def on_connect(self, client, userdata, flags, rc, properties=None):
+        logger.info(f"Connected with result code {rc}")
+        if rc == 0:
             client.subscribe("sensor/+/presence")
-            client.subscribe("sensor/+/human_present")
-            logger.info("📡 Subscribed to sensor presence topics")
+            logger.info("Subscribed to sensor presence topics")
         else:
-            logger.error(f"❌ Failed to connect: {reason_code}")
+            logger.error(f"Failed to connect: {rc}")
     
     def on_message(self, client, userdata, msg):
-        topic = msg.topic
-        payload = msg.payload.decode()
+        self.stats['messages_received'] += 1
         
         try:
-            # Parse topic to extract sensor info
-            topic_parts = topic.split('/')
-            if len(topic_parts) >= 3 and topic_parts[0] == 'sensor':
-                sensor_id = topic_parts[1]
-                message_type = topic_parts[2]
-                
-                # Handle different message types
-                if message_type == 'presence':
-                    self.handle_presence_message(sensor_id, payload)
-                elif message_type == 'human_present':
-                    self.handle_simple_presence(sensor_id, payload)
-                    
-        except Exception as e:
-            logger.error(f"Error processing message from {topic}: {e}")
-    
-    def handle_presence_message(self, sensor_id, payload):
-        """Handle detailed presence JSON messages"""
-        try:
-            data = json.loads(payload)
+            data = json.loads(msg.payload.decode())
+            sensor_id = data.get('sensor_id', 'unknown')
             human_present = data.get('human_present', False)
-            analysis = data.get('analysis', 'No analysis')
-            
-            logger.info(f"📊 {sensor_id}: {human_present} ({analysis})")
+            event_id = data.get('event_id')
             
             # Update sensor state
             self.sensor_states[sensor_id] = {
                 'human_present': human_present,
                 'last_update': time.time(),
-                'analysis': analysis
+                'event_id': event_id
             }
             
-            # Trigger automation
-            self.process_automation_rules()
+            if human_present:
+                self.stats['human_detections'] += 1
             
-        except json.JSONDecodeError:
-            logger.warning(f"Invalid JSON from {sensor_id}: {payload}")
+            # Log automation triggered for latency tracking
+            if event_id:
+                self.metrics_tracker.log_automation_triggered(event_id, sensor_id)
+            
+            # Process automation rules
+            self.process_automation()
+            
+        except Exception as e:
+            logger.error(f"Error processing message: {e}")
     
-    def handle_simple_presence(self, sensor_id, payload):
-        """Handle simple boolean presence messages"""
-        human_present = payload.lower() == 'true'
-        
-        logger.info(f"📊 {sensor_id}: {human_present} (simple)")
-        
-        # Update sensor state
-        if sensor_id not in self.sensor_states:
-            self.sensor_states[sensor_id] = {}
-        
-        self.sensor_states[sensor_id].update({
-            'human_present': human_present,
-            'last_update': time.time()
-        })
-        
-        # Trigger automation
-        self.process_automation_rules()
-    
-    def process_automation_rules(self):
-        """Process automation rules based on current sensor states"""
+    def process_automation(self):
         current_time = time.time()
         
-        # Avoid rapid-fire actions
+        # Cooldown check
         if current_time - self.last_action_time < self.action_cooldown:
             return
         
-        # Check each automation rule
-        for actuator_id, rule in self.automation_rules.items():
-            trigger_sensors = rule['trigger_sensors']
-            
-            # Check if any trigger sensor detects presence
-            any_presence = False
-            active_sensors = []
-            
-            for sensor_id in trigger_sensors:
-                if sensor_id in self.sensor_states:
-                    sensor_state = self.sensor_states[sensor_id]
-                    if sensor_state.get('human_present', False):
-                        any_presence = True
-                        active_sensors.append(sensor_id)
-            
-            # Determine desired actuator state
-            desired_state = any_presence
-            
-            # Take action if state should change
-            if desired_state != self.lamp_state:
-                action = rule['action_on'] if desired_state else rule['action_off']
-                self.control_actuator(actuator_id, action, active_sensors)
-                self.lamp_state = desired_state
-                self.last_action_time = current_time
+        # Check if any sensor detects presence
+        any_presence = any(
+            state.get('human_present', False) 
+            for state in self.sensor_states.values()
+        )
+        
+        # Take action if state changed
+        if any_presence != self.lamp_state:
+            self.control_lamp(any_presence)
+            self.lamp_state = any_presence
+            self.last_action_time = current_time
     
-    def control_actuator(self, actuator_id, action, trigger_sensors):
-        """Send control command to actuator"""
-        actuator_topic = f"actuators/{actuator_id}/{action}"
+    def control_lamp(self, turn_on):
+        action = "on" if turn_on else "off"
+        topic = f"actuators/lamp_hall/{action}"
+        
+        # Find triggering sensors and event IDs
+        triggering_sensors = []
+        event_ids = []
+        
+        if turn_on:
+            for sensor_id, state in self.sensor_states.items():
+                if state.get('human_present', False):
+                    triggering_sensors.append(sensor_id)
+                    if state.get('event_id'):
+                        event_ids.append(state['event_id'])
         
         # Create control payload
         control_payload = {
             'timestamp': time.time(),
             'action': action,
-            'triggered_by': trigger_sensors,
-            'automation_controller': 'olympus_demo'
+            'triggered_by': triggering_sensors,
+            'event_ids': event_ids
         }
         
-        # Publish control command
-        self.client.publish(actuator_topic, json.dumps(control_payload), qos=1)
+        # Publish commands
+        self.client.publish(topic, json.dumps(control_payload), qos=1)
+        self.client.publish("actuators/lamp_hall/state", action, qos=1)
         
-        # Also publish simple command
-        simple_topic = f"actuators/{actuator_id}/state"
-        self.client.publish(simple_topic, action, qos=1)
+        # Track statistics
+        self.stats['lamp_commands_sent'] += 1
+        
+        # Log lamp toggle events for latency tracking
+        for event_id in event_ids:
+            for sensor_id in triggering_sensors:
+                if (sensor_id in self.sensor_states and 
+                    self.sensor_states[sensor_id].get('event_id') == event_id):
+                    self.metrics_tracker.log_lamp_toggled(event_id, sensor_id)
         
         # Log action
-        status = "🟡 ON" if action == 'on' else "⚫ OFF"
-        sensors_str = ", ".join(trigger_sensors) if trigger_sensors else "none"
-        logger.info(f"🏠 AUTOMATION: {actuator_id} -> {status} (triggered by: {sensors_str})")
-        
-        # Publish automation event
-        event_topic = "automation/events"
-        event_payload = {
-            'timestamp': time.time(),
-            'event_type': 'actuator_control',
-            'actuator_id': actuator_id,
-            'action': action,
-            'triggered_by': trigger_sensors,
-            'automation_latency_ms': (time.time() - max(
-                [self.sensor_states[s]['last_update'] for s in trigger_sensors] + [0]
-            )) * 1000 if trigger_sensors else 0
-        }
-        self.client.publish(event_topic, json.dumps(event_payload), qos=1)
+        status = "ON" if turn_on else "OFF"
+        sensors_str = ", ".join(triggering_sensors) if triggering_sensors else "none"
+        logger.info(f"AUTOMATION: lamp_hall -> {status} (triggered by: {sensors_str})")
     
     def run(self):
-        logger.info("🏠 Olympus Automation Controller Starting")
-        logger.info("=" * 60)
-        logger.info("This controller demonstrates end-to-end automation:")
-        logger.info("  1. Monitors sensor/+/presence for human detection")
-        logger.info("  2. Controls actuators/lamp_hall/on when presence detected")
-        logger.info("  3. Publishes automation events and latency metrics")
-        logger.info("")
-        logger.info("Expected flow:")
-        logger.info("  sensor/mmwave1/presence -> actuators/lamp_hall/on")
-        logger.info("")
-        logger.info("Press Ctrl+C to exit")
-        logger.info("=" * 60)
+        logger.info("Simple Automation Controller Starting")
+        logger.info("Connecting to MQTT...")
         
         try:
-            self.client.connect("localhost", 1883, 60)
+            mqtt_broker = os.getenv('MQTT_BROKER', 'localhost')
+            mqtt_port = int(os.getenv('MQTT_PORT', '1883'))
+            
+            result = self.client.connect(mqtt_broker, mqtt_port, 60)
+            logger.info(f"Connect result: {result}")
+            
             self.client.loop_forever()
+            
         except KeyboardInterrupt:
-            logger.info("\n👋 Shutting down automation controller...")
+            logger.info("Shutting down...")
+            
+            # Generate final metrics
+            try:
+                plots = self.metrics_tracker.generate_plots()
+                if plots:
+                    logger.info(f"Generated plots: {list(plots.keys())}")
+                
+                # Print final stats
+                runtime = time.time() - self.stats['start_time']
+                logger.info(f"Final Statistics:")
+                logger.info(f"  Runtime: {runtime:.1f} seconds")
+                logger.info(f"  Messages received: {self.stats['messages_received']}")
+                logger.info(f"  Human detections: {self.stats['human_detections']}")
+                logger.info(f"  Lamp commands sent: {self.stats['lamp_commands_sent']}")
+                
+                summary = self.metrics_tracker.get_metrics_summary()
+                if summary:
+                    latency = summary.get('latency', {})
+                    logger.info(f"  End-to-end latency samples: {latency.get('count', 0)}")
+                    if latency.get('count', 0) > 0:
+                        logger.info(f"  Mean latency: {latency.get('mean_ms', 0):.1f}ms")
+                        logger.info(f"  P95 latency: {latency.get('p95_ms', 0):.1f}ms")
+                    
+            except Exception as e:
+                logger.error(f"Error generating final metrics: {e}")
+                
         except Exception as e:
-            logger.error(f"❌ Error: {e}")
+            logger.error(f"Error: {e}")
         finally:
             self.client.disconnect()
-            logger.info("🏠 Automation controller stopped")
+            logger.info("Automation controller stopped")
 
 if __name__ == "__main__":
-    controller = AutomationController()
+    controller = SimpleAutomationController()
     controller.run()

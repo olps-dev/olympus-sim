@@ -14,6 +14,15 @@ import struct
 import time
 from threading import Thread
 import logging
+import sys
+import os
+
+# Add metrics and network directories to path
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'metrics'))
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'network'))
+from latency_battery_tracker import LatencyBatteryTracker
+from network_realism import create_realistic_mqtt_client
+from config import get_network_config_for_component
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -55,14 +64,15 @@ class MultiMmWaveMQTTBridge(Node):
                 'detection_cooldown': 0.5
             }
         
-        # Setup MQTT client
-        try:
-            self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-        except AttributeError:
-            self.mqtt_client = mqtt.Client()
+        # Setup MQTT client with network realism
+        network_config = get_network_config_for_component('sensor_bridge')
+        self.mqtt_client = create_realistic_mqtt_client(network_config)
         
         self.mqtt_client.on_connect = self.on_mqtt_connect
         self.mqtt_client.on_disconnect = self.on_mqtt_disconnect
+        
+        # Store network simulator for statistics
+        self.network_simulator = self.mqtt_client.network_sim
         
         # Create ROS2 Subscribers for each sensor
         self.subscribers = []
@@ -87,8 +97,16 @@ class MultiMmWaveMQTTBridge(Node):
         self.mqtt_thread.daemon = True
         self.mqtt_thread.start()
         
+        # Initialize latency and battery tracker
+        self.metrics_tracker = LatencyBatteryTracker()
+        for sensor_id in self.sensor_ids:
+            self.metrics_tracker.init_sensor_battery(sensor_id)
+        
         # Timer for periodic status updates
         self.create_timer(10.0, self.publish_status)
+        
+        # Timer for metrics plot generation (every 30 seconds)
+        self.create_timer(30.0, self.generate_metrics_plots)
         
     def mqtt_connect(self):
         """Connect to MQTT broker"""
@@ -115,6 +133,9 @@ class MultiMmWaveMQTTBridge(Node):
         try:
             current_time = time.time()
             sensor_state = self.sensor_states[sensor_id]
+            
+            # Log pointcloud received for latency tracking
+            event_id = self.metrics_tracker.log_pointcloud_received(sensor_id)
             
             # Check cooldown
             if current_time - sensor_state['last_detection_time'] < sensor_state['detection_cooldown']:
@@ -149,7 +170,7 @@ class MultiMmWaveMQTTBridge(Node):
             
             # Publish if state changed or periodic update
             if human_present != sensor_state['current_presence'] or current_time - sensor_state['last_detection_time'] > 2.0:
-                self.publish_presence(sensor_id, human_present, num_valid_points, analysis)
+                self.publish_presence(sensor_id, human_present, num_valid_points, analysis, event_id)
                 sensor_state['current_presence'] = human_present
                 sensor_state['last_detection_time'] = current_time
                 
@@ -197,7 +218,7 @@ class MultiMmWaveMQTTBridge(Node):
             self.get_logger().error(f"Error parsing point cloud: {e}")
             return None
     
-    def publish_presence(self, sensor_id, human_present, num_points, analysis):
+    def publish_presence(self, sensor_id, human_present, num_points, analysis, event_id=None):
         """Publish human presence detection to MQTT"""
         try:
             topic = f"sensor/{sensor_id}/presence"
@@ -208,6 +229,8 @@ class MultiMmWaveMQTTBridge(Node):
                 "human_present": human_present,
                 "num_points": num_points,
                 "analysis": analysis,
+                "event_id": event_id,  # Add event_id for latency tracking
+                "battery_level_mah": self.metrics_tracker.get_battery_level(sensor_id),
                 "detection_range": {
                     "min": self.detection_threshold,
                     "max": self.max_detection_range
@@ -217,8 +240,13 @@ class MultiMmWaveMQTTBridge(Node):
             payload = json.dumps(message)
             self.mqtt_client.publish(topic, payload, qos=1, retain=True)
             
+            # Log MQTT published for latency tracking
+            if event_id:
+                self.metrics_tracker.log_mqtt_published(sensor_id, event_id)
+            
             status = "DETECTED" if human_present else "CLEAR"
-            self.get_logger().info(f"[{sensor_id}] {status}: {analysis}")
+            battery_level = message["battery_level_mah"]
+            self.get_logger().info(f"[{sensor_id}] {status}: {analysis} (Battery: {battery_level:.1f}mAh)")
             
         except Exception as e:
             self.get_logger().error(f"Error publishing presence for {sensor_id}: {e}")
@@ -239,6 +267,39 @@ class MultiMmWaveMQTTBridge(Node):
                 
         except Exception as e:
             self.get_logger().error(f"Error publishing status: {e}")
+    
+    def generate_metrics_plots(self):
+        """Generate and update metrics plots"""
+        try:
+            plots = self.metrics_tracker.generate_plots()
+            if plots:
+                self.get_logger().info(f"Generated metrics plots: {list(plots.keys())}")
+            
+            # Log metrics summary
+            summary = self.metrics_tracker.get_metrics_summary()
+            network_stats = self.network_simulator.get_statistics()
+            
+            if summary:
+                latency_info = summary.get('latency', {})
+                battery_info = summary.get('battery', {})
+                
+                self.get_logger().info(
+                    f"Metrics Summary - Latency: {latency_info.get('count', 0)} samples, "
+                    f"Mean: {latency_info.get('mean_ms', 0):.1f}ms, "
+                    f"P95: {latency_info.get('p95_ms', 0):.1f}ms, "
+                    f"Runtime: {battery_info.get('runtime_minutes', 0):.1f}min"
+                )
+                
+                self.get_logger().info(
+                    f"Network Stats - Sent: {network_stats.get('messages_sent', 0)}, "
+                    f"Dropped: {network_stats.get('messages_dropped', 0)} "
+                    f"({network_stats.get('drop_rate_actual', 0):.1%}), "
+                    f"Avg Latency Added: {network_stats.get('avg_latency_added_ms', 0):.1f}ms, "
+                    f"Condition: {network_stats.get('network_condition', 'unknown')}"
+                )
+                
+        except Exception as e:
+            self.get_logger().error(f"Error generating metrics plots: {e}")
 
 def main(args=None):
     rclpy.init(args=args)

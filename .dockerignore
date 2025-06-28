@@ -1,0 +1,71 @@
+# Dockerignore for Olympus CI builds
+
+# Version control
+.git
+.gitignore
+
+# Build artifacts
+build/
+install/
+log/
+*.log
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+results/
+metrics/*.png
+metrics/*.csv
+
+# Temporary files
+*.tmp
+*.temp
+test_*.py
+!tests/test_*.py
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Node modules (if any)
+node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Pytest cache
+.pytest_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+
+# Large files that aren't needed for CI
+readme_imgs/
+*.png
+*.jpg
+*.gif
+
+# Local configuration
+.env
+.env.local
+config.local.*

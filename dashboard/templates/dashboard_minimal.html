@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Olympus IoT Simulation - Live Dashboard</title>
+    
+    <!-- Three.js ES Modules -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.156.1/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.156.1/examples/jsm/"
+            }
+        }
+    </script>
+    
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-areas: 
+                "header header header"
+                "sidebar main-view panels"
+                "sidebar main-view panels";
+            grid-template-columns: 300px 1fr 350px;
+            grid-template-rows: 60px 1fr;
+            height: 100vh;
+            gap: 2px;
+            background: #000;
+        }
+        
+        .header {
+            grid-area: header;
+            background: linear-gradient(90deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 2px solid #00bcd4;
+        }
+        
+        .header h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #00bcd4;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 12px;
+            background: rgba(76,175,80,0.2);
+            border: 1px solid #4caf50;
+            color: #4caf50;
+            font-size: 0.85rem;
+        }
+        
+        .sidebar {
+            grid-area: sidebar;
+            background: #1a1a2e;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        .main-view {
+            grid-area: main-view;
+            background: #0a0a0a;
+            position: relative;
+        }
+        
+        .panels {
+            grid-area: panels;
+            background: #1a1a2e;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        .panel {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .panel-header {
+            background: linear-gradient(90deg, #16213e, #1a1a2e);
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-weight: 600;
+            color: #00bcd4;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .panel-content {
+            padding: 15px;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            font-size: 0.85rem;
+            color: #999;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .metric-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .sensor-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sensor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .sensor-name {
+            font-weight: 600;
+            color: #00bcd4;
+        }
+        
+        .sensor-status {
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(76,175,80,0.2);
+            color: #4caf50;
+        }
+        
+        .sensor-details {
+            font-size: 0.8rem;
+            color: #999;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .event-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .event-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            padding: 10px;
+            margin: 6px 0;
+            border-left: 3px solid #00bcd4;
+            font-size: 0.85rem;
+        }
+        
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        
+        .event-action {
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .event-time {
+            color: #999;
+            font-size: 0.8rem;
+        }
+        
+        .event-details {
+            color: #ccc;
+            font-size: 0.8rem;
+        }
+        
+        .viewport-overlay {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.85rem;
+            color: #00bcd4;
+            z-index: 100;
+            border: 1px solid rgba(0,188,212,0.3);
+        }
+        
+        .debug-info {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.8);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: #4caf50;
+            z-index: 100;
+            border: 1px solid rgba(76,175,80,0.3);
+        }
+        
+        #three-container {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .success { color: #4caf50; }
+        .warning { color: #ff9800; }
+        .error { color: #f44336; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,188,212,0.5);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,188,212,0.7);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-grid">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <i class="fas fa-cube"></i>
+                Olympus Simulation Dashboard
+            </h1>
+            <div class="status-badge">
+                <i class="fas fa-circle"></i>
+                Live Data
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Performance Metrics -->
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Performance Metrics
+                </div>
+                <div class="panel-content">
+                    <div class="metric-row">
+                        <div class="metric-label">
+                            <i class="fas fa-clock"></i>
+                            Avg Latency
+                        </div>
+                        <div class="metric-value" id="avg-latency">-- ms</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">
+                            <i class="fas fa-chart-line"></i>
+                            P95 Latency
+                        </div>
+                        <div class="metric-value" id="p95-latency">-- ms</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">
+                            <i class="fas fa-hashtag"></i>
+                            Sample Count
+                        </div>
+                        <div class="metric-value" id="sample-count">0</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">
+                            <i class="fas fa-stopwatch"></i>
+                            Min / Max
+                        </div>
+                        <div class="metric-value" id="min-max-latency">-- / --</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sensors -->
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-radar"></i>
+                    mmWave Sensors
+                </div>
+                <div class="panel-content">
+                    <div class="sensor-card">
+                        <div class="sensor-header">
+                            <div class="sensor-name">mmWave Sensor 1</div>
+                            <div class="sensor-status">Active</div>
+                        </div>
+                        <div class="sensor-details">
+                            <div>Points: <span id="sensor1-points">0</span></div>
+                            <div>Range: 0-6m</div>
+                            <div>FOV: 60°</div>
+                            <div>Height: 2.5m</div>
+                        </div>
+                    </div>
+                    
+                    <div class="sensor-card">
+                        <div class="sensor-header">
+                            <div class="sensor-name">mmWave Sensor 2</div>
+                            <div class="sensor-status">Active</div>
+                        </div>
+                        <div class="sensor-details">
+                            <div>Points: <span id="sensor2-points">0</span></div>
+                            <div>Range: 0-6m</div>
+                            <div>FOV: 60°</div>
+                            <div>Height: 2.5m</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main 3D View -->
+        <div class="main-view">
+            <div class="viewport-overlay">
+                <div><strong>Real-time 3D Environment</strong></div>
+                <div><i class="fas fa-mouse"></i> Left Click + Drag: Rotate</div>
+                <div><i class="fas fa-mouse"></i> Right Click + Drag: Pan</div>
+                <div><i class="fas fa-mouse"></i> Scroll: Zoom</div>
+                <div style="margin-top: 8px; font-size: 0.8rem; color: #4fc3f7;">
+                    <i class="fas fa-circle" style="color: #00ff00;"></i> mmWave1 
+                    <i class="fas fa-circle" style="color: #0080ff; margin-left: 10px;"></i> mmWave2
+                </div>
+            </div>
+            <div id="three-container"></div>
+            <div class="debug-info" id="debug-info">
+                Initializing 3D engine...
+            </div>
+        </div>
+        
+        <!-- Right Panels -->
+        <div class="panels">
+            <!-- Automation Events -->
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-history"></i>
+                    Live Automation Events
+                </div>
+                <div class="panel-content">
+                    <div class="event-list" id="automation-events">
+                        <div style="text-align: center; color: #999; padding: 20px;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Waiting for events...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Info -->
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-info-circle"></i>
+                    System Status
+                </div>
+                <div class="panel-content">
+                    <div class="metric-row">
+                        <div class="metric-label">
+                            <i class="fas fa-server"></i>
+                            Gazebo Simulation
+                        </div>
+                        <div class="metric-value success">Running</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">
+                            <i class="fas fa-exchange-alt"></i>
+                            MQTT Bridge
+                        </div>
+                        <div class="metric-value success">Connected</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">
+                            <i class="fas fa-robot"></i>
+                            Automation
+                        </div>
+                        <div class="metric-value success">Active</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">
+                            <i class="fas fa-chart-bar"></i>
+                            Data Source
+                        </div>
+                        <div class="metric-value success">Real Gazebo</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="/static/js/dashboard-minimal.js"></script>
+</body>
+</html>

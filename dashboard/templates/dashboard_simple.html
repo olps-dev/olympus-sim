@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Olympus IoT Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0f0f0f;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #4fc3f7, #29b6f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .status-item {
+            background: rgba(255,255,255,0.05);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .status-item.connected {
+            border-color: #4caf50;
+            background: rgba(76,175,80,0.1);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .card h2 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #4fc3f7;
+            font-weight: 400;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            color: #999;
+        }
+        
+        .metric-value {
+            font-weight: 500;
+            color: #fff;
+        }
+        
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .sensor-card {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .sensor-card.active {
+            border-color: #4caf50;
+            background: rgba(76,175,80,0.1);
+        }
+        
+        .sensor-name {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        
+        .sensor-status {
+            font-size: 0.9rem;
+            color: #999;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+        
+        .event-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .event-item {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            border-left: 3px solid #4fc3f7;
+        }
+        
+        .event-time {
+            color: #999;
+            font-size: 0.85rem;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+            font-style: italic;
+        }
+        
+        .loading {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Olympus IoT Simulation Dashboard</h1>
+            <p>Real-time monitoring and analytics</p>
+            <div class="status-bar">
+                <div class="status-item" id="mqtt-status">
+                    MQTT: <span class="loading">Connecting...</span>
+                </div>
+                <div class="status-item" id="ws-status">
+                    WebSocket: <span class="loading">Connecting...</span>
+                </div>
+                <div class="status-item" id="last-update">
+                    Last Update: <span>--</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h2>Performance Metrics</h2>
+                <div id="performance-metrics">
+                    <div class="metric">
+                        <span class="metric-label">Sample Count</span>
+                        <span class="metric-value" id="metric-count">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Mean Latency</span>
+                        <span class="metric-value" id="metric-mean">-- ms</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">P95 Latency</span>
+                        <span class="metric-value" id="metric-p95">-- ms</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">P99 Latency</span>
+                        <span class="metric-value" id="metric-p99">-- ms</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Min Latency</span>
+                        <span class="metric-value" id="metric-min">-- ms</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Max Latency</span>
+                        <span class="metric-value" id="metric-max">-- ms</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Active Sensors</h2>
+                <div id="sensor-summary">
+                    <div class="metric">
+                        <span class="metric-label">Total Sensors</span>
+                        <span class="metric-value" id="total-sensors">0</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Active Sensors</span>
+                        <span class="metric-value" id="active-sensors">0</span>
+                    </div>
+                </div>
+                <div class="sensor-grid" id="sensor-grid">
+                    <!-- Sensors will be added here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>End-to-End Latency</h2>
+            <div class="chart-container">
+                <canvas id="latency-chart"></canvas>
+            </div>
+            <div id="no-latency-data" class="no-data" style="display: none;">
+                Waiting for latency data...
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Recent Automation Events</h2>
+            <div class="event-list" id="event-list">
+                <div class="no-data">No automation events yet...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // WebSocket connection
+        const socket = io();
+        let latencyChart = null;
+        
+        // Initialize Chart.js
+        const ctx = document.getElementById('latency-chart').getContext('2d');
+        latencyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'End-to-End Latency (ms)',
+                    data: [],
+                    borderColor: '#4fc3f7',
+                    backgroundColor: 'rgba(79, 195, 247, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: {
+                            color: '#999'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: {
+                            color: '#999',
+                            callback: function(value) {
+                                return value + ' ms';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // WebSocket event handlers
+        socket.on('connect', () => {
+            console.log('WebSocket connected');
+            document.getElementById('ws-status').innerHTML = 'WebSocket: <span style="color: #4caf50;">Connected</span>';
+            document.getElementById('ws-status').classList.add('connected');
+        });
+        
+        socket.on('disconnect', () => {
+            console.log('WebSocket disconnected');
+            document.getElementById('ws-status').innerHTML = 'WebSocket: <span style="color: #f44336;">Disconnected</span>';
+            document.getElementById('ws-status').classList.remove('connected');
+        });
+        
+        socket.on('dashboard_update', (data) => {
+            updateDashboard(data);
+        });
+        
+        function updateDashboard(data) {
+            // Update timestamp
+            const now = new Date().toLocaleTimeString();
+            document.getElementById('last-update').innerHTML = `Last Update: <span>${now}</span>`;
+            
+            // Update MQTT status
+            const mqttStatus = data.mqtt_connected ? 
+                '<span style="color: #4caf50;">Connected</span>' : 
+                '<span style="color: #f44336;">Disconnected</span>';
+            document.getElementById('mqtt-status').innerHTML = `MQTT: ${mqttStatus}`;
+            if (data.mqtt_connected) {
+                document.getElementById('mqtt-status').classList.add('connected');
+            } else {
+                document.getElementById('mqtt-status').classList.remove('connected');
+            }
+            
+            // Update performance metrics
+            if (data.latency_stats && data.latency_stats.count > 0) {
+                document.getElementById('metric-count').textContent = data.latency_stats.count;
+                document.getElementById('metric-mean').textContent = data.latency_stats.mean.toFixed(2) + ' ms';
+                document.getElementById('metric-p95').textContent = data.latency_stats.p95.toFixed(2) + ' ms';
+                document.getElementById('metric-p99').textContent = data.latency_stats.p99.toFixed(2) + ' ms';
+                document.getElementById('metric-min').textContent = data.latency_stats.min.toFixed(2) + ' ms';
+                document.getElementById('metric-max').textContent = data.latency_stats.max.toFixed(2) + ' ms';
+            } else {
+                document.getElementById('metric-count').textContent = '0';
+                document.getElementById('metric-mean').textContent = '-- ms';
+                document.getElementById('metric-p95').textContent = '-- ms';
+                document.getElementById('metric-p99').textContent = '-- ms';
+                document.getElementById('metric-min').textContent = '-- ms';
+                document.getElementById('metric-max').textContent = '-- ms';
+            }
+            
+            // Update sensors
+            if (data.sensors) {
+                document.getElementById('total-sensors').textContent = data.sensors.total_sensors;
+                document.getElementById('active-sensors').textContent = data.sensors.active_sensors;
+                
+                // Update sensor grid
+                const sensorGrid = document.getElementById('sensor-grid');
+                sensorGrid.innerHTML = '';
+                
+                for (const [sensorId, sensor] of Object.entries(data.sensors.sensors)) {
+                    const sensorCard = document.createElement('div');
+                    sensorCard.className = 'sensor-card';
+                    if (sensor.human_present) {
+                        sensorCard.classList.add('active');
+                    }
+                    
+                    sensorCard.innerHTML = `
+                        <div class="sensor-name">${sensorId}</div>
+                        <div class="sensor-status">${sensor.human_present ? 'Presence Detected' : 'No Presence'}</div>
+                        <div class="sensor-status">Battery: ${sensor.battery_level_mah.toFixed(0)} mAh</div>
+                    `;
+                    
+                    sensorGrid.appendChild(sensorCard);
+                }
+            }
+            
+            // Update latency chart
+            if (data.latency_history && data.latency_history.length > 0) {
+                document.getElementById('no-latency-data').style.display = 'none';
+                document.getElementById('latency-chart').style.display = 'block';
+                
+                // Prepare chart data
+                const chartData = data.latency_history.slice(-50); // Last 50 points
+                const labels = chartData.map(item => {
+                    const date = new Date(item.timestamp * 1000);
+                    return date.toLocaleTimeString();
+                });
+                const values = chartData.map(item => item.latency_ms);
+                
+                latencyChart.data.labels = labels;
+                latencyChart.data.datasets[0].data = values;
+                latencyChart.update('none'); // No animation for smooth updates
+            } else {
+                document.getElementById('no-latency-data').style.display = 'block';
+                document.getElementById('latency-chart').style.display = 'none';
+            }
+            
+            // Update automation events
+            if (data.automation_events && data.automation_events.length > 0) {
+                const eventList = document.getElementById('event-list');
+                eventList.innerHTML = '';
+                
+                // Show latest events first
+                const recentEvents = data.automation_events.slice().reverse().slice(0, 10);
+                
+                recentEvents.forEach(event => {
+                    const eventItem = document.createElement('div');
+                    eventItem.className = 'event-item';
+                    
+                    const eventTime = new Date(event.timestamp * 1000).toLocaleTimeString();
+                    const triggeredBy = event.triggered_by.join(', ') || 'Manual';
+                    
+                    eventItem.innerHTML = `
+                        <div><strong>${event.actuator_id}</strong> → ${event.action.toUpperCase()}</div>
+                        <div class="event-time">Triggered by: ${triggeredBy}</div>
+                        <div class="event-time">${eventTime} ${event.latency_ms > 0 ? `(${event.latency_ms.toFixed(1)}ms)` : ''}</div>
+                    `;
+                    
+                    eventList.appendChild(eventItem);
+                });
+            }
+        }
+        
+        // Initial data fetch
+        fetch('/api/status')
+            .then(response => response.json())
+            .then(data => updateDashboard(data))
+            .catch(error => console.error('Error fetching initial data:', error));
+    </script>
+</body>
+</html>
