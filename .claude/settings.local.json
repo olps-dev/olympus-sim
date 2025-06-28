@@ -25,7 +25,12 @@
       "Bash(pip3 install:*)",
       "Bash(sudo apt install:*)",
       "Bash(mosquitto_sub:*)",
-      "Bash(ros2 topic echo:*)"
+      "Bash(ros2 topic echo:*)",
+      "Bash(mosquitto_pub:*)",
+      "Bash(ros2 topic list:*)",
+      "Bash(killall:*)",
+      "Bash(ss:*)",
+      "Bash(hostname:*)"
     ],
     "deny": []
   }

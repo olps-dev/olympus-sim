@@ -138,6 +138,9 @@ class LiveDataManager:
             payload = msg.payload.decode()
             timestamp = time.time()
             
+            logger.info(f"Received MQTT message on topic: {topic}")
+            logger.info(f"Payload: {payload[:200]}...")  # Log first 200 chars
+            
             with self.lock:
                 if "presence" in topic:
                     self._process_presence(topic, payload, timestamp)

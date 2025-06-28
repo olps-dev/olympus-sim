@@ -21,7 +21,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Global data manager
 data_manager = LiveDataManager(
-    mqtt_broker=os.getenv('MQTT_BROKER', 'mosquitto'),
+    mqtt_broker=os.getenv('MQTT_BROKER', 'localhost'),
     mqtt_port=int(os.getenv('MQTT_PORT', '1883'))
 )
 
@@ -378,38 +378,109 @@ def dashboard():
             if (el) el.textContent = value;
         }
         
-        function updatePointCloud(sensorId, numPoints) {
+        function updatePointCloud(sensorId, sensorInfo) {
             const pointCloud = pointClouds[sensorId];
             const sensor = sensors[sensorId];
             if (!pointCloud || !sensor) return;
             
             const positions = pointCloud.geometry.attributes.position.array;
             const colors = pointCloud.geometry.attributes.color.array;
+            const numPoints = sensorInfo.num_points || 0;
             
             if (numPoints > 0) {
-                const sensorPos = sensor.group.position;
-                for (let i = 0; i < Math.min(numPoints, 333); i++) {
-                    const idx = i * 3;
-                    const angle = (Math.random() - 0.5) * Math.PI / 3;
-                    const distance = 1 + Math.random() * 5;
-                    const height = Math.random() * 2;
+                // Use real point cloud data if available
+                if (sensorInfo.point_cloud_sample && sensorInfo.point_cloud_sample.length > 0) {
+                    const realPoints = sensorInfo.point_cloud_sample;
+                    const pointsToShow = Math.min(realPoints.length, 333);
                     
-                    positions[idx] = sensorPos.x + Math.sin(angle) * distance;
-                    positions[idx + 1] = height;
-                    positions[idx + 2] = sensorPos.z + Math.cos(angle) * distance * (sensorId === 'mmwave2' ? -1 : 1);
+                    for (let i = 0; i < pointsToShow; i++) {
+                        const idx = i * 3;
+                        const point = realPoints[i];
+                        
+                        // Transform from sensor coordinate system to world coordinates
+                        // mmwave1 is at (-5, 2.5, 0), mmwave2 is at (5, 2.5, 0) facing opposite
+                        if (sensorId === 'mmwave1') {
+                            positions[idx] = -5 + point.z;     // Sensor facing +Z, so its Z becomes world X offset
+                            positions[idx + 1] = 2.5 + point.y; // Sensor Y becomes world Y offset  
+                            positions[idx + 2] = point.x;       // Sensor X becomes world Z
+                        } else { // mmwave2
+                            positions[idx] = 5 - point.z;       // Sensor facing -Z (rotated 180°)
+                            positions[idx + 1] = 2.5 + point.y; // Sensor Y becomes world Y offset
+                            positions[idx + 2] = -point.x;      // Sensor X becomes world Z (flipped)
+                        }
+                        
+                        // Color based on distance from sensor
+                        const distance = Math.sqrt(point.x*point.x + point.y*point.y + point.z*point.z);
+                        const intensity = Math.max(0.3, 1 - (distance / 6));
+                        colors[idx] = sensorId === 'mmwave1' ? intensity : 0;
+                        colors[idx + 1] = sensorId === 'mmwave1' ? intensity : intensity;
+                        colors[idx + 2] = sensorId === 'mmwave2' ? intensity : 0;
+                    }
                     
-                    const intensity = 1 - (distance / 6);
-                    colors[idx] = sensorId === 'mmwave1' ? intensity : 0;
-                    colors[idx + 1] = sensorId === 'mmwave1' ? intensity : intensity;
-                    colors[idx + 2] = sensorId === 'mmwave2' ? intensity : 0;
+                    pointCloud.geometry.setDrawRange(0, pointsToShow);
+                    pointCloud.visible = true;
+                } else {
+                    // Fallback: use centroid position if available
+                    if (sensorInfo.centroid_position) {
+                        const centroid = sensorInfo.centroid_position;
+                        const sensorPos = sensor.group.position;
+                        
+                        // Show a cluster of points around the centroid
+                        const clusterSize = Math.min(numPoints, 50);
+                        for (let i = 0; i < clusterSize; i++) {
+                            const idx = i * 3;
+                            
+                            // Transform centroid to world coordinates and add some spread
+                            const spread = 0.3;
+                            if (sensorId === 'mmwave1') {
+                                positions[idx] = -5 + centroid.z + (Math.random() - 0.5) * spread;
+                                positions[idx + 1] = 2.5 + centroid.y + (Math.random() - 0.5) * spread;
+                                positions[idx + 2] = centroid.x + (Math.random() - 0.5) * spread;
+                            } else {
+                                positions[idx] = 5 - centroid.z + (Math.random() - 0.5) * spread;
+                                positions[idx + 1] = 2.5 + centroid.y + (Math.random() - 0.5) * spread;
+                                positions[idx + 2] = -centroid.x + (Math.random() - 0.5) * spread;
+                            }
+                            
+                            const intensity = 0.8;
+                            colors[idx] = sensorId === 'mmwave1' ? intensity : 0;
+                            colors[idx + 1] = sensorId === 'mmwave1' ? intensity : intensity;
+                            colors[idx + 2] = sensorId === 'mmwave2' ? intensity : 0;
+                        }
+                        
+                        pointCloud.geometry.setDrawRange(0, clusterSize);
+                        pointCloud.visible = true;
+                        
+                        // Update human position based on centroid
+                        updateHumanPosition(sensorInfo);
+                    }
                 }
-                pointCloud.geometry.setDrawRange(0, Math.min(numPoints, 333));
-                pointCloud.visible = true;
             } else {
                 pointCloud.visible = false;
             }
+            
             pointCloud.geometry.attributes.position.needsUpdate = true;
             pointCloud.geometry.attributes.color.needsUpdate = true;
+        }
+        
+        function updateHumanPosition(sensorInfo) {
+            if (!human || !sensorInfo.centroid_position) return;
+            
+            const centroid = sensorInfo.centroid_position;
+            
+            // Convert sensor coordinates to world coordinates and position human
+            // Use the centroid to estimate where the human actually is
+            if (sensorInfo.sensor_id === 'mmwave1') {
+                const worldX = -5 + centroid.z;  // mmwave1 faces +Z direction
+                const worldZ = centroid.x;
+                human.position.set(worldX, 0, worldZ);
+            } else if (sensorInfo.sensor_id === 'mmwave2') {
+                const worldX = 5 - centroid.z;   // mmwave2 faces -Z direction (rotated 180°)
+                const worldZ = -centroid.x;
+                human.position.set(worldX, 0, worldZ);
+            }
+            
+            console.log(`🚶 Human positioned at (${human.position.x.toFixed(1)}, ${human.position.z.toFixed(1)}) based on ${sensorInfo.sensor_id} centroid`);
         }
         
         function initWebSocket() {
@@ -435,7 +506,7 @@ def dashboard():
                     Object.entries(data.sensors.sensors).forEach(([sensorId, info]) => {
                         const points = info.num_points || 0;
                         updateElement(`${sensorId.replace('mmwave', 'sensor')}-points`, points);
-                        updatePointCloud(sensorId, points);
+                        updatePointCloud(sensorId, info);
                     });
                 }
                 
@@ -537,7 +608,7 @@ if __name__ == '__main__':
     
     try:
         # Run Flask app
-        socketio.run(app, host='0.0.0.0', port=5000, debug=False, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=5001, debug=False, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
         logger.info("Shutting down")
         data_manager.stop()

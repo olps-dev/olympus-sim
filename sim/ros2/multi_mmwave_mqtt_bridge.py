@@ -163,14 +163,31 @@ class MultiMmWaveMQTTBridge(Node):
             
             # Calculate centroid if points exist
             analysis = f"{num_valid_points} points"
+            centroid_position = None
             if valid_points:
                 centroid = np.mean(valid_points, axis=0)
                 centroid_distance = np.sqrt(centroid[0]**2 + centroid[1]**2 + centroid[2]**2)
+                centroid_position = {
+                    "x": float(centroid[0]), 
+                    "y": float(centroid[1]), 
+                    "z": float(centroid[2]),
+                    "distance": float(centroid_distance)
+                }
                 analysis += f", centroid at {centroid_distance:.2f}m"
             
             # Publish if state changed or periodic update
             if human_present != sensor_state['current_presence'] or current_time - sensor_state['last_detection_time'] > 2.0:
-                self.publish_presence(sensor_id, human_present, num_valid_points, analysis, event_id)
+                # Include point cloud sample for visualization (limit to 100 points for MQTT)
+                point_cloud_sample = []
+                if valid_points and len(valid_points) > 0:
+                    sample_size = min(len(valid_points), 100)
+                    sample_indices = np.linspace(0, len(valid_points)-1, sample_size, dtype=int)
+                    point_cloud_sample = [
+                        {"x": float(valid_points[i][0]), "y": float(valid_points[i][1]), "z": float(valid_points[i][2])}
+                        for i in sample_indices
+                    ]
+                
+                self.publish_presence(sensor_id, human_present, num_valid_points, analysis, event_id, centroid_position, point_cloud_sample)
                 sensor_state['current_presence'] = human_present
                 sensor_state['last_detection_time'] = current_time
                 
@@ -218,7 +235,7 @@ class MultiMmWaveMQTTBridge(Node):
             self.get_logger().error(f"Error parsing point cloud: {e}")
             return None
     
-    def publish_presence(self, sensor_id, human_present, num_points, analysis, event_id=None):
+    def publish_presence(self, sensor_id, human_present, num_points, analysis, event_id=None, centroid_position=None, point_cloud_sample=None):
         """Publish human presence detection to MQTT"""
         try:
             topic = f"sensor/{sensor_id}/presence"
@@ -234,7 +251,9 @@ class MultiMmWaveMQTTBridge(Node):
                 "detection_range": {
                     "min": self.detection_threshold,
                     "max": self.max_detection_range
-                }
+                },
+                "centroid_position": centroid_position,
+                "point_cloud_sample": point_cloud_sample or []
             }
             
             payload = json.dumps(message)

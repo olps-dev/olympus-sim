@@ -233,7 +233,7 @@ class LiveAutomationController:
         
         try:
             # Connect to MQTT
-            mqtt_broker = os.getenv('MQTT_BROKER', 'mosquitto')
+            mqtt_broker = os.getenv('MQTT_BROKER', 'localhost')
             mqtt_port = int(os.getenv('MQTT_PORT', '1883'))
             
             logger.info(f"Connecting to MQTT broker: {mqtt_broker}:{mqtt_port}")
