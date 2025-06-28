@@ -5,7 +5,10 @@
       "Bash(make:*)",
       "Bash(./olympus:*)",
       "Bash(pkill:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }

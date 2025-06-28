@@ -5,3 +5,4 @@ log/
 build/
 install/
 CLAUDE.md
+.claude/
