@@ -1,0 +1,14 @@
+#!/bin/bash
+"""
+Olympus Simulation - Simple Launcher
+Usage: ./olympus [mode] [options]
+"""
+
+# Get the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source ROS2 environment
+source /opt/ros/jazzy/setup.bash 2>/dev/null || echo "WARNING: ROS2 not found, some features may not work"
+
+# Run the Python launcher
+python3 "$SCRIPT_DIR/tools/launch_olympus.py" "$@"

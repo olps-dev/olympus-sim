@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(make:*)",
+      "Bash(./olympus:*)",
+      "Bash(pkill:*)",
+      "Bash(timeout:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(chmod:*)",
+      "Bash(find:*)",
+      "Bash(mv:*)",
+      "Bash(rg:*)",
+      "Bash(dos2unix:*)",
+      "Bash(ls:*)",
+      "Bash(docker:*)",
+      "Bash(/dev/null)",
+      "Bash(bash:*)",
+      "Bash(curl:*)",
+      "Bash(cp:*)",
+      "Bash(python3:*)",
+      "Bash(mkdir:*)",
+      "Bash(pip3 install:*)",
+      "Bash(sudo apt install:*)",
+      "Bash(mosquitto_sub:*)",
+      "Bash(ros2 topic echo:*)",
+      "Bash(mosquitto_pub:*)",
+      "Bash(ros2 topic list:*)",
+      "Bash(killall:*)",
+      "Bash(ss:*)",
+      "Bash(hostname:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(claude /ide)",
+      "Bash(code .)",
+      "Bash(sed:*)",
+      "Bash(rm:*)",
+      "Bash(sudo chmod:*)"
+    ],
+    "deny": []
+  }
+}

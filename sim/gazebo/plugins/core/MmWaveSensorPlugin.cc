@@ -62,11 +62,13 @@ void MmWaveSensorPlugin::Configure(const Entity &_entity,
   }
   
   // Check that entity has a name component
+  std::string sensorName;
   auto nameComp = _ecm.Component<components::Name>(this->entity);
   if (nameComp)
   {
+    sensorName = nameComp->Data();
     gzmsg << "[" << pluginName << "] Configuring plugin for entity [" 
-          << nameComp->Data() << "]" << std::endl;
+          << sensorName << "]" << std::endl;
   }
   else
   {
@@ -74,7 +76,7 @@ void MmWaveSensorPlugin::Configure(const Entity &_entity,
   }
 
   // Load configuration from SDF
-  if (!this->config.Load(_sdf, pluginName))
+  if (!this->config.Load(_sdf, pluginName, sensorName))
   {
     gzerr << "[" << pluginName << "] Failed to load configuration" << std::endl;
     return;
@@ -101,16 +103,17 @@ void MmWaveSensorPlugin::Configure(const Entity &_entity,
   if (isWSL) {
     gzmsg << "[MmWaveSensorPlugin] WSL detected: Setting up WSL rendering environment" << std::endl;
     
-    // Force enable WSL compatibility mode in WSL environment
+    // Only force WSL compatibility mode if raycast is not explicitly requested
     gzmsg << "[MmWaveSensorPlugin] Before: wslCompatMode=" << (this->config.wslCompatMode ? "true" : "false") << std::endl;
-    this->config.wslCompatMode = true;
-    gzmsg << "[MmWaveSensorPlugin] After: wslCompatMode=" << (this->config.wslCompatMode ? "true" : "false") << std::endl;
-    gzmsg << "[MmWaveSensorPlugin] Forcing WSL compatibility mode in WSL environment" << std::endl;
     
-    // If force_raycast is enabled in WSL, warn about potential issues
     if (this->config.forceRaycast) {
-      gzmsg << "[MmWaveSensorPlugin] Force raycast is enabled in WSL - will attempt ray casting" << std::endl;
+      gzmsg << "[MmWaveSensorPlugin] Force raycast is enabled - keeping WSL compatibility mode as configured" << std::endl;
+    } else {
+      this->config.wslCompatMode = true;
+      gzmsg << "[MmWaveSensorPlugin] Forcing WSL compatibility mode in WSL environment (no force_raycast)" << std::endl;
     }
+    
+    gzmsg << "[MmWaveSensorPlugin] After: wslCompatMode=" << (this->config.wslCompatMode ? "true" : "false") << std::endl;
   } else {
     gzmsg << "[MmWaveSensorPlugin] Non-WSL environment: Using standard configuration" << std::endl;
   }
@@ -514,3 +517,7 @@ GZ_ADD_PLUGIN(olympus_sim::MmWaveSensorPlugin,
               gz::sim::System,
               olympus_sim::MmWaveSensorPlugin::ISystemConfigure,
               olympus_sim::MmWaveSensorPlugin::ISystemPostUpdate)
+
+// Add plugin alias for easier discovery
+GZ_ADD_PLUGIN_ALIAS(olympus_sim::MmWaveSensorPlugin,
+                    "olympus_sim::MmWaveSensorPlugin")

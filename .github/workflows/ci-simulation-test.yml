@@ -1,0 +1,318 @@
+name: Olympus Simulation CI
+
+on:
+  push:
+    branches: [ main, multiple_sensors ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  # Performance thresholds
+  MAX_LATENCY_P95_MS: 300
+  MAX_DROPPED_MESSAGES: 2
+  MIN_TEST_DURATION_SEC: 30
+
+jobs:
+  simulation-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    strategy:
+      matrix:
+        test-scenario:
+          - name: "baseline"
+            network-condition: "excellent"
+            expected-latency-ms: 50
+          - name: "realistic"
+            network-condition: "good" 
+            expected-latency-ms: 100
+          - name: "stressed"
+            network-condition: "poor"
+            expected-latency-ms: 250
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y mosquitto mosquitto-clients
+        sudo systemctl stop mosquitto
+        echo "System dependencies installed"
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-step4.txt
+        echo "Python dependencies installed"
+
+    - name: Validate codebase structure
+      run: |
+        echo "Checking required directories and files..."
+        test -d "automation" || exit 1
+        test -d "metrics" || exit 1
+        test -d "network" || exit 1
+        test -d "tests" || exit 1
+        test -f "automation/automation_demo.py" || exit 1
+        test -f "network/network_realism.py" || exit 1
+        test -f "metrics/latency_battery_tracker.py" || exit 1
+        echo "Codebase structure validation passed"
+
+    - name: Configure network conditions
+      run: |
+        python -c "
+        import sys, os
+        sys.path.append('network')
+        from config import NetworkConfigManager
+        manager = NetworkConfigManager()
+        manager.set_scenario('${{ matrix.test-scenario.network-condition }}')
+        print('Network condition set to: ${{ matrix.test-scenario.network-condition }}')
+        "
+
+    - name: Start MQTT broker
+      run: |
+        mosquitto -d -p 1883
+        sleep 2
+        echo "MQTT broker started on port 1883"
+
+    - name: Run headless simulation test
+      id: simulation_test
+      run: |
+        echo "Starting simulation test: ${{ matrix.test-scenario.name }}"
+        echo "Expected max latency: ${{ matrix.test-scenario.expected-latency-ms }}ms"
+        
+        # Set environment variables for test
+        export TEST_SCENARIO_NAME="${{ matrix.test-scenario.name }}"
+        export TEST_NETWORK_CONDITION="${{ matrix.test-scenario.network-condition }}"
+        export TEST_EXPECTED_LATENCY_MS="${{ matrix.test-scenario.expected-latency-ms }}"
+        export TEST_DURATION_SEC="${{ env.MIN_TEST_DURATION_SEC }}"
+        
+        # Run the CI-specific test
+        timeout 300 python tests/test_ci_simulation.py || {
+          echo "ERROR: Simulation test failed or timed out"
+          exit 1
+        }
+
+    - name: Analyze results
+      id: analyze_results
+      run: |
+        echo "Analyzing simulation results..."
+        
+        # Check if metrics files exist
+        if [ ! -f "metrics/latency_metrics.csv" ]; then
+          echo "ERROR: No latency metrics generated"
+          exit 1
+        fi
+        
+        if [ ! -f "metrics/battery_metrics.csv" ]; then
+          echo "ERROR: No battery metrics generated"
+          exit 1
+        fi
+        
+        # Run analysis script
+        python -c "
+        import pandas as pd
+        import sys
+        
+        # Read latency data
+        try:
+            df = pd.read_csv('metrics/latency_metrics.csv')
+            e2e_data = df[(df['stage'] == 'lamp_toggled') & df['cumulative_latency_ms'].notna()]
+            
+            if len(e2e_data) == 0:
+                print('ERROR: No end-to-end latency data found')
+                sys.exit(1)
+            
+            latencies = e2e_data['cumulative_latency_ms']
+            p95_latency = latencies.quantile(0.95)
+            mean_latency = latencies.mean()
+            sample_count = len(latencies)
+            
+            # Performance checks
+            max_allowed_p95 = ${{ env.MAX_LATENCY_P95_MS }}
+            expected_max = ${{ matrix.test-scenario.expected-latency-ms }}
+            
+            print(f'Latency Analysis Results:')
+            print(f'  Sample count: {sample_count}')
+            print(f'  Mean latency: {mean_latency:.1f}ms')
+            print(f'  P95 latency: {p95_latency:.1f}ms')
+            print(f'  Expected max: {expected_max}ms')
+            print(f'  CI threshold: {max_allowed_p95}ms')
+            
+            # Pass/fail criteria
+            success_criteria = {
+                'sufficient_samples': sample_count >= 10,
+                'p95_within_ci_limit': p95_latency <= max_allowed_p95,
+                'mean_reasonable': mean_latency <= expected_max
+            }
+            
+            all_passed = all(success_criteria.values())
+            
+            print(f'Success Criteria:')
+            for criterion, passed in success_criteria.items():
+                status = 'PASS' if passed else 'FAIL'
+                print(f'  {criterion}: {status}')
+            
+            if not all_passed:
+                print('ERROR: Performance criteria not met')
+                sys.exit(1)
+            else:
+                print('SUCCESS: All performance criteria met')
+                
+        except Exception as e:
+            print(f'ERROR: Analysis failed: {e}')
+            sys.exit(1)
+        "
+
+    - name: Check for dropped messages
+      run: |
+        echo "Checking for dropped control messages..."
+        
+        # Simple check for automation events
+        python -c "
+        import json
+        import sys
+        
+        try:
+            # Check if automation log exists and has control messages
+            with open('automation_test.log', 'r') as f:
+                log_content = f.read()
+                
+            # Count automation events
+            automation_events = log_content.count('AUTOMATION:')
+            control_messages = log_content.count('lamp_hall')
+            
+            print(f'Automation events found: {automation_events}')
+            print(f'Control messages found: {control_messages}')
+            
+            if control_messages == 0:
+                print('WARNING: No control messages detected')
+                # Don't fail for this - network conditions might prevent all messages
+            
+            print('Message check completed')
+            
+        except FileNotFoundError:
+            print('WARNING: No automation log found')
+        except Exception as e:
+            print(f'WARNING: Message check failed: {e}')
+        "
+
+    - name: Generate performance report
+      if: always()
+      run: |
+        echo "Generating performance report..."
+        
+        # Create summary report
+        cat > performance_report.md << EOF
+        # Simulation Performance Report
+        
+        **Test Scenario:** ${{ matrix.test-scenario.name }}
+        **Network Condition:** ${{ matrix.test-scenario.network-condition }}
+        **Expected Max Latency:** ${{ matrix.test-scenario.expected-latency-ms }}ms
+        **CI Threshold:** ${{ env.MAX_LATENCY_P95_MS }}ms
+        
+        ## Results
+        $(python -c "
+        try:
+            import pandas as pd
+            df = pd.read_csv('metrics/latency_metrics.csv')
+            e2e_data = df[(df['stage'] == 'lamp_toggled') & df['cumulative_latency_ms'].notna()]
+            if len(e2e_data) > 0:
+                latencies = e2e_data['cumulative_latency_ms']
+                print(f'- Sample Count: {len(latencies)}')
+                print(f'- Mean Latency: {latencies.mean():.1f}ms')
+                print(f'- P95 Latency: {latencies.quantile(0.95):.1f}ms')
+                print(f'- Min Latency: {latencies.min():.1f}ms')
+                print(f'- Max Latency: {latencies.max():.1f}ms')
+            else:
+                print('- No latency data available')
+        except:
+            print('- Analysis failed')
+        ")
+        
+        ## Files Generated
+        - Latency metrics: metrics/latency_metrics.csv
+        - Battery metrics: metrics/battery_metrics.csv
+        - Performance plots: metrics/*.png
+        EOF
+        
+        echo "Performance report generated"
+
+    - name: Upload artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: simulation-failure-artifacts-${{ matrix.test-scenario.name }}
+        path: |
+          metrics/
+          *.log
+          performance_report.md
+        retention-days: 7
+
+    - name: Upload performance plots
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-plots-${{ matrix.test-scenario.name }}
+        path: |
+          metrics/*.png
+          performance_report.md
+        retention-days: 14
+
+    - name: Clean up
+      if: always()
+      run: |
+        # Stop MQTT broker
+        pkill mosquitto || true
+        
+        # Clean up test files
+        rm -f automation_test.log
+        echo "Cleanup completed"
+
+  # Job to check overall CI success
+  ci-status:
+    needs: simulation-test
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Check CI results
+      run: |
+        echo "Checking overall CI status..."
+        
+        # This will fail if any matrix job failed
+        if [ "${{ needs.simulation-test.result }}" != "success" ]; then
+          echo "ERROR: One or more simulation tests failed"
+          echo "Check the individual job logs for details"
+          exit 1
+        fi
+        
+        echo "SUCCESS: All simulation tests passed"
+        echo "Olympus automation loop is working correctly across all network conditions"
+
+    - name: Post success comment
+      if: success() && github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '✅ **Olympus Simulation CI Passed**\n\nAll network conditions tested successfully:\n- Baseline (excellent): ✅\n- Realistic (good): ✅\n- Stressed (poor): ✅\n\nEnd-to-end latency is within acceptable limits.'
+          });

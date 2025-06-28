@@ -26,6 +26,11 @@ set(MMWAVE_PLUGIN_SOURCES
   raycast/MmWaveSensorRay.cc
   raycast/MmWaveSensorScene.cc
   pointcloud/MmWavePointCloudLoader.cc
+  pointcloud/MmWavePointCloudScenarioGenerators.cc
+  pointcloud/MmWaveRoomScenarioGenerator.cc
+  pointcloud/MmWaveBedroomScenarioGenerator.cc
+  pointcloud/MmWaveDefaultScenarioGenerator.cc
+  pointcloud/MmWavePointCloudGenerator.cc
   core/MmWaveSensorWslCompat.cc
   sensor_config/MmWaveSensorConfig.cc
 )

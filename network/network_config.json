@@ -1,0 +1,10 @@
+{
+  "default_condition": "good",
+  "sensor_bridge_config": null,
+  "automation_config": null,
+  "environment_based": true,
+  "enabled": true,
+  "log_network_events": true,
+  "max_queue_size": 1000,
+  "queue_warning_threshold": 100
+}

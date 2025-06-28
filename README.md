@@ -11,6 +11,25 @@ The simulation system provides:
 - **Cross-Platform Compatibility**: Native Linux and WSL2 support with automatic detection
 - **Real-Time Visualization**: Gazebo 3D simulation and RViz2 sensor data visualization
 - **Interactive Scene Manipulation**: Programmatic object movement and sensor testing
+- **Automation Integration**: Complete sensor-to-actuator automation pipeline
+
+## Quick Start
+
+The Olympus simulation has a single, clean entry point:
+
+```bash
+# Simple full simulation (headless)
+./olympus
+
+# Full simulation with GUI, RViz, and web dashboard
+./olympus full --gui --rviz --automation --dashboard
+
+# Just the sensor simulation with dashboard
+./olympus sensor --rviz --dashboard
+
+# List all available modes
+./olympus --list-modes
+```
 
 ## Prerequisites
 
@@ -48,283 +67,322 @@ sudo apt install ros-jazzy-ros-gz-bridge ros-jazzy-ros-gz-sim
 
 # Additional Dependencies
 sudo apt install python3-pip mosquitto mosquitto-clients
-pip3 install paho-mqtt numpy scipy
+sudo apt install python3-paho-mqtt
 
-# WSL Graphics Support (WSL only)
-sudo apt install x11-apps mesa-utils
+# Python Dependencies
+pip3 install numpy scipy
 ```
 
-## Quick Start
+### Build the mmWave Plugin
 
-### 1. Clone and Setup
-```bash
-git clone <repository-url> olympus-sim
-cd olympus-sim
-chmod +x run_simulation.sh
-chmod +x manipulate_scene.py
-```
-
-### 2. Build mmWave Plugin
 ```bash
 cd sim/gazebo/plugins
-./build_mmwave_plugin.sh --build-only
-cd ../../..
+mkdir -p build && cd build
+cmake ..
+make -j4
 ```
 
-### 3. Run Simulation
+## Simulation Modes
 
-**Headless Mode (Recommended for WSL):**
+| Mode | Description | Components |
+|------|-------------|------------|
+| `full` | Complete simulation | Gazebo + ROS2 + MQTT + Automation |
+| `gazebo` | Gazebo simulation only | Gazebo + ROS2 bridge |
+| `sensor` | Sensor simulation | Gazebo + ROS2 + MQTT bridge |
+| `automation` | Automation only | MQTT automation controller |
+
+## Command Line Options
+
+- `--gui` - Launch Gazebo with GUI (default: headless)
+- `--rviz` - Launch RViz2 for visualization
+- `--automation` - Launch automation controller
+- `--dashboard` - Launch web dashboard on http://localhost:5001
+- `--list-modes` - Show available modes
+
+## Usage Examples
+
+### Development Workflow
 ```bash
-./run_simulation.sh
+# 1. Test sensor data flow with dashboard
+./olympus sensor --rviz --dashboard
+
+# 2. Test complete automation with monitoring
+./olympus full --automation --dashboard
+
+# 3. Debug with full visualization
+./olympus full --gui --rviz --automation --dashboard
 ```
 
-**GUI Mode (Native Linux):**
+### Testing Automation
 ```bash
-./run_simulation.sh --gui
+# Terminal 1: Run simulation
+./olympus full --automation
+
+# Terminal 2: Monitor MQTT
+mosquitto_sub -t sensor/#
+
+# Terminal 3: Test automation loop
+python3 tests/test_automation_loop.py 30
 ```
 
-### 4. Verify Operation
-- **RViz2**: Should open showing mmWave point cloud visualization
-- **Terminal Output**: Should show "Generated 190 points" messages
-- **Topics**: Check with `ros2 topic list` - should see `/mmwave/points`
+## Architecture
 
-## Interactive Scene Manipulation
+The system implements a complete sensor-to-actuator pipeline:
 
-The system includes a powerful scene manipulation tool for testing sensor responses:
+```
+Gazebo mmWave Sensor → ROS2 PointCloud2 → mmWave MQTT Bridge → MQTT Topics → Automation Controller → Actuator Commands
+```
+
+### Components
+
+1. **Gazebo Simulation**: Physics-based 3D environment with mmWave sensor
+2. **ROS2 Bridge**: Converts Gazebo messages to ROS2 topics
+3. **mmWave MQTT Bridge**: Processes point cloud data for presence detection
+4. **Automation Controller**: Implements automation logic based on sensor data
+5. **Web Dashboard**: Real-time 3D visualization and metrics monitoring
+
+### Data Flow
+
+1. **Sensor Data Generation**: mmWave plugin generates point cloud data in Gazebo
+2. **ROS2 Integration**: Data published to `/mmwave/points` topic
+3. **MQTT Bridge**: Converts point cloud to presence detection
+4. **Automation Logic**: Triggers actuator commands based on presence
+5. **Actuator Control**: MQTT commands sent to control devices
+
+## Automation Features
+
+### mmWave MQTT Bridge
+
+**Purpose**: Converts ROS2 PointCloud2 data to MQTT presence detection
+
+**Configuration Parameters**:
+- `detection_threshold`: Minimum distance for detection (default: 0.1m)
+- `max_detection_range`: Maximum detection range (default: 10.0m)
+- `min_points_for_detection`: Minimum points to consider detection (default: 5)
+
+**MQTT Topics Published**:
+- `sensor/mmwave1/presence` - Detailed JSON presence data
+- `sensor/mmwave1/human_present` - Simple boolean presence
+- `sensor/mmwave1/status` - Periodic status updates
+
+### Automation Controller
+
+**Features**:
+- Monitors `sensor/+/presence` topics
+- Triggers `actuators/lamp_hall/on` when presence detected
+- Publishes automation events with latency metrics
+- Configurable automation rules with cooldown periods
+
+## Web Dashboard
+
+The web dashboard provides real-time monitoring and visualization at http://localhost:5001
+
+### Features
+
+1. **3D Visualization**:
+   - Real-time point cloud display from mmWave sensors
+   - Interactive 3D scene with OrbitControls
+   - Synchronized human model positioning based on detections
+   - Sensor field-of-view indicators
+
+2. **Performance Metrics**:
+   - End-to-end latency tracking
+   - Sample count and statistical analysis
+   - Real-time latency graphs
+   - Min/Max/P99 latency metrics
+
+3. **Live Monitoring**:
+   - Active sensor status
+   - Automation event stream
+   - Battery level indicators
+   - MQTT message flow visualization
+
+### Accessing the Dashboard
 
 ```bash
-# In a new terminal (while simulation is running)
-python3 manipulate_scene.py
+# Start simulation with dashboard
+./olympus full --automation --dashboard
+
+# Access from browser
+# - From WSL: http://localhost:5001
+# - From Windows: http://<WSL-IP>:5001
 ```
 
-### Available Commands:
+## Testing and Validation
+
+### Test Scripts
+
+Located in `tests/` directory:
+
+- `test_mmwave_mqtt.py` - Monitor MQTT sensor topics
+- `test_automation_loop.py` - End-to-end automation testing with latency metrics
+
+### Running Tests
+
+```bash
+# Monitor MQTT sensor data
+python3 tests/test_mmwave_mqtt.py
+
+# Test complete automation loop (30 second test)
+python3 tests/test_automation_loop.py 30
+
+# Monitor all sensor topics
+mosquitto_sub -t sensor/#
+```
+
+## Tools and Utilities
+
+Located in `tools/` directory:
+
+### Setup Verification
+
+Check that all components are properly organized:
+
+```bash
+python3 tools/verify_setup.py
+```
+
+### Scene Manipulation
+
+Interactive tool for testing sensor responses:
+
+```bash
+# Start simulation first
+./olympus full --gui
+
+# In another terminal
+python3 tools/manipulate_scene.py
+```
+
+**Commands**:
 - `list` - Show all entities in the scene
-- `move <entity> <x> <y> <z>` - Move an object to new coordinates
-- `test` - Run predefined test scenarios
-- `quit` - Exit the manipulator
+- `move <entity> <x> <y> <z>` - Move an object to coordinates
+- `spawn <model> <x> <y> <z>` - Add new objects
+- `delete <entity>` - Remove objects
+- `help` - Show all commands
+- `quit` - Exit the tool
 
-### Example Usage:
-```bash
- Enter command: move box_obstacle_1 1.0 1.0 0.5
- Moved box_obstacle_1 to (1.0, 1.0, 0.5)
- Check RViz2 to see how the mmWave sensor response changes!
- Enter command: test
- Running test scenarios...
- Test 1: Moving box_obstacle_1 closer to sensor
- Test 2: Moving cylinder_obstacle to new position  
- Test 3: Moving box_obstacle_2 directly in front of sensor
- Test scenarios complete!
+## Project Structure
+
+```
+olympus-sim/
+├── olympus                     # Main launcher script
+├── sim/
+│   ├── gazebo/
+│   │   ├── plugins/            # mmWave sensor plugin
+│   │   ├── worlds/             # Gazebo world files
+│   │   └── models/             # 3D models
+│   └── ros2/
+│       ├── multi_mmwave_mqtt_bridge.py  # ROS2 to MQTT bridge
+│       └── config/             # RViz configurations
+├── automation/
+│   └── live_automation.py      # Live automation controller
+├── dashboard/
+│   ├── app_simple.py           # Flask web dashboard
+│   ├── live_data_manager.py    # Real-time data management
+│   └── static/                 # Frontend assets
+├── docker/
+│   ├── Dockerfile.*            # Container definitions
+│   ├── docker-compose.yml      # Multi-container setup
+│   └── README.md               # Docker documentation
+├── metrics/
+│   └── latency_battery_tracker.py  # Performance tracking
+├── tests/
+│   ├── test_mmwave_mqtt.py     # MQTT testing
+│   └── test_automation_loop.py # End-to-end testing
+├── tools/
+│   ├── launch_olympus.py       # Main launcher backend
+│   ├── manipulate_scene.py     # Scene manipulation
+│   └── verify_setup.py         # Setup verification
+└── scripts/
+    ├── test_utils/             # Test utilities
+    └── *.sh                    # Helper scripts
 ```
 
-## mmWave Sensor Details
+## Configuration
 
-### Technical Specifications
-- **Frequency**: 77-81 GHz (automotive radar band)
-- **Range**: 0.05m to 50m
-- **Field of View**: 90° horizontal, 30° vertical
-- **Resolution**: 32×16 rays (512 total)
-- **Update Rate**: 10 Hz
-- **Point Cloud Output**: ~190 points per scan
-- **Frame ID**: `mmwave`
-- **Topic**: `/mmwave/points` (sensor_msgs/PointCloud2)
+### mmWave Sensor Configuration
 
-### WSL Compatibility Mode
-The mmWave plugin automatically detects WSL environments and enables compatibility mode:
-- **Physics-Based Simulation**: Uses geometric ray-object intersection
-- **No OpenGL Dependency**: Avoids WSL graphics limitations  
-- **Consistent Performance**: Maintains 190-point output regardless of environment
-- **Automatic Detection**: No manual configuration required
+The mmWave sensor can be configured in the world file:
 
-### Sensor Configuration
-Located in `sim/gazebo/worlds/mmwave_test.sdf`:
 ```xml
 <plugin filename="libMmWaveSensorPlugin.so" name="olympus_sim::MmWaveSensorPlugin">
   <topic>/mmwave/points</topic>
   <update_rate>10</update_rate>
   <horizontal_fov>1.5708</horizontal_fov>  <!-- 90 degrees -->
   <vertical_fov>0.5236</vertical_fov>      <!-- 30 degrees -->
-  <horizontal_resolution>32</horizontal_resolution>
-  <vertical_resolution>16</vertical_resolution>
-  <min_range>0.05</min_range>
-  <max_range>50.0</max_range>
-  <wsl_compat_mode>true</wsl_compat_mode>
+  <range_min>0.1</range_min>
+  <range_max>10.0</range_max>
+  <range_resolution>0.01</range_resolution>
 </plugin>
 ```
 
-## ROS2 Integration
-
-### Topics Published
-- `/mmwave/points` - mmWave radar point cloud (sensor_msgs/PointCloud2)
-- `/tf` - Transform tree for coordinate frames
-- `/tf_static` - Static transforms (world→mmwave)
-- `/clock` - Simulation time synchronization
-
-### Coordinate Frames
-- `world` - Global reference frame
-- `mmwave` - mmWave sensor frame (1m above origin)
-
-### Bridge Configuration
-The ROS2-Gazebo bridge automatically handles:
-- Point cloud message conversion (gz.msgs.PointCloudPacked → sensor_msgs/PointCloud2)
-- Transform synchronization
-- Clock synchronization for simulation time
-
-## Visualization
-
-![alt text](readme_imgs/image.png)
-
-### RViz2 Configuration
-Pre-configured visualization includes:
-- **PointCloud2 Display**: mmWave radar points with intensity coloring
-- **TF Display**: Coordinate frame visualization
-- **Grid Display**: Reference grid for spatial orientation
-- **Axes Display**: World coordinate system
-
-### Gazebo GUI (Native Linux)
-When running with `--gui` flag:
-- **3D Scene View**: Interactive 3D world visualization
-- **Entity Inspector**: Object property examination
-- **Transform Tools**: Manual object manipulation
-- **Plugin Panels**: Sensor configuration and monitoring
-
-## Configuration
-
 ### Environment Variables
-The system automatically configures:
-```bash
-# Gazebo paths
-export GZ_SIM_RESOURCE_PATH="$OLYMPUS_SIM_ROOT/sim/gazebo/models"
-export GZ_SIM_SYSTEM_PLUGIN_PATH="$OLYMPUS_SIM_ROOT/sim/gazebo/plugins/build"
 
-# WSL graphics compatibility
-export LIBGL_ALWAYS_SOFTWARE=1
-export MESA_GL_VERSION_OVERRIDE=3.3
-export QT_X11_NO_MITSHM=1
-```
+The launcher automatically sets up required environment variables:
 
-### Simulation Parameters
-Edit `config/simulation_config.yaml`:
-```yaml
-simulation:
-  update_rate: 100  # Hz
-  real_time_factor: 1.0
-  
-mmwave_sensor:
-  update_rate: 10
-  max_range: 50.0
-  noise_stddev: 0.01
-  
-mqtt:
-  broker_host: "localhost"
-  broker_port: 1883
-```
+- `GZ_SIM_RESOURCE_PATH` - Gazebo model and world paths
+- `GZ_SIM_PLUGIN_PATH` - Plugin library path
+- `LD_LIBRARY_PATH` - Shared library paths
+- `ROS_DOMAIN_ID` - ROS2 domain isolation
 
 ## Troubleshooting
 
 ### Common Issues
 
-**1. Plugin Build Failures**
-```bash
-# Ensure all dependencies are installed
-sudo apt install build-essential cmake libgz-sim8-dev
+1. **Plugin Loading Errors**
+   - Ensure plugin is built: `cd sim/gazebo/plugins/build && make`
+   - Check plugin path in environment variables
 
-# Clean and rebuild
-cd sim/gazebo/plugins
-rm -rf build/
-./build_mmwave_plugin.sh --build-only
+2. **ROS2 Bridge Issues**
+   - Source ROS2 environment: `source /opt/ros/jazzy/setup.bash`
+   - Check ROS2 installation: `ros2 --version`
+
+3. **MQTT Connection Issues**
+   - Start mosquitto broker: `sudo systemctl start mosquitto`
+   - Check broker status: `mosquitto_pub -t test -m "hello"`
+
+4. **WSL Graphics Issues**
+   - Install VcXsrv or similar X11 server
+   - Set DISPLAY environment variable
+
+### Debug Mode
+
+Run with verbose logging:
+
+```bash
+# Enable Gazebo debug output
+GZ_VERBOSE=1 ./olympus full --gui
+
+# Monitor all processes
+./olympus full --gui --rviz --automation
 ```
 
-**2. No Point Cloud Data**
+## Performance Optimization
+
+### For WSL Users
+
 ```bash
-# Check if plugin loaded successfully
-gz topic -l | grep mmwave
+# Enable GPU acceleration (if available)
+export LIBGL_ALWAYS_INDIRECT=1
 
-# Verify ROS2 bridge is running
-ros2 topic list | grep mmwave
-
-# Check for error messages
-ros2 launch olympus_gazebo.launch.py gui:=false rviz:=true
+# Reduce graphics quality for better performance
+export GZ_SIM_RENDER_ENGINE=ogre
 ```
 
-**3. WSL Graphics Issues**
-```bash
-# Test basic graphics
-glxinfo | grep "direct rendering"
+### Memory Usage
 
-# For WSLg (Windows 11)
-echo $DISPLAY  # Should show :0
+- Minimum 4GB RAM recommended
+- Close unnecessary applications during simulation
+- Use headless mode for automated testing
 
-# For X11 forwarding
-export DISPLAY=$(grep nameserver /etc/resolv.conf | awk '{print $2}'):0.0
-```
+## Contributing
 
-**4. MQTT Connection Issues**
-```bash
-# Start mosquitto broker
-sudo systemctl start mosquitto
-sudo systemctl enable mosquitto
+1. Follow the existing code structure
+2. Test changes with all simulation modes
+3. Update documentation for new features
+4. Ensure WSL compatibility
 
-# Test MQTT connectivity
-mosquitto_pub -h localhost -t test -m "hello"
-mosquitto_sub -h localhost -t test
-```
+## License
 
-**5. RViz2 Transform Errors**
-```bash
-# Check transform tree
-ros2 run tf2_tools view_frames
-
-# Verify static transform publisher
-ros2 topic echo /tf_static
-```
-
-### Performance Optimization
-
-**For WSL Users:**
-- Use headless mode: `./run_simulation.sh` (without --gui)
-- Increase WSL memory: Add to `.wslconfig`: `memory=4GB`
-- Enable WSLg for better graphics support
-
-**For Native Linux:**
-- Use GUI mode for full interactivity: `./run_simulation.sh --gui`
-- Adjust simulation real-time factor in world file
-- Monitor CPU/GPU usage with `htop` and `nvidia-smi`
-
-## Monitoring and Debugging
-
-### Real-Time Monitoring
-```bash
-# Monitor point cloud data rate
-ros2 topic hz /mmwave/points
-
-# View point cloud data
-ros2 topic echo /mmwave/points --no-arr
-
-# Monitor system performance
-htop
-```
-
-### Debug Logging
-Enable verbose logging:
-```bash
-# Gazebo debug output
-export GZ_VERBOSE=1
-./run_simulation.sh
-
-# ROS2 debug output
-ros2 launch olympus_gazebo.launch.py gui:=false rviz:=true --ros-args --log-level DEBUG
-```
-
-### Data Recording
-```bash
-# Record sensor data
-ros2 bag record /mmwave/points /tf /tf_static
-
-# Playback recorded data
-ros2 bag play <bag_file>
-```
-### Development Guidelines
-- Follow ROS2 coding standards
-- Add unit tests for new sensors
-- Update documentation for new features
-- Test on both native Linux and WSL2
+This project is part of the Olympus simulation system.

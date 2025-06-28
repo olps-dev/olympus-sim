@@ -2,8 +2,10 @@
 
 #include <gz/math/Rand.hh>
 
+
 namespace olympus_sim
 {
+
 
 void MmWavePointCloudGenerator::InitializeDefaultSensorParams(
     std::shared_ptr<MmWavePointCloud> pointCloud) 
@@ -15,6 +17,7 @@ void MmWavePointCloudGenerator::InitializeDefaultSensorParams(
   pointCloud->verticalResolution = 16;
   pointCloud->sensorPose = gz::math::Pose3d(0, 0, 0, 0, 0, 0); // Origin
 }
+
 
 void MmWavePointCloudGenerator::AddNoiseToPoints(
     std::shared_ptr<MmWavePointCloud> pointCloud, double rangeNoise) 

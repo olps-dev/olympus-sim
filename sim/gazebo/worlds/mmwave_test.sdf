@@ -193,12 +193,86 @@
             <max_radial_velocity>30.0</max_radial_velocity>
             <force_raycast>true</force_raycast>
             <visualize>true</visualize>
-            <wsl_compat_mode>true</wsl_compat_mode>
+            <wsl_compat_mode>false</wsl_compat_mode>
             <use_point_clouds_only>false</use_point_clouds_only>
             <debug>true</debug>
           </plugin>
         </sensor>
       </link>
     </model>
+
+    <!-- Second mmWave sensor -->
+    <model name="mmwave_sensor2">
+      <static>true</static>
+      <pose>5 0 1 0 0 3.14159</pose>
+      <plugin
+        filename="gz-sim-pose-publisher-system"
+        name="gz::sim::systems::PosePublisher">
+        <static_publisher>true</static_publisher>
+        <update_frequency>10</update_frequency>
+      </plugin>
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <sensor name="mmwave2" type="ray">
+          <always_on>1</always_on>
+          <visualize>true</visualize>
+          <update_rate>10</update_rate>
+          <topic>/mmwave2/points</topic>
+          <ray>
+            <scan>
+              <horizontal>
+                <samples>32</samples>
+                <resolution>1</resolution>
+                <min_angle>-0.7854</min_angle>
+                <max_angle>0.7854</max_angle>
+              </horizontal>
+              <vertical>
+                <samples>16</samples>
+                <resolution>1</resolution>
+                <min_angle>-0.2618</min_angle>
+                <max_angle>0.2618</max_angle>
+              </vertical>
+            </scan>
+            <range>
+              <min>0.05</min>
+              <max>50</max>
+              <resolution>0.01</resolution>
+            </range>
+          </ray>
+          <plugin
+            filename="libMmWaveSensorPlugin.so"
+            name="olympus_sim::MmWaveSensorPlugin">
+            <horizontal_fov>1.5708</horizontal_fov>
+            <vertical_fov>0.5236</vertical_fov>
+            <horizontal_resolution>32</horizontal_resolution>
+            <vertical_resolution>16</vertical_resolution>
+            <min_range>0.05</min_range>
+            <max_range>50</max_range>
+            <noise_mean>0</noise_mean>
+            <noise_stddev>0.01</noise_stddev>
+            <default_rcs>1.0</default_rcs>
+            <min_rcs>0.1</min_rcs>
+            <max_radial_velocity>30.0</max_radial_velocity>
+            <force_raycast>true</force_raycast>
+            <visualize>true</visualize>
+            <wsl_compat_mode>false</wsl_compat_mode>
+            <use_point_clouds_only>false</use_point_clouds_only>
+            <debug>true</debug>
+          </plugin>
+        </sensor>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.1 0.1 0.05</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0 1 0 1</ambient>
+            <diffuse>0 1 0 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
   </world>
 </sdf>

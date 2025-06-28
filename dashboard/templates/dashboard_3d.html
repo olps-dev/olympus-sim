@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Olympus IoT Simulation - 3D Dashboard</title>
+    
+    <!-- Three.js for 3D visualization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .dashboard-container {
+            display: grid;
+            grid-template-areas: 
+                "header header header"
+                "sidebar main-3d controls"
+                "sidebar main-3d controls";
+            grid-template-columns: 300px 1fr 280px;
+            grid-template-rows: 60px 1fr;
+            height: 100vh;
+            gap: 1px;
+            background: #000;
+        }
+        
+        .header {
+            grid-area: header;
+            background: linear-gradient(90deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 2px solid #00bcd4;
+            box-shadow: 0 2px 10px rgba(0,188,212,0.3);
+        }
+        
+        .header h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            background: linear-gradient(45deg, #00bcd4, #4fc3f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-indicators {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem;
+            padding: 5px 10px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .status-indicator.connected {
+            border-color: #4caf50;
+            background: rgba(76,175,80,0.1);
+        }
+        
+        .status-indicator.disconnected {
+            border-color: #f44336;
+            background: rgba(244,67,54,0.1);
+        }
+        
+        .sidebar {
+            grid-area: sidebar;
+            background: #1a1a2e;
+            overflow-y: auto;
+            border-right: 1px solid #333;
+        }
+        
+        .main-3d {
+            grid-area: main-3d;
+            background: #0f0f0f;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .controls-panel {
+            grid-area: controls;
+            background: #1a1a2e;
+            overflow-y: auto;
+            border-left: 1px solid #333;
+        }
+        
+        .panel {
+            background: #1a1a2e;
+            border-radius: 8px;
+            margin: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .panel-header {
+            background: linear-gradient(90deg, #16213e, #1a1a2e);
+            padding: 12px 15px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #00bcd4;
+        }
+        
+        .panel-content {
+            padding: 15px;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            font-size: 0.85rem;
+            color: #999;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .metric-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .sensor-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .sensor-card:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: #00bcd4;
+        }
+        
+        .sensor-card.active {
+            border-color: #4caf50;
+            background: rgba(76,175,80,0.1);
+            box-shadow: 0 0 15px rgba(76,175,80,0.3);
+        }
+        
+        .sensor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .sensor-name {
+            font-weight: 600;
+            color: #00bcd4;
+        }
+        
+        .sensor-status {
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(244,67,54,0.2);
+            color: #f44336;
+        }
+        
+        .sensor-status.active {
+            background: rgba(76,175,80,0.2);
+            color: #4caf50;
+        }
+        
+        .sensor-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #999;
+        }
+        
+        .chart-container {
+            height: 200px;
+            margin: 10px 0;
+        }
+        
+        .event-list {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        
+        .event-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            padding: 10px;
+            margin: 6px 0;
+            border-left: 3px solid #00bcd4;
+            font-size: 0.85rem;
+        }
+        
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        
+        .event-action {
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .event-time {
+            color: #999;
+            font-size: 0.8rem;
+        }
+        
+        .event-details {
+            color: #ccc;
+        }
+        
+        .control-group {
+            margin: 15px 0;
+        }
+        
+        .control-label {
+            font-size: 0.85rem;
+            color: #00bcd4;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .control-input {
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #fff;
+            font-size: 0.85rem;
+        }
+        
+        .control-input:focus {
+            outline: none;
+            border-color: #00bcd4;
+            box-shadow: 0 0 0 2px rgba(0,188,212,0.2);
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 10px 0;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #00bcd4, #0097a7);
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: linear-gradient(135deg, #00acc1, #00838f);
+            transform: translateY(-1px);
+        }
+        
+        .btn.danger {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+        }
+        
+        .btn.danger:hover {
+            background: linear-gradient(135deg, #e53935, #c62828);
+        }
+        
+        .viewport-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 0.8rem;
+            color: #00bcd4;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            font-size: 1.1rem;
+            color: #00bcd4;
+        }
+        
+        .loading i {
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        .success-indicator {
+            color: #4caf50;
+        }
+        
+        .warning-indicator {
+            color: #ff9800;
+        }
+        
+        .error-indicator {
+            color: #f44336;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,188,212,0.5);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,188,212,0.7);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <i class="fas fa-cube"></i>
+                Olympus IoT Simulation Dashboard
+            </h1>
+            <div class="status-indicators">
+                <div class="status-indicator" id="ws-status">
+                    <i class="fas fa-wifi"></i>
+                    <span>WebSocket</span>
+                </div>
+                <div class="status-indicator" id="mqtt-status">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>MQTT</span>
+                </div>
+                <div class="status-indicator" id="simulation-status">
+                    <i class="fas fa-play"></i>
+                    <span>Simulation</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- System Metrics -->
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Performance Metrics
+                </div>
+                <div class="panel-content">
+                    <div class="metric-row">
+                        <div class="metric-label">
+                            <i class="fas fa-clock"></i>
+                            Avg Latency
+                        </div>
+                        <div class="metric-value" id="avg-latency">-- ms</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">
+                            <i class="fas fa-chart-line"></i>
+                            P95 Latency
+                        </div>
+                        <div class="metric-value" id="p95-latency">-- ms</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">
+                            <i class="fas fa-hashtag"></i>
+                            Sample Count
+                        </div>
+                        <div class="metric-value" id="sample-count">0</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">
+                            <i class="fas fa-stopwatch"></i>
+                            Min / Max
+                        </div>
+                        <div class="metric-value" id="min-max-latency">-- / --</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sensors -->
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-radar"></i>
+                    mmWave Sensors
+                </div>
+                <div class="panel-content" id="sensor-list">
+                    <div class="loading">
+                        <i class="fas fa-spinner pulse"></i>
+                        Loading sensors...
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Events -->
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-history"></i>
+                    Automation Events
+                </div>
+                <div class="panel-content">
+                    <div class="event-list" id="automation-events">
+                        <div class="loading">
+                            <i class="fas fa-spinner pulse"></i>
+                            Waiting for events...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main 3D Viewport -->
+        <div class="main-3d">
+            <div class="viewport-overlay">
+                <div><i class="fas fa-mouse"></i> Left Click + Drag: Rotate</div>
+                <div><i class="fas fa-mouse"></i> Right Click + Drag: Pan</div>
+                <div><i class="fas fa-mouse"></i> Scroll: Zoom</div>
+            </div>
+            <div id="three-container"></div>
+        </div>
+        
+        <!-- Controls Panel -->
+        <div class="controls-panel">
+            <!-- Simulation Controls -->
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-sliders-h"></i>
+                    Simulation Controls
+                </div>
+                <div class="panel-content">
+                    <div class="control-group">
+                        <div class="control-label">
+                            <i class="fas fa-user"></i>
+                            Human Position
+                        </div>
+                        <input type="range" class="control-input" id="human-x" min="-5" max="5" step="0.1" value="0">
+                        <label style="font-size: 0.7rem; color: #999;">X: <span id="human-x-value">0.0</span></label>
+                        <input type="range" class="control-input" id="human-z" min="-5" max="5" step="0.1" value="0">
+                        <label style="font-size: 0.7rem; color: #999;">Z: <span id="human-z-value">0.0</span></label>
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-label">
+                            <i class="fas fa-wifi"></i>
+                            Sensor 1 Position
+                        </div>
+                        <input type="range" class="control-input" id="sensor1-y" min="1" max="4" step="0.1" value="2.5">
+                        <label style="font-size: 0.7rem; color: #999;">Height: <span id="sensor1-y-value">2.5</span></label>
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-label">
+                            <i class="fas fa-wifi"></i>
+                            Sensor 2 Position
+                        </div>
+                        <input type="range" class="control-input" id="sensor2-y" min="1" max="4" step="0.1" value="2.5">
+                        <label style="font-size: 0.7rem; color: #999;">Height: <span id="sensor2-y-value">2.5</span></label>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn" id="reset-scene">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                        <button class="btn" id="randomize-scene">
+                            <i class="fas fa-random"></i> Random
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Latency Chart -->
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-chart-area"></i>
+                    Real-time Latency
+                </div>
+                <div class="panel-content">
+                    <div class="chart-container">
+                        <canvas id="latency-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Point Cloud Info -->
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-cloud"></i>
+                    Point Cloud Data
+                </div>
+                <div class="panel-content">
+                    <div class="metric-row">
+                        <div class="metric-label">
+                            <i class="fas fa-dot-circle"></i>
+                            Sensor 1 Points
+                        </div>
+                        <div class="metric-value" id="sensor1-points">0</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">
+                            <i class="fas fa-dot-circle"></i>
+                            Sensor 2 Points
+                        </div>
+                        <div class="metric-value" id="sensor2-points">0</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">
+                            <i class="fas fa-bullseye"></i>
+                            Detection Range
+                        </div>
+                        <div class="metric-value">0-6m</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/dashboard-3d.js"></script>
+</body>
+</html>

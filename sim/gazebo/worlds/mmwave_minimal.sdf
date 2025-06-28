@@ -2,7 +2,51 @@
 <sdf version="1.8">
   <world name="mmwave_minimal">
     
-    <!-- Minimal world with no rendering components -->
+    <!-- Minimal world with basic objects for mmWave detection -->
+    
+    <!-- Ground plane -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Simple box for detection -->
+    <model name="test_box">
+      <pose>3 0 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>1 1 1</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>1 1 1</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+    </model>
     
     <!-- mmWave sensor model -->
     <model name="mmwave_sensor">
@@ -33,7 +77,7 @@
               <resolution>0.01</resolution>
             </range>
           </ray>
-          <plugin filename="libMmWaveSensorPlugin.so" name="olympus_sim::MmWaveSensorPlugin">
+          <plugin filename="/home/aliza/olympus-sim/sim/gazebo/plugins/build/libMmWaveSensorPlugin.so" name="olympus_sim::MmWaveSensorPlugin">
             <topic>/mmwave/points</topic>
             <frame_id>mmwave_sensor_link</frame_id>
             <update_rate>10</update_rate>
@@ -45,6 +89,9 @@
             <vertical_samples>16</vertical_samples>
             <noise_mean>0.0</noise_mean>
             <noise_stddev>0.01</noise_stddev>
+            <force_raycast>true</force_raycast>
+            <use_point_clouds_only>false</use_point_clouds_only>
+            <wsl_compat_mode>true</wsl_compat_mode>
           </plugin>
         </sensor>
       </link>

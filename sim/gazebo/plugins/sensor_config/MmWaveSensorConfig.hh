@@ -22,9 +22,10 @@ public:
    * @brief Load configuration from SDF element
    * @param _sdf The SDF element containing configuration
    * @param _pluginName Name of the plugin for logging
+   * @param _sensorName Name of the sensor entity (used as fallback for topic generation)
    * @return True if configuration loaded successfully, false otherwise
    */
-  bool Load(const std::shared_ptr<const sdf::Element> &_sdf, const std::string &_pluginName);
+  bool Load(const std::shared_ptr<const sdf::Element> &_sdf, const std::string &_pluginName, const std::string &_sensorName = "");
 
   // Sensor parameters
   std::string topicName = "/mmwave/points";
