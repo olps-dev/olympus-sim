@@ -75,37 +75,49 @@ class OlympusLauncher:
         return subprocess.Popen(cmd, env=self.get_ros2_env())
     
     def launch_ros2_bridge(self):
-        """Launch ROS2-Gazebo bridge"""
+        """Launch ROS2-Gazebo bridge for both mmwave sensors"""
         cmd = [
             'ros2', 'run', 'ros_gz_bridge', 'parameter_bridge',
             '/mmwave/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
+            '/mmwave2/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'
         ]
         
-        print("🌉 Starting ROS2-Gazebo bridge...")
+        print("🌉 Starting ROS2-Gazebo bridge for dual sensors...")
         bridge_process = subprocess.Popen(cmd, env=self.get_ros2_env())
         
-        # Also start a static transform publisher for the mmwave sensor frame
-        tf_cmd = [
+        # Start static transform publishers for both mmwave sensor frames
+        tf_cmd1 = [
             'ros2', 'run', 'tf2_ros', 'static_transform_publisher',
             '0', '0', '1', '0', '0', '0', 'world', 'mmwave'
         ]
         print("🔗 Starting static transform publisher for mmwave frame...")
-        tf_process = subprocess.Popen(tf_cmd, env=self.get_ros2_env())
+        tf_process1 = subprocess.Popen(tf_cmd1, env=self.get_ros2_env())
         
-        return [bridge_process, tf_process]
+        tf_cmd2 = [
+            'ros2', 'run', 'tf2_ros', 'static_transform_publisher',
+            '5', '0', '1', '0', '0', '3.14159', 'world', 'mmwave2'
+        ]
+        print("🔗 Starting static transform publisher for mmwave2 frame...")
+        tf_process2 = subprocess.Popen(tf_cmd2, env=self.get_ros2_env())
+        
+        return [bridge_process, tf_process1, tf_process2]
     
     def launch_mmwave_mqtt_bridge(self):
-        """Launch mmWave MQTT bridge"""
-        bridge_script = self.project_root / "sim" / "ros2" / "mmwave_mqtt_bridge.py"
+        """Launch multi-mmWave MQTT bridge"""
+        bridge_script = self.project_root / "sim" / "ros2" / "multi_mmwave_mqtt_bridge.py"
         
         if not bridge_script.exists():
-            print(f"❌ mmWave bridge not found: {bridge_script}")
-            return None
+            print(f"❌ Multi-mmWave bridge not found: {bridge_script}")
+            # Fall back to single sensor bridge
+            bridge_script = self.project_root / "sim" / "ros2" / "mmwave_mqtt_bridge.py"
+            if not bridge_script.exists():
+                print(f"❌ mmWave bridge not found: {bridge_script}")
+                return None
         
         cmd = ['python3', str(bridge_script)]
-        print("📡 Starting mmWave MQTT bridge...")
+        print("📡 Starting multi-mmWave MQTT bridge...")
         return subprocess.Popen(cmd, env=self.get_ros2_env())
     
     def launch_rviz(self):
@@ -185,7 +197,7 @@ class OlympusLauncher:
                 # Launch ROS2 bridge
                 bridge_procs = self.launch_ros2_bridge()
                 if bridge_procs:
-                    processes.extend([("ROS2 Bridge", bridge_procs[0]), ("Static Transform Publisher", bridge_procs[1])])
+                    processes.extend([("ROS2 Bridge", bridge_procs[0]), ("Static Transform Publisher 1", bridge_procs[1]), ("Static Transform Publisher 2", bridge_procs[2])])
                     time.sleep(2)
                 
                 # Launch mmWave MQTT bridge

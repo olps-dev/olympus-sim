@@ -62,11 +62,13 @@ void MmWaveSensorPlugin::Configure(const Entity &_entity,
   }
   
   // Check that entity has a name component
+  std::string sensorName;
   auto nameComp = _ecm.Component<components::Name>(this->entity);
   if (nameComp)
   {
+    sensorName = nameComp->Data();
     gzmsg << "[" << pluginName << "] Configuring plugin for entity [" 
-          << nameComp->Data() << "]" << std::endl;
+          << sensorName << "]" << std::endl;
   }
   else
   {
@@ -74,7 +76,7 @@ void MmWaveSensorPlugin::Configure(const Entity &_entity,
   }
 
   // Load configuration from SDF
-  if (!this->config.Load(_sdf, pluginName))
+  if (!this->config.Load(_sdf, pluginName, sensorName))
   {
     gzerr << "[" << pluginName << "] Failed to load configuration" << std::endl;
     return;

@@ -2,13 +2,131 @@
 
 using namespace olympus_sim;
 
-bool MmWaveSensorConfig::Load(const std::shared_ptr<const sdf::Element> &_sdf, const std::string &_pluginName)
+bool MmWaveSensorConfig::Load(const std::shared_ptr<const sdf::Element> &_sdf, const std::string &_pluginName, const std::string &_sensorName)
 {
-  // Load parameters from SDF
+  gzmsg << "[" << _pluginName << "] Starting config load, current topic: " << this->topicName << std::endl;
+  
+  // First try to get topic from plugin configuration (for backward compatibility)
   if (_sdf->HasElement("topic"))
   {
     this->topicName = _sdf->Get<std::string>("topic");
+    gzmsg << "[" << _pluginName << "] Found topic in plugin config: " << this->topicName << std::endl;
   }
+  else
+  {
+    gzmsg << "[" << _pluginName << "] No topic in plugin config, trying alternative methods" << std::endl;
+    
+    // Try multiple approaches to find the topic
+    bool topicFound = false;
+    
+    // Method 1: Try to get topic from parent sensor element using GetParent
+    auto currentElement = _sdf;
+    int traversalDepth = 0;
+    while (currentElement && traversalDepth < 5)
+    {
+      gzmsg << "[" << _pluginName << "] Traversal depth " << traversalDepth 
+            << ", element name: " << currentElement->GetName() << std::endl;
+      
+      // Check if current element has topic
+      if (currentElement->HasElement("topic"))
+      {
+        this->topicName = currentElement->Get<std::string>("topic");
+        gzmsg << "[" << _pluginName << "] Found topic at depth " << traversalDepth 
+              << ": " << this->topicName << std::endl;
+        topicFound = true;
+        break;
+      }
+      
+      // Check if we're at sensor element
+      if (currentElement->GetName() == "sensor")
+      {
+        // Even if no topic element, check for topic attribute
+        if (currentElement->HasAttribute("topic"))
+        {
+          this->topicName = currentElement->Get<std::string>("topic");
+          gzmsg << "[" << _pluginName << "] Found topic attribute in sensor: " << this->topicName << std::endl;
+          topicFound = true;
+          break;
+        }
+        
+        // Also check direct children for topic
+        // Note: We need to check if element exists first before trying to get its value
+        if (currentElement->HasElement("topic"))
+        {
+          // For const elements, we can directly get the value
+          this->topicName = currentElement->Get<std::string>("topic");
+          gzmsg << "[" << _pluginName << "] Found topic child in sensor: " << this->topicName << std::endl;
+          topicFound = true;
+          break;
+        }
+      }
+      
+      currentElement = currentElement->GetParent();
+      traversalDepth++;
+    }
+    
+    // Method 2: If parent traversal failed, try a different approach
+    // Some Gazebo versions might not properly link parent elements
+    if (!topicFound)
+    {
+      gzmsg << "[" << _pluginName << "] Parent traversal failed, trying direct sensor access" << std::endl;
+      
+      // In some cases, the sensor configuration might be available through
+      // a different mechanism. Let's check if the plugin has access to 
+      // sensor-specific configuration
+      auto rayParent = _sdf->GetParent();
+      if (rayParent && rayParent->GetName() == "ray")
+      {
+        gzmsg << "[" << _pluginName << "] Found ray parent, checking for sensor sibling" << std::endl;
+        
+        // Sometimes the topic is a sibling of the ray element
+        auto sensorParent = rayParent->GetParent();
+        if (sensorParent && sensorParent->GetName() == "sensor")
+        {
+          gzmsg << "[" << _pluginName << "] Found sensor parent, looking for topic element" << std::endl;
+          
+          // Try to find topic as a direct child
+          if (sensorParent->HasElement("topic"))
+          {
+            this->topicName = sensorParent->Get<std::string>("topic");
+            gzmsg << "[" << _pluginName << "] Found topic in sensor parent: " << this->topicName << std::endl;
+            topicFound = true;
+          }
+        }
+      }
+    }
+    
+    if (!topicFound)
+    {
+      // Final fallback: if sensor name is provided and different from default, generate topic from sensor name
+      if (!_sensorName.empty())
+      {
+        // If sensor name is "mmwave", use default topic
+        // If sensor name is "mmwave2", "mmwave3", etc., generate topic accordingly
+        if (_sensorName == "mmwave")
+        {
+          this->topicName = "/mmwave/points";
+          gzmsg << "[" << _pluginName << "] Using default topic for sensor 'mmwave': " << this->topicName << std::endl;
+        }
+        else if (_sensorName.find("mmwave") == 0)
+        {
+          // Extract the sensor name and create topic
+          this->topicName = "/" + _sensorName + "/points";
+          gzmsg << "[" << _pluginName << "] Generated topic from sensor name '" << _sensorName << "': " << this->topicName << std::endl;
+        }
+        else
+        {
+          gzmsg << "[" << _pluginName << "] Sensor name '" << _sensorName << "' doesn't match mmwave pattern, using default: " << this->topicName << std::endl;
+        }
+      }
+      else
+      {
+        gzmsg << "[" << _pluginName << "] No sensor name provided, using default: " << this->topicName << std::endl;
+      }
+    }
+  }
+
+  // Load parameters from SDF
   if (_sdf->HasElement("update_rate"))
   {
     this->updateRate = _sdf->Get<double>("update_rate");
