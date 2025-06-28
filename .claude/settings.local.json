@@ -36,7 +36,14 @@
       "Bash(code .)",
       "Bash(sed:*)",
       "Bash(rm:*)",
-      "Bash(sudo chmod:*)"
+      "Bash(sudo chmod:*)",
+      "Bash(source:*)",
+      "Bash(kill:*)",
+      "Bash(./kill_olympus.sh:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(python:*)",
+      "Bash(./start_simulation.sh:*)",
+      "Bash(pip install:*)"
     ],
     "deny": []
   }

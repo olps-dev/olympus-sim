@@ -1,0 +1,15 @@
+#!/bin/bash
+echo "Stopping Olympus Simulation..."
+pkill -f "threejs_ros2_bridge"
+pkill -f "mqtt_bridge" 
+pkill -f "live_automation"
+pkill -f "app_simple"
+pkill -f "launch_olympus"
+pkill -f "static_transform_publisher.*mmwave"
+sleep 2
+echo "Force killing remaining processes..."
+pkill -9 -f "threejs_ros2_bridge"
+pkill -9 -f "mqtt_bridge"
+pkill -9 -f "live_automation" 
+pkill -9 -f "app_simple"
+echo "All Olympus processes stopped!"

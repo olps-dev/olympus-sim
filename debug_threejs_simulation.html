@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Three.js Simulation</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; background: #111; color: #fff; }
+        #container { width: 100vw; height: 100vh; position: relative; }
+        #info { position: absolute; top: 10px; left: 10px; z-index: 100; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; }
+        #debug { position: absolute; top: 10px; right: 10px; z-index: 100; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; width: 300px; height: 400px; overflow-y: auto; font-size: 12px; }
+        .sensor-info { margin: 5px 0; font-size: 12px; }
+        .debug-log { margin: 2px 0; color: #00ff00; }
+        .error-log { margin: 2px 0; color: #ff0000; }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h3>Debug Three.js Simulation</h3>
+        <div>Status: <span id="status">Initializing...</span></div>
+        <div>Sensors: <span id="sensor-count">0</span></div>
+        <div>Objects: <span id="object-count">0</span></div>
+        <div id="sensor-data"></div>
+    </div>
+    <div id="debug">
+        <h4>Debug Log:</h4>
+        <div id="debug-log"></div>
+    </div>
+    <div id="container"></div>
+
+    <script src="https://unpkg.com/three@0.156.1/build/three.min.js"></script>
+    <script>
+        // Debug logging function
+        function debugLog(message, isError = false) {
+            const debugDiv = document.getElementById('debug-log');
+            const logDiv = document.createElement('div');
+            logDiv.className = isError ? 'error-log' : 'debug-log';
+            logDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            debugDiv.appendChild(logDiv);
+            debugDiv.scrollTop = debugDiv.scrollHeight;
+            console.log(message);
+        }
+
+        // Override console.log to capture all output
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            debugLog(args.join(' '));
+            originalConsoleLog.apply(console, args);
+        };
+
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            debugLog(args.join(' '), true);
+            originalConsoleError.apply(console, args);
+        };
+
+        console.log('🚀 Starting Debug Three.js Simulation...');
+        
+        let scene, camera, renderer, sensors = new Map(), animationId;
+        let isRunning = false;
+        
+        function init() {
+            console.log('🎨 Initializing Three.js scene...');
+            const container = document.getElementById('container');
+            
+            try {
+                // Initialize Three.js scene
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x222222);
+                
+                camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+                camera.position.set(10, 8, 10);
+                camera.lookAt(0, 0, 0);
+                
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                renderer.setClearColor(0x222222);
+                renderer.shadowMap.enabled = true;
+                container.appendChild(renderer.domElement);
+                
+                setupLighting();
+                setupScene();
+                addDefaultSensors();
+                startSimulation();
+                
+                document.getElementById('status').textContent = 'Running (Debug Mode)';
+                isRunning = true;
+                
+                console.log('✅ Three.js scene initialized successfully');
+                
+            } catch (error) {
+                console.error('❌ Three.js initialization failed:', error);
+                document.getElementById('status').textContent = 'ERROR: ' + error.message;
+            }
+        }
+        
+        function setupLighting() {
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+            console.log('💡 Lighting setup complete');
+        }
+        
+        function setupScene() {
+            // Ground plane
+            const groundGeometry = new THREE.PlaneGeometry(20, 20);
+            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x666666 });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            
+            // Grid helper
+            const gridHelper = new THREE.GridHelper(20, 40, 0x444444, 0x222222);
+            scene.add(gridHelper);
+            
+            // Sample objects for detection
+            createSampleObjects();
+            console.log('🏠 Scene setup complete');
+        }
+        
+        function createSampleObjects() {
+            // Create object storage
+            window.sceneObjects = [];
+            console.log('📦 Creating scene objects...');
+            
+            // Human figure (draggable)
+            const humanGroup = new THREE.Group();
+            const humanGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.6, 8);
+            const humanMaterial = new THREE.MeshLambertMaterial({ color: 0x4444ff });
+            const humanBody = new THREE.Mesh(humanGeometry, humanMaterial);
+            humanBody.position.y = 0.8;
+            humanBody.castShadow = true;
+            humanGroup.add(humanBody);
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+            const head = new THREE.Mesh(headGeometry, humanMaterial);
+            head.position.y = 1.8;
+            head.castShadow = true;
+            humanGroup.add(head);
+            
+            humanGroup.position.set(2, 0, 0);
+            humanGroup.userData = { type: 'human', rcs: 1.0, moveable: true, name: 'Human' };
+            scene.add(humanGroup);
+            window.sceneObjects.push(humanGroup);
+            console.log('👤 Added human at position:', humanGroup.position);
+            
+            // Table (draggable)
+            const tableGroup = new THREE.Group();
+            const tableGeometry = new THREE.BoxGeometry(1.5, 0.1, 0.8);
+            const tableMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const table = new THREE.Mesh(tableGeometry, tableMaterial);
+            table.position.y = 0.05;
+            table.castShadow = true;
+            tableGroup.add(table);
+            
+            // Table legs
+            for (let i = 0; i < 4; i++) {
+                const legGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.8);
+                const leg = new THREE.Mesh(legGeometry, tableMaterial);
+                const x = (i % 2) * 1.4 - 0.7;
+                const z = Math.floor(i / 2) * 0.6 - 0.3;
+                leg.position.set(x, -0.4, z);
+                leg.castShadow = true;
+                tableGroup.add(leg);
+            }
+            
+            tableGroup.position.set(-2, 0.8, 2);
+            tableGroup.userData = { type: 'furniture', rcs: 0.5, moveable: true, name: 'Table' };
+            scene.add(tableGroup);
+            window.sceneObjects.push(tableGroup);
+            console.log('🪑 Added table at position:', tableGroup.position);
+            
+            // Metal object (draggable)
+            const metalGroup = new THREE.Group();
+            const metalGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+            const metalMaterial = new THREE.MeshLambertMaterial({ color: 0x999999 });
+            const metalObject = new THREE.Mesh(metalGeometry, metalMaterial);
+            metalObject.castShadow = true;
+            metalGroup.add(metalObject);
+            
+            metalGroup.position.set(1, 0.3, -2);
+            metalGroup.userData = { type: 'object', rcs: 2.0, moveable: true, name: 'Metal Sphere' };
+            scene.add(metalGroup);
+            window.sceneObjects.push(metalGroup);
+            console.log('⚪ Added metal sphere at position:', metalGroup.position);
+            
+            document.getElementById('object-count').textContent = window.sceneObjects.length;
+            console.log(`📊 Total objects created: ${window.sceneObjects.length}`);
+        }
+        
+        function addDefaultSensors() {
+            console.log('📡 Adding default sensors...');
+            addSensorToScene('mmwave1', new THREE.Vector3(-5, 1, 0), new THREE.Euler(0, 0, 0));
+            addSensorToScene('mmwave2', new THREE.Vector3(5, 1, 0), new THREE.Euler(0, Math.PI, 0));
+        }
+        
+        function addSensorToScene(id, position, rotation) {
+            console.log(`🔧 Adding sensor ${id} at position:`, position, 'rotation:', rotation);
+            
+            const sensorGroup = new THREE.Group();
+            
+            // Sensor body (more visible)
+            const sensorGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.1);
+            const sensorMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+            const sensorMesh = new THREE.Mesh(sensorGeometry, sensorMaterial);
+            sensorGroup.add(sensorMesh);
+            
+            // FOV visualization cone
+            const coneGeometry = new THREE.ConeGeometry(3, 6, 8, 1, true);
+            const coneMaterial = new THREE.MeshBasicMaterial({
+                color: id === 'mmwave1' ? 0x00ff00 : 0x0080ff, 
+                transparent: true, 
+                opacity: 0.15, 
+                side: THREE.DoubleSide
+            });
+            const cone = new THREE.Mesh(coneGeometry, coneMaterial);
+            cone.position.z = 3;
+            cone.rotation.x = Math.PI / 2;
+            sensorGroup.add(cone);
+            
+            sensorGroup.position.copy(position);
+            sensorGroup.rotation.copy(rotation);
+            scene.add(sensorGroup);
+            
+            sensors.set(id, {
+                id: id,
+                group: sensorGroup,
+                lastUpdate: 0,
+                config: { horizontalFov: Math.PI/2, verticalFov: Math.PI/6, minRange: 0.1, maxRange: 10.0 }
+            });
+            
+            updateSensorCount();
+            console.log(`✅ Added sensor: ${id}`);
+        }
+        
+        function updateSensorCount() {
+            document.getElementById('sensor-count').textContent = sensors.size;
+        }
+        
+        function simulateSensors() {
+            console.log('🔄 Starting sensor simulation cycle...');
+            sensors.forEach((sensor, sensorId) => {
+                const pointCloud = simulatePointCloud(sensor);
+                console.log(`📊 Sensor ${sensorId}: Generated ${pointCloud.length} points`);
+                updateSensorDisplay(sensorId, pointCloud);
+            });
+        }
+        
+        function simulatePointCloud(sensor) {
+            if (!isRunning) return [];
+            
+            console.log(`🎯 Simulating point cloud for sensor:`, sensor.id);
+            const points = [];
+            const sensorPos = sensor.group.position;
+            const sensorRotation = sensor.group.rotation;
+            
+            console.log(`📍 Sensor position:`, sensorPos);
+            console.log(`🔄 Sensor rotation:`, sensorRotation);
+            console.log(`🎪 Scene objects available:`, window.sceneObjects ? window.sceneObjects.length : 0);
+            
+            // Check each moveable object
+            (window.sceneObjects || []).forEach((object, index) => {
+                if (object.userData && object.userData.moveable) {
+                    console.log(`🔍 Checking object ${index}: ${object.userData.name} at`, object.position);
+                    
+                    const distance = sensorPos.distanceTo(object.position);
+                    console.log(`📏 Distance to ${object.userData.name}: ${distance.toFixed(2)}m`);
+                    
+                    if (distance <= sensor.config.maxRange && distance >= sensor.config.minRange) {
+                        console.log(`✅ Object ${object.userData.name} is within range (${sensor.config.minRange}-${sensor.config.maxRange})`);
+                        
+                        // Check if object is within sensor FOV
+                        const directionToObject = object.position.clone().sub(sensorPos).normalize();
+                        const sensorForward = new THREE.Vector3(0, 0, 1);
+                        sensorForward.applyEuler(sensorRotation);
+                        
+                        console.log(`🧭 Direction to object:`, directionToObject);
+                        console.log(`🧭 Sensor forward:`, sensorForward);
+                        
+                        const angle = sensorForward.angleTo(directionToObject);
+                        const fovCheck = angle <= sensor.config.horizontalFov / 2;
+                        
+                        console.log(`📐 Angle: ${(angle * 180 / Math.PI).toFixed(2)}°, FOV: ${(sensor.config.horizontalFov * 180 / Math.PI).toFixed(2)}°, In FOV: ${fovCheck}`);
+                        
+                        if (fovCheck) {
+                            console.log(`🎯 Object ${object.userData.name} is in FOV! Generating points...`);
+                            
+                            // Generate realistic point cloud around the object
+                            const basePoints = Math.floor(distance < 2 ? 80 : distance < 5 ? 40 : 20);
+                            const numPoints = Math.floor(basePoints * object.userData.rcs);
+                            
+                            console.log(`📊 Generating ${numPoints} points for ${object.userData.name}`);
+                            
+                            for (let i = 0; i < numPoints; i++) {
+                                // Convert to sensor coordinate system
+                                const worldPoint = object.position.clone();
+                                
+                                // Add noise based on distance
+                                const noiseLevel = 0.05 + (distance * 0.02);
+                                worldPoint.x += (Math.random() - 0.5) * noiseLevel;
+                                worldPoint.y += (Math.random() - 0.5) * noiseLevel;
+                                worldPoint.z += (Math.random() - 0.5) * noiseLevel;
+                                
+                                const localPoint = worldPoint.sub(sensorPos);
+                                
+                                points.push({
+                                    x: localPoint.x,
+                                    y: localPoint.y,
+                                    z: localPoint.z,
+                                    intensity: Math.min(1.0, object.userData.rcs / distance),
+                                    range: distance,
+                                    velocity: 0,
+                                    rcs: object.userData.rcs
+                                });
+                            }
+                        } else {
+                            console.log(`❌ Object ${object.userData.name} is NOT in FOV`);
+                        }
+                    } else {
+                        console.log(`❌ Object ${object.userData.name} is out of range`);
+                    }
+                } else {
+                    console.log(`⚠️ Object ${index} is not moveable or missing userData`);
+                }
+            });
+            
+            console.log(`🎯 Sensor ${sensor.id} generated ${points.length} total points`);
+            return points;
+        }
+        
+        function updateSensorDisplay(sensorId, pointCloud) {
+            const sensorData = document.getElementById('sensor-data');
+            const sensorDiv = document.getElementById(`sensor-${sensorId}`) || document.createElement('div');
+            sensorDiv.id = `sensor-${sensorId}`;
+            sensorDiv.className = 'sensor-info';
+            sensorDiv.innerHTML = `
+                <strong>${sensorId}:</strong> ${pointCloud.length} points,
+                ${pointCloud.length > 5 ? 'Objects detected' : 'No detection'}
+            `;
+            
+            if (!document.getElementById(`sensor-${sensorId}`)) {
+                sensorData.appendChild(sensorDiv);
+            }
+        }
+        
+        function startSimulation() {
+            animate();
+            // Update sensors at 2 Hz for debugging
+            window.simulationInterval = setInterval(simulateSensors, 500);
+            console.log('🚀 Simulation started with 2 Hz sensor updates');
+        }
+        
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+            if (renderer && scene && camera) renderer.render(scene, camera);
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (camera && renderer) {
+                const container = document.getElementById('container');
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+        });
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

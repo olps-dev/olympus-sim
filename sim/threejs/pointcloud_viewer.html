@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mmWave Point Cloud Viewer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+            overflow: hidden;
+        }
+        
+        #container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+        
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #00ff00;
+            z-index: 100;
+            min-width: 250px;
+        }
+        
+        .sensor-panel {
+            background: rgba(0, 40, 0, 0.8);
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 3px;
+            border-left: 3px solid #00ff00;
+        }
+        
+        .sensor-name {
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 5px;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+            font-size: 12px;
+        }
+        
+        .value {
+            color: #00ffff;
+            font-weight: bold;
+        }
+        
+        #status {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+        }
+        
+        #fps {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            color: #ffff00;
+            font-weight: bold;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #00ff00;
+            font-size: 11px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 3px 0;
+        }
+        
+        .color-box {
+            width: 12px;
+            height: 12px;
+            margin-right: 8px;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="controls">
+            <h3 style="margin: 0 0 10px 0; color: #ffffff;">
+                Point Cloud Viewer
+                <span id="activity-indicator" style="color: #666666; font-size: 20px;">⚫</span>
+            </h3>
+            <div style="color: #888; font-size: 11px; margin-bottom: 10px;">
+                Shows actual detected objects from simulation
+            </div>
+            <div id="sensor-list"></div>
+            <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #333;">
+                <div class="metric">
+                    <span>Update Rate:</span>
+                    <span class="value" id="update-rate">--</span>
+                </div>
+                <div class="metric">
+                    <span>Total Points:</span>
+                    <span class="value" id="total-points">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="status">Connecting to simulation...</div>
+        <div id="fps">FPS: --</div>
+        
+        <div class="legend">
+            <h4 style="margin: 0 0 10px 0; color: #ffffff;">Sensor Legend</h4>
+            <div class="legend-item">
+                <div class="color-box" style="background: #00ff00;"></div>
+                <span>MMWAVE1 (Left)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #0080ff;"></div>
+                <span>MMWAVE2 (Right)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #ff0080;"></div>
+                <span>MMWAVE3 (Back)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #ffff00;"></div>
+                <span>TEST DATA</span>
+            </div>
+            <div style="margin-top: 10px; padding-top: 5px; border-top: 1px solid #333; font-size: 10px;">
+                <div>🔴 Sphere = Sensor Position</div>
+                <div>Point Brightness = Intensity</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let sensorData = new Map();
+        let pointClouds = new Map();
+        let lastUpdate = Date.now();
+        let frameCount = 0;
+        let lastFpsUpdate = Date.now();
+        
+        // Initialize viewer
+        function init() {
+            const container = document.getElementById('container');
+            
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a0a);
+            
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 10);
+            camera.lookAt(0, 0, 0);
+            
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+            
+            // Add coordinate axes
+            const axesHelper = new THREE.AxesHelper(2);
+            scene.add(axesHelper);
+            
+            // Add grid
+            const gridHelper = new THREE.GridHelper(20, 40, 0x444444, 0x222222);
+            scene.add(gridHelper);
+            
+            // Add sensor position indicators
+            addSensorIndicators();
+            
+            // Setup controls
+            setupControls();
+            
+            // Connect to data source
+            connectToSimulation();
+            
+            // Start render loop
+            animate();
+            
+            document.getElementById('status').textContent = 'Point Cloud Viewer Active';
+        }
+        
+        function setupControls() {
+            let isMouseDown = false;
+            let mouseX = 0, mouseY = 0;
+            let cameraDistance = 12;
+            let cameraAngleX = 0;
+            let cameraAngleY = Math.PI / 6;
+            
+            // Mouse controls for camera
+            renderer.domElement.addEventListener('mousedown', (event) => {
+                isMouseDown = true;
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+            });
+            
+            renderer.domElement.addEventListener('mouseup', () => {
+                isMouseDown = false;
+            });
+            
+            renderer.domElement.addEventListener('mousemove', (event) => {
+                if (isMouseDown) {
+                    const deltaX = event.clientX - mouseX;
+                    const deltaY = event.clientY - mouseY;
+                    
+                    cameraAngleX += deltaX * 0.01;
+                    cameraAngleY = Math.max(0.1, Math.min(Math.PI - 0.1, cameraAngleY - deltaY * 0.01));
+                    
+                    updateCameraPosition();
+                    
+                    mouseX = event.clientX;
+                    mouseY = event.clientY;
+                }
+            });
+            
+            // Zoom with mouse wheel
+            renderer.domElement.addEventListener('wheel', (event) => {
+                cameraDistance += event.deltaY * 0.01;
+                cameraDistance = Math.max(2, Math.min(50, cameraDistance));
+                updateCameraPosition();
+                event.preventDefault();
+            });
+            
+            function updateCameraPosition() {
+                camera.position.x = Math.sin(cameraAngleY) * Math.cos(cameraAngleX) * cameraDistance;
+                camera.position.y = Math.cos(cameraAngleY) * cameraDistance;
+                camera.position.z = Math.sin(cameraAngleY) * Math.sin(cameraAngleX) * cameraDistance;
+                camera.lookAt(0, 0, 0);
+            }
+            
+            updateCameraPosition();
+        }
+        
+        function connectToSimulation() {
+            // Poll for point cloud data at reasonable frequency
+            setInterval(fetchPointCloudData, 200); // 5 Hz update rate to prevent overload
+        }
+        
+        async function fetchPointCloudData() {
+            try {
+                const response = await fetch('http://localhost:5555/api/pointclouds');
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                updatePointClouds(data);
+                updateUI(data);
+                
+            } catch (error) {
+                console.log('Waiting for simulation data...');
+            }
+        }
+        
+        // Sensor positions and colors for correlation
+        const sensorConfig = {
+            'mmwave1': { position: [-5, 1, 0], color: 0x00ff00, name: 'MMWAVE1 (Left)' },
+            'mmwave2': { position: [5, 1, 0], color: 0x0080ff, name: 'MMWAVE2 (Right)' },
+            'mmwave3': { position: [0, 1, -5], color: 0xff0080, name: 'MMWAVE3 (Back)' },
+            'test_frontend': { position: [0, 2, 0], color: 0xffff00, name: 'TEST DATA' }
+        };
+        
+        function updatePointClouds(data) {
+            let totalPoints = 0;
+            
+            // Clear existing point clouds
+            pointClouds.forEach((pointCloud) => {
+                scene.remove(pointCloud);
+            });
+            pointClouds.clear();
+            
+            // Create new point clouds for each sensor with sensor-specific colors
+            Object.entries(data).forEach(([sensorId, pointCloudData]) => {
+                if (pointCloudData.points && pointCloudData.points.length > 0) {
+                    const sensorInfo = sensorConfig[sensorId] || { 
+                        position: [0, 0, 0], 
+                        color: 0xffffff, 
+                        name: sensorId.toUpperCase() 
+                    };
+                    const pointCloud = createPointCloud(sensorId, pointCloudData.points, sensorInfo);
+                    scene.add(pointCloud);
+                    pointClouds.set(sensorId, pointCloud);
+                    totalPoints += pointCloudData.points.length;
+                }
+            });
+            
+            document.getElementById('total-points').textContent = totalPoints;
+        }
+        
+        function createPointCloud(sensorId, points, sensorInfo) {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(points.length * 3);
+            const colors = new Float32Array(points.length * 3);
+            
+            // Convert sensor color to RGB
+            const sensorColor = new THREE.Color(sensorInfo.color);
+            
+            points.forEach((point, i) => {
+                // Position: points are already in world coordinates from simulation
+                positions[i * 3] = point.x;
+                positions[i * 3 + 1] = point.y;
+                positions[i * 3 + 2] = point.z;
+                
+                // Color: blend sensor color with intensity
+                const intensity = point.intensity || 0.5;
+                colors[i * 3] = sensorColor.r * intensity;
+                colors[i * 3 + 1] = sensorColor.g * intensity;
+                colors[i * 3 + 2] = sensorColor.b * intensity;
+            });
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const material = new THREE.PointsMaterial({
+                size: 0.08,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            return new THREE.Points(geometry, material);
+        }
+        
+        function intensityToColor(intensity) {
+            // Green -> Yellow -> Red based on intensity
+            if (intensity < 0.5) {
+                return {
+                    r: intensity * 2,
+                    g: 1.0,
+                    b: 0.0
+                };
+            } else {
+                return {
+                    r: 1.0,
+                    g: 2.0 * (1.0 - intensity),
+                    b: 0.0
+                };
+            }
+        }
+        
+        function addSensorIndicators() {
+            Object.entries(sensorConfig).forEach(([sensorId, config]) => {
+                // Create sensor position marker
+                const geometry = new THREE.SphereGeometry(0.15, 16, 16);
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: config.color,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const marker = new THREE.Mesh(geometry, material);
+                marker.position.set(config.position[0], config.position[1], config.position[2]);
+                scene.add(marker);
+                
+                // Add sensor label
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = 256;
+                canvas.height = 64;
+                context.fillStyle = '#000000';
+                context.fillRect(0, 0, canvas.width, canvas.height);
+                context.fillStyle = `#${config.color.toString(16).padStart(6, '0')}`;
+                context.font = 'bold 20px Arial';
+                context.textAlign = 'center';
+                context.fillText(config.name, canvas.width / 2, canvas.height / 2 + 7);
+                
+                const texture = new THREE.CanvasTexture(canvas);
+                const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+                const sprite = new THREE.Sprite(spriteMaterial);
+                sprite.position.set(config.position[0], config.position[1] + 0.5, config.position[2]);
+                sprite.scale.set(2, 0.5, 1);
+                scene.add(sprite);
+            });
+        }
+        
+        function updateUI(data) {
+            const sensorList = document.getElementById('sensor-list');
+            sensorList.innerHTML = '';
+            
+            Object.entries(data).forEach(([sensorId, sensorInfo]) => {
+                const config = sensorConfig[sensorId] || { color: 0xffffff, name: sensorId.toUpperCase() };
+                const panel = document.createElement('div');
+                panel.className = 'sensor-panel';
+                panel.style.borderLeft = `3px solid #${config.color.toString(16).padStart(6, '0')}`;
+                
+                const pointCount = sensorInfo.points ? sensorInfo.points.length : 0;
+                const avgIntensity = sensorInfo.points && sensorInfo.points.length > 0 
+                    ? (sensorInfo.points.reduce((sum, p) => sum + (p.intensity || 0), 0) / sensorInfo.points.length).toFixed(2)
+                    : '0.00';
+                
+                // Calculate detection status
+                const detectionStatus = pointCount > 0 ? '🔴 DETECTING' : '⚫ IDLE';
+                const lastSeen = sensorInfo.timestamp ? 
+                    `${((Date.now() / 1000) - sensorInfo.timestamp).toFixed(1)}s ago` : '--';
+                
+                panel.innerHTML = `
+                    <div class="sensor-name">${config.name}</div>
+                    <div class="metric">
+                        <span>Status:</span>
+                        <span class="value" style="font-weight: bold;">${detectionStatus}</span>
+                    </div>
+                    <div class="metric">
+                        <span>Detected Points:</span>
+                        <span class="value" style="font-size: 14px; font-weight: bold;">${pointCount}</span>
+                    </div>
+                    <div class="metric" style="font-size: 10px; color: #666;">
+                        <span>Last seen:</span>
+                        <span class="value">${lastSeen}</span>
+                    </div>
+                `;
+                
+                sensorList.appendChild(panel);
+            });
+            
+            // Update rate calculation and activity indicator
+            const now = Date.now();
+            const updateRate = (1000 / (now - lastUpdate)).toFixed(1);
+            document.getElementById('update-rate').textContent = updateRate + ' Hz';
+            lastUpdate = now;
+            
+            // Update activity indicator
+            const hasActivity = Object.values(data).some(sensor => 
+                sensor.points && sensor.points.length > 0
+            );
+            const indicator = document.getElementById('activity-indicator');
+            if (hasActivity) {
+                indicator.style.color = '#00ff00';
+                indicator.textContent = '🟢';
+            } else {
+                indicator.style.color = '#666666';
+                indicator.textContent = '⚫';
+            }
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // FPS calculation
+            frameCount++;
+            const now = Date.now();
+            if (now - lastFpsUpdate >= 1000) {
+                const fps = Math.round(frameCount * 1000 / (now - lastFpsUpdate));
+                document.getElementById('fps').textContent = `FPS: ${fps}`;
+                frameCount = 0;
+                lastFpsUpdate = now;
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
