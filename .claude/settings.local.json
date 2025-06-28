@@ -30,7 +30,13 @@
       "Bash(ros2 topic list:*)",
       "Bash(killall:*)",
       "Bash(ss:*)",
-      "Bash(hostname:*)"
+      "Bash(hostname:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(claude /ide)",
+      "Bash(code .)",
+      "Bash(sed:*)",
+      "Bash(rm:*)",
+      "Bash(sudo chmod:*)"
     ],
     "deny": []
   }

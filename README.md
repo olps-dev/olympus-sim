@@ -21,11 +21,11 @@ The Olympus simulation has a single, clean entry point:
 # Simple full simulation (headless)
 ./olympus
 
-# Full simulation with GUI and RViz
-./olympus full --gui --rviz --automation
+# Full simulation with GUI, RViz, and web dashboard
+./olympus full --gui --rviz --automation --dashboard
 
-# Just the sensor simulation
-./olympus sensor --rviz
+# Just the sensor simulation with dashboard
+./olympus sensor --rviz --dashboard
 
 # List all available modes
 ./olympus --list-modes
@@ -96,20 +96,21 @@ make -j4
 - `--gui` - Launch Gazebo with GUI (default: headless)
 - `--rviz` - Launch RViz2 for visualization
 - `--automation` - Launch automation controller
+- `--dashboard` - Launch web dashboard on http://localhost:5001
 - `--list-modes` - Show available modes
 
 ## Usage Examples
 
 ### Development Workflow
 ```bash
-# 1. Test sensor data flow
-./olympus sensor --rviz
+# 1. Test sensor data flow with dashboard
+./olympus sensor --rviz --dashboard
 
-# 2. Test complete automation
-./olympus full --automation
+# 2. Test complete automation with monitoring
+./olympus full --automation --dashboard
 
-# 3. Debug with GUI
-./olympus full --gui --rviz --automation
+# 3. Debug with full visualization
+./olympus full --gui --rviz --automation --dashboard
 ```
 
 ### Testing Automation
@@ -138,6 +139,7 @@ Gazebo mmWave Sensor → ROS2 PointCloud2 → mmWave MQTT Bridge → MQTT Topics
 2. **ROS2 Bridge**: Converts Gazebo messages to ROS2 topics
 3. **mmWave MQTT Bridge**: Processes point cloud data for presence detection
 4. **Automation Controller**: Implements automation logic based on sensor data
+5. **Web Dashboard**: Real-time 3D visualization and metrics monitoring
 
 ### Data Flow
 
@@ -170,6 +172,41 @@ Gazebo mmWave Sensor → ROS2 PointCloud2 → mmWave MQTT Bridge → MQTT Topics
 - Triggers `actuators/lamp_hall/on` when presence detected
 - Publishes automation events with latency metrics
 - Configurable automation rules with cooldown periods
+
+## Web Dashboard
+
+The web dashboard provides real-time monitoring and visualization at http://localhost:5001
+
+### Features
+
+1. **3D Visualization**:
+   - Real-time point cloud display from mmWave sensors
+   - Interactive 3D scene with OrbitControls
+   - Synchronized human model positioning based on detections
+   - Sensor field-of-view indicators
+
+2. **Performance Metrics**:
+   - End-to-end latency tracking
+   - Sample count and statistical analysis
+   - Real-time latency graphs
+   - Min/Max/P99 latency metrics
+
+3. **Live Monitoring**:
+   - Active sensor status
+   - Automation event stream
+   - Battery level indicators
+   - MQTT message flow visualization
+
+### Accessing the Dashboard
+
+```bash
+# Start simulation with dashboard
+./olympus full --automation --dashboard
+
+# Access from browser
+# - From WSL: http://localhost:5001
+# - From Windows: http://<WSL-IP>:5001
+```
 
 ## Testing and Validation
 
@@ -229,24 +266,37 @@ python3 tools/manipulate_scene.py
 
 ```
 olympus-sim/
-├── ./olympus                    # Main launcher script
+├── olympus                     # Main launcher script
 ├── sim/
 │   ├── gazebo/
 │   │   ├── plugins/            # mmWave sensor plugin
 │   │   ├── worlds/             # Gazebo world files
 │   │   └── models/             # 3D models
 │   └── ros2/
-│       └── mmwave_mqtt_bridge.py  # ROS2 to MQTT bridge
+│       ├── multi_mmwave_mqtt_bridge.py  # ROS2 to MQTT bridge
+│       └── config/             # RViz configurations
 ├── automation/
-│   └── automation_demo.py      # Automation controller
+│   └── live_automation.py      # Live automation controller
+├── dashboard/
+│   ├── app_simple.py           # Flask web dashboard
+│   ├── live_data_manager.py    # Real-time data management
+│   └── static/                 # Frontend assets
+├── docker/
+│   ├── Dockerfile.*            # Container definitions
+│   ├── docker-compose.yml      # Multi-container setup
+│   └── README.md               # Docker documentation
+├── metrics/
+│   └── latency_battery_tracker.py  # Performance tracking
 ├── tests/
 │   ├── test_mmwave_mqtt.py     # MQTT testing
 │   └── test_automation_loop.py # End-to-end testing
 ├── tools/
-│   ├── launch_olympus.py       # Main launcher
+│   ├── launch_olympus.py       # Main launcher backend
 │   ├── manipulate_scene.py     # Scene manipulation
 │   └── verify_setup.py         # Setup verification
-└── legacy_launch/              # Old launch scripts
+└── scripts/
+    ├── test_utils/             # Test utilities
+    └── *.sh                    # Helper scripts
 ```
 
 ## Configuration

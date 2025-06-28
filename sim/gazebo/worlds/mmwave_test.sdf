@@ -193,7 +193,7 @@
             <max_radial_velocity>30.0</max_radial_velocity>
             <force_raycast>true</force_raycast>
             <visualize>true</visualize>
-            <wsl_compat_mode>true</wsl_compat_mode>
+            <wsl_compat_mode>false</wsl_compat_mode>
             <use_point_clouds_only>false</use_point_clouds_only>
             <debug>true</debug>
           </plugin>
@@ -255,7 +255,7 @@
             <max_radial_velocity>30.0</max_radial_velocity>
             <force_raycast>true</force_raycast>
             <visualize>true</visualize>
-            <wsl_compat_mode>true</wsl_compat_mode>
+            <wsl_compat_mode>false</wsl_compat_mode>
             <use_point_clouds_only>false</use_point_clouds_only>
             <debug>true</debug>
           </plugin>

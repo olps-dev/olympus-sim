@@ -8,7 +8,7 @@ Usage: ./olympus [mode] [options]
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Source ROS2 environment
-source /opt/ros/jazzy/setup.bash 2>/dev/null || echo "⚠️ ROS2 not found, some features may not work"
+source /opt/ros/jazzy/setup.bash 2>/dev/null || echo "WARNING: ROS2 not found, some features may not work"
 
 # Run the Python launcher
 python3 "$SCRIPT_DIR/tools/launch_olympus.py" "$@"

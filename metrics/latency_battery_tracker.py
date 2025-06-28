@@ -23,9 +23,9 @@ from typing import Dict, List, Optional
 logger = logging.getLogger('latency_battery_tracker')
 
 class LatencyBatteryTracker:
-    def __init__(self, output_dir: str = "metrics"):
+    def __init__(self, output_dir: str = "/tmp/olympus_metrics"):
         self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(exist_ok=True)
+        self.output_dir.mkdir(exist_ok=True, mode=0o777)
         
         # CSV files for data logging
         self.latency_csv = self.output_dir / "latency_metrics.csv"
@@ -61,7 +61,15 @@ class LatencyBatteryTracker:
             'stage_timestamp', 'cumulative_latency_ms', 'stage_latency_ms'
         ]
         
-        if not self.latency_csv.exists():
+        try:
+            if not self.latency_csv.exists():
+                with open(self.latency_csv, 'w', newline='') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(latency_headers)
+        except PermissionError:
+            # Try alternative location
+            self.latency_csv = Path.home() / ".olympus_metrics" / "latency_metrics.csv"
+            self.latency_csv.parent.mkdir(exist_ok=True)
             with open(self.latency_csv, 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(latency_headers)
@@ -72,7 +80,15 @@ class LatencyBatteryTracker:
             'consumption_mah', 'runtime_seconds'
         ]
         
-        if not self.battery_csv.exists():
+        try:
+            if not self.battery_csv.exists():
+                with open(self.battery_csv, 'w', newline='') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(battery_headers)
+        except PermissionError:
+            # Try alternative location
+            self.battery_csv = Path.home() / ".olympus_metrics" / "battery_metrics.csv"
+            self.battery_csv.parent.mkdir(exist_ok=True)
             with open(self.battery_csv, 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(battery_headers)
