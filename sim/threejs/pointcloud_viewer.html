@@ -145,10 +145,6 @@
                 <div class="color-box" style="background: #ff0080;"></div>
                 <span>MMWAVE3 (Back)</span>
             </div>
-            <div class="legend-item">
-                <div class="color-box" style="background: #ffff00;"></div>
-                <span>TEST DATA</span>
-            </div>
             <div style="margin-top: 10px; padding-top: 5px; border-top: 1px solid #333; font-size: 10px;">
                 <div>🔴 Sphere = Sensor Position</div>
                 <div>Point Brightness = Intensity</div>
@@ -157,8 +153,9 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
-        let scene, camera, renderer;
+        let scene, camera, renderer, controls;
         let sensorData = new Map();
         let pointClouds = new Map();
         let lastUpdate = Date.now();
@@ -207,54 +204,22 @@
         }
         
         function setupControls() {
-            let isMouseDown = false;
-            let mouseX = 0, mouseY = 0;
-            let cameraDistance = 12;
-            let cameraAngleX = 0;
-            let cameraAngleY = Math.PI / 6;
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = true;
+            controls.minDistance = 2;
+            controls.maxDistance = 50;
+            controls.maxPolarAngle = Math.PI * 0.9;
             
-            // Mouse controls for camera
-            renderer.domElement.addEventListener('mousedown', (event) => {
-                isMouseDown = true;
-                mouseX = event.clientX;
-                mouseY = event.clientY;
-            });
+            // Enable auto-rotation for better visualization
+            controls.autoRotate = false;
+            controls.autoRotateSpeed = 0.5;
             
-            renderer.domElement.addEventListener('mouseup', () => {
-                isMouseDown = false;
-            });
-            
-            renderer.domElement.addEventListener('mousemove', (event) => {
-                if (isMouseDown) {
-                    const deltaX = event.clientX - mouseX;
-                    const deltaY = event.clientY - mouseY;
-                    
-                    cameraAngleX += deltaX * 0.01;
-                    cameraAngleY = Math.max(0.1, Math.min(Math.PI - 0.1, cameraAngleY - deltaY * 0.01));
-                    
-                    updateCameraPosition();
-                    
-                    mouseX = event.clientX;
-                    mouseY = event.clientY;
-                }
-            });
-            
-            // Zoom with mouse wheel
-            renderer.domElement.addEventListener('wheel', (event) => {
-                cameraDistance += event.deltaY * 0.01;
-                cameraDistance = Math.max(2, Math.min(50, cameraDistance));
-                updateCameraPosition();
-                event.preventDefault();
-            });
-            
-            function updateCameraPosition() {
-                camera.position.x = Math.sin(cameraAngleY) * Math.cos(cameraAngleX) * cameraDistance;
-                camera.position.y = Math.cos(cameraAngleY) * cameraDistance;
-                camera.position.z = Math.sin(cameraAngleY) * Math.sin(cameraAngleX) * cameraDistance;
-                camera.lookAt(0, 0, 0);
-            }
-            
-            updateCameraPosition();
+            // Set initial camera position
+            camera.position.set(0, 5, 10);
+            camera.lookAt(0, 0, 0);
+            controls.update();
         }
         
         function connectToSimulation() {
@@ -280,8 +245,7 @@
         const sensorConfig = {
             'mmwave1': { position: [-5, 1, 0], color: 0x00ff00, name: 'MMWAVE1 (Left)' },
             'mmwave2': { position: [5, 1, 0], color: 0x0080ff, name: 'MMWAVE2 (Right)' },
-            'mmwave3': { position: [0, 1, -5], color: 0xff0080, name: 'MMWAVE3 (Back)' },
-            'test_frontend': { position: [0, 2, 0], color: 0xffff00, name: 'TEST DATA' }
+            'mmwave3': { position: [0, 1, -5], color: 0xff0080, name: 'MMWAVE3 (Back)' }
         };
         
         function updatePointClouds(data) {
@@ -457,6 +421,11 @@
         
         function animate() {
             requestAnimationFrame(animate);
+            
+            // Update controls
+            if (controls) {
+                controls.update();
+            }
             
             // FPS calculation
             frameCount++;

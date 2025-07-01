@@ -43,7 +43,17 @@
       "WebFetch(domain:localhost)",
       "Bash(python:*)",
       "Bash(./start_simulation.sh:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm install:*)",
+      "Bash(claude config)",
+      "Bash(claude config list)",
+      "Bash(claude config set mcpServers.olympus-dev-tools.command node)",
+      "Bash(claude config set:*)",
+      "Bash(claude mcp:*)",
+      "Bash(node:*)",
+      "Bash(npx create-react-app:*)",
+      "Bash(npm start)"
     ],
     "deny": []
   }

@@ -115,7 +115,7 @@ class WebHandler(SimpleHTTPRequestHandler):
 <body>
     <div class="container">
         <div class="header">
-            <h1>🌊 mmWave Sensor Visualization</h1>
+            <h1>mmWave Sensor Visualization</h1>
             <p>Real-time physics-based raycast data from Olympus simulation</p>
         </div>
         
@@ -274,8 +274,8 @@ def main():
     server_thread.daemon = True
     server_thread.start()
     
-    print("🌐 Web visualization started at http://localhost:8080")
-    print("📊 Visualizing mmWave sensor data from /mmwave/points")
+    print("Web visualization started at http://localhost:8080")
+    print("Visualizing mmWave sensor data from /mmwave/points")
     print("Press Ctrl+C to stop")
     
     try:

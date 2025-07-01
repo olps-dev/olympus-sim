@@ -179,13 +179,29 @@ class ThreeJSROS2Bridge(Node):
         <div id="sensor-data"></div>
     </div>
     <div id="controls">
-        <button onclick="addSensor()">Add Sensor</button>
-        <button onclick="toggleSimulation()">Start/Stop</button>
-        <button onclick="resetScene()">Reset Scene</button>
-        <button onclick="toggleROS2Mode()">Toggle ROS2 Mode</button>
-        <button onclick="testDataSend()" style="background: #ff6600;">🔧 Test Data Send</button>
-        <button onclick="debugSimulation()" style="background: #6600ff;">🐛 Debug Sim</button>
-        <button onclick="manualSensorRun()" style="background: #00ff66;">▶️ Manual Run</button>
+        <div style="margin-bottom: 10px;">
+            <strong>Simulation Controls:</strong><br>
+            <button onclick="toggleSimulation()">Start/Stop</button>
+            <button onclick="resetScene()">Reset Scene</button>
+            <button onclick="toggleROS2Mode()">Toggle ROS2 Mode</button>
+        </div>
+        <div style="margin-bottom: 10px;">
+            <strong>Camera Views:</strong><br>
+            <button onclick="setCameraView('top')">Top</button>
+            <button onclick="setCameraView('front')">Front</button>
+            <button onclick="setCameraView('side')">Side</button>
+            <button onclick="setCameraView('iso')">Isometric</button>
+        </div>
+        <div style="margin-bottom: 10px;">
+            <strong>Sensor Controls:</strong><br>
+            <button onclick="addSensor()">Add Sensor</button>
+            <button onclick="manualSensorRun()" style="background: #00ff66;">▶️ Manual Run</button>
+        </div>
+        <div style="margin-bottom: 10px;">
+            <strong>Debug:</strong><br>
+            <button onclick="testDataSend()" style="background: #ff6600;">🔧 Test Data</button>
+            <button onclick="debugSimulation()" style="background: #6600ff;">🐛 Debug</button>
+        </div>
         <div>
             <label>Update Rate: <input type="range" id="updateRate" min="1" max="10" value="2" onchange="updateRate(this.value)"> <span id="rateValue">2</span> Hz</label>
         </div>
@@ -193,6 +209,7 @@ class ThreeJSROS2Bridge(Node):
     <div id="container"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
         console.log('🚀 Starting Three.js ROS2 Simulation...');
         
@@ -421,7 +438,11 @@ class ThreeJSROS2Bridge(Node):
             
             sensorGroup.position.copy(position);
             sensorGroup.rotation.copy(rotation);
+            sensorGroup.userData = { type: 'sensor', moveable: true, name: id, sensorId: id };
             scene.add(sensorGroup);
+            
+            // Add to sceneObjects so it can be dragged
+            window.sceneObjects.push(sensorGroup);
             
             sensors.set(id, {
                 id: id,
@@ -434,60 +455,43 @@ class ThreeJSROS2Bridge(Node):
             console.log('Added sensor:', id);
         }
         
-        // Camera controls - right mouse button only
+        // Camera controls using OrbitControls
         function setupCameraControls() {
-            let isMouseDown = false;
-            let mouseX = 0, mouseY = 0;
-            let cameraDistance = 15;
-            let cameraAngleX = 0;
-            let cameraAngleY = Math.PI / 4;
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = false;
+            controls.minDistance = 5;
+            controls.maxDistance = 50;
+            controls.maxPolarAngle = Math.PI * 0.9;
             
-            // Right mouse button for camera orbit
-            renderer.domElement.addEventListener('mousedown', (event) => {
-                if (event.button === 2) { // Right mouse button
-                    isMouseDown = true;
-                    mouseX = event.clientX;
-                    mouseY = event.clientY;
-                    event.preventDefault();
+            // Important: Right-click for camera rotation, left-click for object interaction
+            controls.mouseButtons = {
+                LEFT: THREE.MOUSE.ROTATE,  // Will be disabled when over objects
+                MIDDLE: THREE.MOUSE.DOLLY,
+                RIGHT: THREE.MOUSE.ROTATE  // Backup camera rotation
+            };
+            
+            // Set initial camera position
+            camera.position.set(15, 10, 15);
+            camera.lookAt(0, 0, 0);
+            controls.update();
+            
+            // Add camera preset buttons
+            window.setCameraView = function(view) {
+                const positions = {
+                    'top': [0, 20, 0.1],
+                    'front': [0, 5, 20],
+                    'side': [20, 5, 0],
+                    'iso': [15, 10, 15]
+                };
+                
+                if (positions[view]) {
+                    camera.position.set(...positions[view]);
+                    camera.lookAt(0, 0, 0);
+                    controls.update();
                 }
-            });
-            
-            renderer.domElement.addEventListener('mouseup', () => {
-                isMouseDown = false;
-            });
-            
-            renderer.domElement.addEventListener('mousemove', (event) => {
-                if (isMouseDown && event.buttons === 2) { // Right mouse button held
-                    const deltaX = event.clientX - mouseX;
-                    const deltaY = event.clientY - mouseY;
-                    
-                    cameraAngleX += deltaX * 0.01;
-                    cameraAngleY = Math.max(0.1, Math.min(Math.PI - 0.1, cameraAngleY - deltaY * 0.01));
-                    
-                    updateCameraPosition();
-                    
-                    mouseX = event.clientX;
-                    mouseY = event.clientY;
-                    event.preventDefault();
-                }
-            });
-            
-            // Zoom with mouse wheel
-            renderer.domElement.addEventListener('wheel', (event) => {
-                cameraDistance += event.deltaY * 0.01;
-                cameraDistance = Math.max(5, Math.min(50, cameraDistance));
-                updateCameraPosition();
-                event.preventDefault();
-            });
-            
-            function updateCameraPosition() {
-                camera.position.x = Math.sin(cameraAngleY) * Math.cos(cameraAngleX) * cameraDistance;
-                camera.position.y = Math.cos(cameraAngleY) * cameraDistance;
-                camera.position.z = Math.sin(cameraAngleY) * Math.sin(cameraAngleX) * cameraDistance;
-                camera.lookAt(0, 0, 0);
             }
-            
-            updateCameraPosition();
         }
         
         // Object interaction - separate from camera controls
@@ -518,12 +522,15 @@ class ThreeJSROS2Bridge(Node):
                     if (object.userData && object.userData.moveable) {
                         selectedObject = object;
                         isDragging = true;
+                        // Disable OrbitControls while dragging objects
+                        if (controls) controls.enabled = false;
                         document.body.style.cursor = 'grabbing';
                         console.log('Selected for dragging:', object.userData.name || object.userData.type);
                         event.stopPropagation();
                         event.preventDefault();
                     }
                 }
+                // If no object was clicked, OrbitControls will handle camera rotation naturally
             });
             
             renderer.domElement.addEventListener('mousemove', (event) => {
@@ -546,6 +553,8 @@ class ThreeJSROS2Bridge(Node):
                             selectedObject.position.y = 0;
                         } else if (selectedObject.userData.type === 'furniture') {
                             selectedObject.position.y = 0.8;
+                        } else if (selectedObject.userData.type === 'sensor') {
+                            selectedObject.position.y = 1; // Keep sensors at 1m height
                         } else {
                             selectedObject.position.y = 0.3;
                         }
@@ -559,6 +568,8 @@ class ThreeJSROS2Bridge(Node):
                     isDragging = false;
                     selectedObject = null;
                     document.body.style.cursor = 'default';
+                    // Re-enable OrbitControls after dragging
+                    if (controls) controls.enabled = true;
                 }
             });
             

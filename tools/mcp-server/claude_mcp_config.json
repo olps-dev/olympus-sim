@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "olympus-dev-tools": {
+      "command": "node",
+      "args": ["/home/aliza/olympus-sim/tools/mcp-server/dist/server.js"],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}

@@ -11,28 +11,28 @@ from pathlib import Path
 def check_file(path, description):
     """Check if a file exists and is accessible"""
     if path.exists():
-        print(f"✅ {description}: {path}")
+        print(f"{description}: {path}")
         return True
     else:
-        print(f"❌ {description}: {path} (NOT FOUND)")
+        print(f"{description}: {path} (NOT FOUND)")
         return False
 
 def check_directory(path, description):
     """Check if a directory exists"""
     if path.exists() and path.is_dir():
-        print(f"✅ {description}: {path}")
+        print(f"{description}: {path}")
         return True
     else:
-        print(f"❌ {description}: {path} (NOT FOUND)")
+        print(f"{description}: {path} (NOT FOUND)")
         return False
 
 def main():
-    print("🔍 Olympus Simulation Setup Verification\n")
+    print("Olympus Simulation Setup Verification\n")
     
     project_root = Path(__file__).parent
     all_good = True
     
-    print("📁 Directory Structure:")
+    print("Directory Structure:")
     dirs_to_check = [
         (project_root / "automation", "Automation directory"),
         (project_root / "tests", "Tests directory"),
@@ -58,7 +58,7 @@ def main():
     for path, desc in files_to_check:
         all_good &= check_file(path, desc)
     
-    print("\n📚 Documentation:")
+    print("\nDocumentation:")
     docs_to_check = [
         (project_root / "README.md", "Main README"),
         (project_root / "LAUNCHER_README.md", "Launcher README"),
@@ -71,7 +71,7 @@ def main():
     for path, desc in docs_to_check:
         all_good &= check_file(path, desc)
     
-    print("\n🚀 ROS2 & Gazebo Components:")
+    print("\nROS2 & Gazebo Components:")
     sim_files = [
         (project_root / "sim" / "ros2" / "launch" / "olympus_gazebo.launch.py", "ROS2 launch file"),
         (project_root / "sim" / "ros2" / "mmwave_mqtt_bridge.py", "mmWave MQTT bridge"),
@@ -83,15 +83,15 @@ def main():
     
     print(f"\n{'='*50}")
     if all_good:
-        print("🎉 All components verified successfully!")
-        print("\n🚀 Ready to launch:")
+        print("All components verified successfully!")
+        print("\nReady to launch:")
         print("   ./olympus full --automation")
         print("   ./olympus --list-modes")
-        print("\n🧪 Ready to test:")
+        print("\nReady to test:")
         print("   python3 tests/test_automation_loop.py 30")
         print("   python3 tests/test_mmwave_mqtt.py")
     else:
-        print("⚠️  Some components are missing or misplaced")
+        print("Some components are missing or misplaced")
         print("Please check the errors above")
         return 1
     

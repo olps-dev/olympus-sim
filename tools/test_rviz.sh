@@ -27,10 +27,10 @@ timeout 3s xclock &
 XCLOCK_PID=$!
 sleep 1
 if kill -0 $XCLOCK_PID 2>/dev/null; then
-    echo "✅ xclock started successfully"
+    echo "xclock started successfully"
     kill $XCLOCK_PID 2>/dev/null
 else
-    echo "❌ xclock failed to start"
+    echo "xclock failed to start"
 fi
 
 echo "Now testing RViz2..."
@@ -42,9 +42,9 @@ echo "RViz2 PID: $RVIZ_PID"
 sleep 3
 
 if kill -0 $RVIZ_PID 2>/dev/null; then
-    echo "✅ RViz2 is running (PID: $RVIZ_PID)"
+    echo "RViz2 is running (PID: $RVIZ_PID)"
     echo "If you don't see the window, there may be a display issue"
     echo "RViz2 will continue running in background..."
 else
-    echo "❌ RViz2 failed to start or crashed"
+    echo "RViz2 failed to start or crashed"
 fi
