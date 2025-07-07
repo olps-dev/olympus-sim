@@ -36,7 +36,24 @@
       "Bash(code .)",
       "Bash(sed:*)",
       "Bash(rm:*)",
-      "Bash(sudo chmod:*)"
+      "Bash(sudo chmod:*)",
+      "Bash(source:*)",
+      "Bash(kill:*)",
+      "Bash(./kill_olympus.sh:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(python:*)",
+      "Bash(./start_simulation.sh:*)",
+      "Bash(pip install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm install:*)",
+      "Bash(claude config)",
+      "Bash(claude config list)",
+      "Bash(claude config set mcpServers.olympus-dev-tools.command node)",
+      "Bash(claude config set:*)",
+      "Bash(claude mcp:*)",
+      "Bash(node:*)",
+      "Bash(npx create-react-app:*)",
+      "Bash(npm start)"
     ],
     "deny": []
   }

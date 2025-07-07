@@ -15,7 +15,7 @@ from sim.python.sensor_stubs import BME680Stub, SSD1306Stub, BatteryADC
 
 
 def main():
-    print("🎯 Project Olympus - Digital Twin Simulation")
+    print("Project Olympus - Digital Twin Simulation")
     print("=" * 50)
     print()
     
@@ -25,7 +25,7 @@ def main():
     battery = BatteryADC()
     
     # Simulate firmware boot sequence
-    print("🔄 Simulating ESP32 firmware boot...")
+    print("Simulating ESP32 firmware boot...")
     boot_messages = [
         "I (312) OLYMPUS_MAIN: Project Olympus - Digital Twin Node Starting",
         "I (318) OLYMPUS_MAIN: ESP-IDF Version: v5.3.3",
@@ -38,12 +38,12 @@ def main():
     ]
     
     for message in boot_messages:
-        print(f"📤 {message}")
+        print(f"{message}")
         time.sleep(0.1)
     
     print()
-    print("📊 Starting sensor monitoring loop...")
-    print("🛑 Press Ctrl+C to stop")
+    print("Starting sensor monitoring loop...")
+    print("Press Ctrl+C to stop")
     print()
     
     try:
@@ -51,11 +51,11 @@ def main():
         while True:
             # Read BME680 sensor
             bme_data = bme680.read()
-            print(f"📤 BME680: Temperature={bme_data['temperature']:.1f}°C, IAQ={bme_data['iaq']:.1f}")
+            print(f"BME680: Temperature={bme_data['temperature']:.1f}°C, IAQ={bme_data['iaq']:.1f}")
             
             # Read battery voltage
             voltage = battery.voltage()
-            print(f"📤 Battery: {voltage:.2f}V")
+            print(f"Battery: {voltage:.2f}V")
             
             # Update OLED display
             display_text = f"T:{bme_data['temperature']:.1f} IAQ:{bme_data['iaq']:.0f}"
@@ -63,14 +63,14 @@ def main():
             
             # System heartbeat every 10 seconds
             if uptime % 10 == 0:
-                print(f"📤 I (xxx) OLYMPUS_MAIN: System heartbeat - uptime: {uptime} seconds")
+                print(f"I (xxx) OLYMPUS_MAIN: System heartbeat - uptime: {uptime} seconds")
             
             time.sleep(1)
             uptime += 1
             
     except KeyboardInterrupt:
-        print("\n🛑 Simulation stopped by user")
-        print("🧹 Cleanup complete")
+        print("\nSimulation stopped by user")
+        print("Cleanup complete")
 
 
 if __name__ == "__main__":

@@ -148,7 +148,7 @@ class OlympusLauncher:
         if config_file.exists():
             cmd.extend(['-d', str(config_file)])
         
-        print("👁️ Starting RViz2...")
+        print("Starting RViz2...")
         print(f"   Config: {config_file}")
         print(f"   Display: {env.get('DISPLAY')}")
         
@@ -181,6 +181,30 @@ class OlympusLauncher:
         
         cmd = ['python3', str(automation_script)]
         print(" Starting automation controller...")
+        return subprocess.Popen(cmd)
+    
+    def launch_threejs_ros2_bridge(self):
+        """Launch Three.js ROS2 bridge"""
+        bridge_script = self.project_root / "sim" / "threejs" / "threejs_ros2_bridge.py"
+        
+        if not bridge_script.exists():
+            print(f"ERROR: Three.js ROS2 bridge not found: {bridge_script}")
+            return None
+        
+        cmd = ['python3', str(bridge_script)]
+        print(" Starting Three.js ROS2 bridge on http://localhost:5555...")
+        return subprocess.Popen(cmd, env=self.get_ros2_env())
+    
+    def launch_threejs_mqtt_bridge(self):
+        """Launch Three.js MQTT bridge (direct mode)"""
+        bridge_script = self.project_root / "sim" / "threejs" / "mqtt_bridge.py"
+        
+        if not bridge_script.exists():
+            print(f"ERROR: Three.js MQTT bridge not found: {bridge_script}")
+            return None
+        
+        cmd = ['python3', str(bridge_script)]
+        print(" Starting Three.js MQTT bridge on http://localhost:5555...")
         return subprocess.Popen(cmd)
     
     def launch_dashboard(self):
@@ -232,21 +256,51 @@ class OlympusLauncher:
                         processes.append(("mmWave MQTT Bridge", mqtt_bridge_proc))
                         time.sleep(1)
             
+            elif mode == "threejs":
+                # Launch Three.js ROS2 bridge (default for scalability)
+                threejs_bridge_proc = self.launch_threejs_ros2_bridge()
+                if threejs_bridge_proc:
+                    processes.append(("Three.js ROS2 Bridge", threejs_bridge_proc))
+                    time.sleep(2)
+                
+                # Launch static transform publishers for Three.js sensor frames
+                tf_cmd1 = [
+                    'ros2', 'run', 'tf2_ros', 'static_transform_publisher',
+                    '-5', '0', '1', '0', '0', '0', 'world', 'mmwave1_frame'
+                ]
+                print(" Starting static transform publisher for mmwave1 frame...")
+                tf_process1 = subprocess.Popen(tf_cmd1, env=self.get_ros2_env())
+                processes.append(("Static Transform Publisher mmwave1", tf_process1))
+                
+                tf_cmd2 = [
+                    'ros2', 'run', 'tf2_ros', 'static_transform_publisher',
+                    '5', '0', '1', '0', '0', '3.14159', 'world', 'mmwave2_frame'
+                ]
+                print(" Starting static transform publisher for mmwave2 frame...")
+                tf_process2 = subprocess.Popen(tf_cmd2, env=self.get_ros2_env())
+                processes.append(("Static Transform Publisher mmwave2", tf_process2))
+                
+                # Launch mmWave MQTT bridge to convert ROS2 to MQTT
+                mqtt_bridge_proc = self.launch_mmwave_mqtt_bridge()
+                if mqtt_bridge_proc:
+                    processes.append(("mmWave MQTT Bridge", mqtt_bridge_proc))
+                    time.sleep(1)
+            
             # Launch RViz if requested
-            if rviz and mode in ["full", "gazebo", "sensor"]:
+            if rviz and mode in ["full", "gazebo", "sensor", "threejs"]:
                 rviz_proc = self.launch_rviz()
                 if rviz_proc:
                     processes.append(("RViz2", rviz_proc))
                     time.sleep(2)
             
             # Launch automation if requested
-            if automation and mode in ["full", "automation", "sensor"]:
+            if automation and mode in ["full", "automation", "sensor", "threejs"]:
                 auto_proc = self.launch_automation_demo()
                 if auto_proc:
                     processes.append(("Automation", auto_proc))
             
             # Launch dashboard if requested
-            if dashboard and mode in ["full", "sensor"]:
+            if dashboard and mode in ["full", "sensor", "threejs"]:
                 dashboard_proc = self.launch_dashboard()
                 if dashboard_proc:
                     processes.append(("Dashboard", dashboard_proc))
@@ -301,7 +355,7 @@ def main():
     parser = argparse.ArgumentParser(description="Olympus Simulation Launcher")
     
     parser.add_argument('mode', nargs='?', default='full',
-                       choices=['full', 'gazebo', 'sensor', 'automation'],
+                       choices=['full', 'gazebo', 'sensor', 'automation', 'threejs'],
                        help='Simulation mode (default: full)')
     
     parser.add_argument('--gui', action='store_true',
@@ -326,7 +380,12 @@ def main():
         print("  full       - Complete simulation (Gazebo + ROS2 + MQTT + bridges)")
         print("  gazebo     - Gazebo simulation only (with ROS2 bridge)")
         print("  sensor     - Sensor simulation (Gazebo + bridges, no automation)")
+        print("  threejs    - Three.js browser simulation (ROS2 + MQTT bridges)")
         print("  automation - Automation controller only (requires running sensor)")
+        print("")
+        print("Platform compatibility:")
+        print("  full/gazebo/sensor - Linux/Mac (native), WSL2 (limited)")
+        print("  threejs           - Universal (any platform with browser)")
         return
     
     launcher = OlympusLauncher()

@@ -35,7 +35,7 @@ class MultiMmWaveMQTTBridge(Node):
         # Parameters
         self.declare_parameter('mqtt_broker', 'localhost')
         self.declare_parameter('mqtt_port', 1883)
-        self.declare_parameter('sensor_topics', ['/mmwave/points', '/mmwave2/points'])
+        self.declare_parameter('sensor_topics', ['/mmwave/mmwave1/points', '/mmwave/mmwave2/points'])
         self.declare_parameter('sensor_ids', ['mmwave1', 'mmwave2'])
         self.declare_parameter('detection_threshold', 0.1)
         self.declare_parameter('max_detection_range', 10.0)
