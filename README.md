@@ -1,4 +1,4 @@
-# Olympus Simulation System
+# Olympus Simulation System (This readme is outdated)
 
 A comprehensive multi-sensor simulation platform that integrates MQTT-based hierarchical communication with Gazebo physics simulation and ROS2 visualization. The system features advanced mmWave radar sensor simulation with WSL compatibility and real-time point cloud visualization.
 
